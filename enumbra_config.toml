@@ -1,4 +1,4 @@
-# Enumbra is a code generator for creating robust enumerations in multiple languates.
+# Enumbra is a code generator for creating robust enumerations in multiple languages.
 # Create definitions for multiple target languages from a single source.
 
 # This configuration file uses TOML syntax: https://toml.io/en/
@@ -15,16 +15,19 @@
 # >> You are free to fork the project and alter the outputs to your liking. PRs using newer language features are welcome, however
 # >> they will only be accepted if they follow the baseline requirements of this project and/or are sufficiently configurable to be disabled.
 
-# Q> C++: Why code generation instead of <templates/reflection/language feature?
+# Q> C++: Why code generation instead of <templates/reflection/language feature>?
 # A> Constexpr enums just are not there yet. The template syntax to generate the functions and outputs is ugly or plain impossible
 # >> to fit desired use-cases. Large constexpr expressions are slow and cumbersome on compile times / memory. Pre-generating all
 # >> of the relevant data is just very convenient. C++23 reflection will probably get us a step closer but I am not convinced it
 # >> is the final solution.
 
-# : https://softwareengineering.stackexchange.com/questions/194412/using-scoped-enums-for-bit-flags-in-c
+# Q> Why is the library called enumbra (pronounced e-num-bruh)?
+# A> The word umbra represents a region where visible light is obscured by another body. I think enums are often obscured by
+# >> the languages they reside in, so it's a fitting name.
 
 # Many configuration values can be overridden on a per-enum basis
 # Enumbra will not make implicit decisions for you, if a configuration value is not set then you must set it!
+# Version updates may result in new compile errors, but outputs should not change without warning.
 
 [[configuration]]
 # Generate C++ Output Files
