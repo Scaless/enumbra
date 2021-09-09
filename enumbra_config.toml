@@ -73,17 +73,6 @@ value_enum_value_postfix = ""
 flags_enum_name_postfix = ""
 flags_enum_value_postfix = ""
 
-# Default type to use for value_enums where size is not specified
-# Value must be a string containing the name of a type contained in size_types, OR one of the special values:
-# 	smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain all enum values.
-#   smallest_signed : Generated enum will use the smallest signed size type that may contain all enum values.
-default_value_enum_size_type = "signed32"
-
-# Default type to use for flags_enums where size is not specified
-# Value must be a string containing the name of an unsigned type contained in size_types, OR one of the special values:
-# 	smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain all enum values.
-default_flags_enum_size_type = "unsigned32"
-
 # List of types used by enums. 
 #   name: Name of the type when referenced elsewhere in this configuration
 #   bits: Number of bits that the storage type represents. MUST be accurate or generated code will fail miserably.
@@ -102,6 +91,17 @@ size_types = [
 	# Put any custom user types here
 	#{ name = "custom_type1", bits = 64, signed = true, gen_name = "simd_aligned64" },
 ]
+
+# Default type to use for value_enums where size is not specified
+# Value must be a string containing the name of a type contained in size_types, OR one of the special values:
+#   smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain all enum values.
+#   smallest_signed : Generated enum will use the smallest signed size type that may contain all enum values.
+default_value_enum_size_type = "signed32"
+
+# Default type to use for flags_enums where size is not specified
+# Value must be a string containing the name of an unsigned type contained in size_types, OR one of the special values:
+#   smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain all enum values.
+default_flags_enum_size_type = "unsigned32"
 
 # Denotes the order of evaluation when determining special size types
 # Values must be entries in size_types
