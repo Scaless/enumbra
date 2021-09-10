@@ -204,6 +204,10 @@ warnings = [
 	{ name = "strict_ordering", enabled = false},
 	{ name = "value_enums_allow_sparse", enabled = true},
 	{ name = "flags_enums_allow_sparse", enabled = true},
+	{ name = "value_enum_name_naming_convention_violation", enabled = true},
+	{ name = "value_enum_value_naming_convention_violation", enabled = true},
+	{ name = "flags_enum_name_naming_convention_violation", enabled = true},
+	{ name = "flags_enum_value_naming_convention_violation", enabled = true},
 ]
 
 # Type of convention to use when determining if a naming_convention_violation warning should be raised.
