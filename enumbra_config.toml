@@ -8,8 +8,6 @@
 generate_cpp = true
 # Generate C# Output Files
 generate_csharp = false
-# Default starting value for value_enums that are implicitly assigned values
-value_enum_default_start_value = 0
 
 [configuration.cpp_generator]
 # Generated enums will reside in this namespace. Nested namespaces are allowed:
@@ -100,6 +98,7 @@ string_table_layout = "name_and_description"
 
 # Type to use when generating code for string tables. 
 # Value is ignored when string_table_layout is "none". 
+# If set to a string_view type, the <string_view> header will be included.
 # Valid options:
 #   "constexpr_string_view": constexpr std::string_view ... = ""sv;
 #   "constexpr_wstring_view": constexpr std::wstring_view ... = L""sv;
@@ -109,6 +108,9 @@ string_table_type = "const_char_ptr"
 
 # Generate bitwise operators for flags_enums. bitwise ops on value_enums are disallowed.
 bitwise_op_functions = true
+
+# Generate functions for retrieving the user-configured default value of an enum
+default_functions = true
 
 # Generate functions for checking if a supplied enum contains a valid value
 # A flags_enum will match any valid set of flags
@@ -191,6 +193,10 @@ packed_declaration_macros = true
 #warning_value_enum_value_naming_convention = "PascalCase"
 #warning_flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
 #warning_flags_enum_value_naming_convention = "PascalCase"
+value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+value_enum_value_naming_convention = "PascalCase"
+flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+flags_enum_value_naming_convention = "PascalCase"
 
 # Treat all warnings as errors and prevents output from being generated.
 #warnings_as_errors = true
@@ -259,5 +265,5 @@ generated_name = "int64_t"
 #is_signed = true
 #generated_name = "simd_aligned64"
 
-[[configuration.csharp_generator]]
+[configuration.csharp_generator]
 # TODO...

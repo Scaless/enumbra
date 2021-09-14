@@ -59,7 +59,7 @@ std::string cpp_generator::generate_cpp_output(const enumbra_config& cfg, const 
 
 	// ENUM DEFINITIONS
 	for (const auto& e : enum_def.values) {
-		e.
+		
 	}
 
 

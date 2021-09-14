@@ -293,6 +293,7 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 		}
 
 		c.bitwise_op_functions = get_required<bool>(cpp_cfg, "bitwise_op_functions");
+		c.default_functions = get_required<bool>(cpp_cfg, "default_functions");
 		c.bounds_check_functions = get_required<bool>(cpp_cfg, "bounds_check_functions");
 		c.density_functions = get_required<bool>(cpp_cfg, "density_functions");
 		c.min_max_functions = get_required<bool>(cpp_cfg, "min_max_functions");

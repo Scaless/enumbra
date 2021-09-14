@@ -17,7 +17,8 @@ namespace enumbra {
 			CamelCase,			// enforcedStyle
 			PascalCase			// EnforcedStyle
 		};
-		constexpr std::array<std::pair<std::string_view, NamingConvention>, 5> NamingConventionMapped = { {
+		constexpr std::array<std::pair<std::string_view, NamingConvention>, 5> NamingConventionMapped 
+		{ {
 			{ "none", NamingConvention::None },
 			{ "snake_case", NamingConvention::SnakeCase },
 			{ "SCREAMING_SNAKE_CASE", NamingConvention::ScreamingSnakeCase },
@@ -30,7 +31,8 @@ namespace enumbra {
 			PragmaOnce,
 			CStyle
 		};
-		constexpr std::array<std::pair<std::string_view, IncludeGuardStyle>, 3> IncludeGuardStyleMapped = { {
+		constexpr std::array<std::pair<std::string_view, IncludeGuardStyle>, 3> IncludeGuardStyleMapped 
+		{ {
 			{ "none", IncludeGuardStyle::None },
 			{ "pragma_once", IncludeGuardStyle::PragmaOnce },
 			{ "c_style", IncludeGuardStyle::CStyle },
@@ -42,7 +44,8 @@ namespace enumbra {
 			ConstCharPtr,
 			ConstWCharPtr
 		};
-		constexpr std::array<std::pair<std::string_view, StringTableType>, 4> StringTableTypeMapped = { {
+		constexpr std::array<std::pair<std::string_view, StringTableType>, 4> StringTableTypeMapped
+		{ {
 			{ "constexpr_string_view", StringTableType::ConstexprStringView },
 			{ "constexpr_wstring_view", StringTableType::ConstexprWStringView },
 			{ "const_char_ptr", StringTableType::ConstCharPtr },
@@ -54,7 +57,8 @@ namespace enumbra {
 			NameOnly,
 			NameAndDescription
 		};
-		constexpr std::array<std::pair<std::string_view, StringTableLayout>, 3> StringTableLayoutMapped = { {
+		constexpr std::array<std::pair<std::string_view, StringTableLayout>, 3> StringTableLayoutMapped 
+		{ {
 			{ "none", StringTableLayout::None },
 			{ "name", StringTableLayout::NameOnly },
 			{ "name_and_description", StringTableLayout::NameAndDescription },
@@ -64,14 +68,15 @@ namespace enumbra {
 			LF,
 			CRLF
 		};
-		constexpr std::array<std::pair<std::string_view, LineEndingStyle>, 2> LineEndingStyleMapped = { {
+		constexpr std::array<std::pair<std::string_view, LineEndingStyle>, 2> LineEndingStyleMapped
+		{ {
 			{ "LF", LineEndingStyle::LF },
 			{ "CRLF", LineEndingStyle::CRLF },
 		} };
 
 		struct enum_size_type {
 			std::string name;
-			int64_t bits{0};
+			int64_t bits{ 0 };
 			bool is_signed{ true };
 			std::string generated_name;
 		};
@@ -107,6 +112,7 @@ namespace enumbra {
 			StringTableLayout string_table_layout{ StringTableLayout::NameAndDescription };
 
 			bool bitwise_op_functions{ true };
+			bool default_functions{ true };
 			bool bounds_check_functions{ true };
 			bool density_functions{ true };
 			bool min_max_functions{ true };
@@ -129,25 +135,72 @@ namespace enumbra {
 		High
 	};
 
+	enum class ValueEnumDefaultValueStyle {
+		Min,
+		Max,
+		First,
+		Last
+	};
+	constexpr std::array<std::pair<std::string_view, ValueEnumDefaultValueStyle>, 4> ValueEnumDefaultValueStyleMapped
+	{ {
+		{ "min", ValueEnumDefaultValueStyle::Min },
+		{ "max", ValueEnumDefaultValueStyle::Max },
+		{ "first", ValueEnumDefaultValueStyle::First },
+		{ "last", ValueEnumDefaultValueStyle::Last },
+	} };
+
+	enum class FlagsEnumDefaultValueStyle {
+		Zero,
+		UsedBitsSet,
+		Min,
+		Max,
+		First,
+		Last
+	};
+	constexpr std::array<std::pair<std::string_view, FlagsEnumDefaultValueStyle>, 6> FlagsEnumDefaultValueStyleMapped
+	{ {
+		{ "zero", FlagsEnumDefaultValueStyle::Zero },
+		{ "used_bits_set", FlagsEnumDefaultValueStyle::UsedBitsSet },
+		{ "min", FlagsEnumDefaultValueStyle::Min },
+		{ "max", FlagsEnumDefaultValueStyle::Max },
+		{ "first", FlagsEnumDefaultValueStyle::First },
+		{ "last", FlagsEnumDefaultValueStyle::Last },
+	} };
+
 	struct enum_entry
 	{
 		std::string name;
 		int64_t value;
-		int64_t default_value{ 0 };
 	};
 
 	struct enum_definition
 	{
 		std::string name;
 		std::vector<enum_entry> values;
+		int64_t default_value{ 0 };
+
+		size_t size_type_index;
+	};
+
+	struct enum_meta_config
+	{
+		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
+		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
+		int64_t value_enum_start_value{ 0 };
+		uint64_t flags_enum_start_value{ 1 };
+
+		bool value_enum_require_sequential{ true };
+		bool flags_enum_require_packed_bits{ true };
+		bool value_enum_require_unique_values{ true };
+		bool flags_enum_allow_overlap{ false };
+		bool flags_enum_allow_multi_bit_values{ false };
 	};
 
 	struct enumbra_config
 	{
 		bool generate_cpp{ true };
 		bool generate_csharp{ false };
-		int64_t value_enum_default_start_value{ 0 };
-		cpp::cpp_config cpp_config;
+		cpp::cpp_config cpp_config{};
 		Verbosity verbosity{ Verbosity::Low };
 	};
 
