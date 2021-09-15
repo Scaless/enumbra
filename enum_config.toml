@@ -3,6 +3,11 @@
 # See the documentation for enum configuration here: https://github.com/scaless/enumbra
 
 [enum_meta]
+# Unique name for this block of enums.
+# This is used in:
+#   c_style header guards (automatically uppercased): ENUMBRA_BLOCKNAME_H
+block_name = "my_block_of_enums"
+
 # Value to use when generating default enum_value functions. 
 # Valid Options:
 #   "min": The smallest entry in the values[] table. If an enum contains duplicate minimum values, the name of the first occurrence will be used.
@@ -32,7 +37,7 @@ value_enum_start_value = 0
 # Subsequent entries set the next significant bit.
 # This value is required to be a power of two (i.e. one bit set).
 # OVERRIDABLE: YES
-flags_enum_start_value = 0x1
+flags_enum_start_value = 1
 
 # If true, a value_enum is required to contain sequential values.
 # Sequential values may allow generated functions to create slightly faster code since gaps do not need to be handled.
@@ -86,6 +91,17 @@ flags_enum_allow_overlap = false
 # ]
 # OVERRIDABLE: YES
 flags_enum_allow_multi_bit_values = false
+
+[enum_meta.cpp]
+#C++ specific overrides
+
+# Enums within this file will reside in this namespace, nested within the enumbra_config namespace if defined.
+# ex: output_namespace = ["a", "b"]
+# generates: namespace a { namespace b { ... } }
+# output_namespace = []
+
+[enum_meta.csharp]
+#CSharp specific overrides
 
 ################################################
 # Value Enums

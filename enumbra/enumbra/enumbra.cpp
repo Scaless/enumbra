@@ -8,7 +8,17 @@
 #include <cxxopts.hpp>
 #include <toml++/toml.h>
 
-std::string version = "0.0.1";
+std::string version = "0.0.2";
+
+using namespace enumbra;
+
+enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity verbosity);
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity verbosity);
+void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
+void parse_enumbra_csharp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
+void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_config);
+void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config);
+void parse_enum_meta_csharp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_csharp_config);
 
 void print_help(const cxxopts::Options& options)
 {
@@ -18,14 +28,6 @@ void print_help(const cxxopts::Options& options)
 void print_version()
 {
 	std::cout << "enumbra v" << version << std::endl;
-}
-
-void fail_exit(std::string_view sv = "", int code = -1)
-{
-	if (!sv.empty()) {
-		std::cout << sv << std::endl;
-	}
-	exit(code);
 }
 
 int main(int argc, char** argv)
@@ -55,30 +57,62 @@ int main(int argc, char** argv)
 			return 0;
 		}
 		if (!result.count("c")) {
-			fail_exit("Config (-c|--config) argument is required.");
+			throw std::logic_error("Config (-c|--config) argument is required.");
 		}
 		if (!result.count("s")) {
-			fail_exit("Source (-s|--source) argument is required.");
+			throw std::logic_error("Source (-s|--source) argument is required.");
 		}
 
 		auto config_file_path = result["c"].as<std::string>();
 		auto source_file_path = result["s"].as<std::string>();
 
 		if (!std::filesystem::exists(config_file_path)) {
-			fail_exit("Config file does not exist.");
+			throw std::logic_error("Config file does not exist.");
 		}
 		if (!std::filesystem::exists(source_file_path)) {
-			fail_exit("Source file does not exist.");
+			throw std::logic_error("Source file does not exist.");
 		}
 
 		auto verbosity = (result.count("v") ? enumbra::Verbosity::High : enumbra::Verbosity::Low);
-		auto loaded_config = enumbra::load_config(config_file_path, verbosity);
+		auto loaded_enumbra_config = load_enumbra_config(config_file_path, verbosity);
+
+		//TODO: Load the real enum config
+
+		auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path, verbosity);
+
+		enumbra::enum_meta_config enum_meta;
+		enum_meta.block_name = "EnumMeta";
 
 		enumbra::enum_definition def;
-		def.name = "TEST";
+		def.name = "test";
+		def.size_type_index = 0;
+		def.values = {
+			{"A", "Wow", 1},
+			{"B", "Neat", 2}
+		};
+
+		enumbra::enum_definition def2;
+		def2.name = "test2";
+		def2.size_type_index = 0;
+		def2.values = {
+			{"A", "Wow", 1},
+			{"B", "Neat", 2}
+		};
+
+		enumbra::enum_definition def3;
+		def3.name = "test3";
+		def3.size_type_index = 0;
+		def3.values = {
+			{"A", "Wow", 1},
+			{"B", "Neat", 2}
+		};
+
+		enum_meta.enum_definitions.push_back(def);
+		enum_meta.enum_definitions.push_back(def2);
+		enum_meta.enum_definitions.push_back(def3);
 
 		cpp_generator cpp_gen;
-		std::string cpp_out = cpp_gen.generate_cpp_output(loaded_config, def);
+		std::string cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_meta);
 
 		if (result.count("p")) {
 			std::cout << cpp_out << std::endl;
@@ -92,109 +126,65 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
-void load_csharp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
 
-enumbra::enumbra_config enumbra::load_config(std::string_view config_toml_file, enumbra::Verbosity verbosity)
+enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity verbosity)
 {
 	enumbra::enumbra_config cfg;
 
 	toml::table tbl = toml::parse_file(config_toml_file);
 
-	toml::node_view<toml::node>& configuration = tbl["configuration"];
-	toml::node_view<toml::node>& cpp_config = configuration["cpp_generator"];
-	toml::node_view<toml::node>& csharp_config = configuration["csharp_generator"];
+	auto& configuration = tbl["configuration"];
+	auto& cpp_config = configuration["cpp_generator"];
+	auto& csharp_config = configuration["csharp_generator"];
 
-	std::optional<bool> generate_cpp = configuration["generate_cpp"].value<bool>();
-	std::optional<bool> generate_csharp = configuration["generate_csharp"].value<bool>();
+	bool generate_cpp = get_required<bool>(configuration, "generate_cpp");
+	bool generate_csharp = get_required<bool>(configuration, "generate_csharp");
 
-	if (generate_cpp.has_value())
-	{
-		cfg.generate_cpp = generate_cpp.value();
-		if (cfg.generate_cpp) {
-			load_cpp_config(cfg, cpp_config);
-		}
+	if (cfg.generate_cpp) {
+		parse_enumbra_cpp(cfg, cpp_config);
 	}
-	if (generate_csharp.has_value())
-	{
-		cfg.generate_csharp = generate_csharp.value();
-		if (cfg.generate_csharp) {
-			load_csharp_config(cfg, csharp_config);
-		}
+	if (cfg.generate_csharp) {
+		parse_enumbra_csharp(cfg, csharp_config);
 	}
 
 	return cfg;
 }
 
-template<typename T, typename node>
-auto get_required(node& config, std::string_view param) {
-	auto opt = config[param].value<T>();
-	if (opt.has_value()) {
-		return opt.value();
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity verbosity)
+{
+	enumbra::enum_meta_config cfg;
+
+	toml::table tbl = toml::parse_file(config_toml_file);
+
+	auto& enum_meta = tbl["enum_meta"];
+	auto& cpp_meta = enum_meta["cpp"];
+	auto& csharp_meta = enum_meta["csharp"];
+
+	parse_enum_meta(enumbra_config, cfg, enum_meta);
+
+	if (enumbra_config.generate_cpp) {
+		parse_enum_meta_cpp(enumbra_config, cfg, cpp_meta);
+	}
+	if (enumbra_config.generate_csharp) {
+		parse_enum_meta_csharp(enumbra_config, cfg, csharp_meta);
 	}
 
-	std::string x = "Configuration value is required: " + std::string(param);
-	throw std::logic_error(x.c_str());
+
+	return cfg;
 }
 
-template<typename T, typename node>
-std::vector<T> get_array(node& config, std::string_view param) {
-	std::vector<T> out;
-	if (toml::array* preamble = config[param].as_array()) {
-		for (auto& elem : *preamble) {
-			auto opt_val = elem.value<T>();
-			if (opt_val.has_value()) {
-				out.push_back(opt_val.value());
-			}
-			else {
-				throw std::logic_error("");
-			}
-		}
-	}
-	return out;
-}
-
-template<typename T, typename mapping>
-T get_mapped(mapping& map, std::string_view field_name, std::string_view param) {
-	if (map.size() == 0) {
-		throw std::logic_error("Map passed to get_mapped has a size of 0");
-	}
-
-	using namespace enumbra::cpp;
-	auto found_map = std::find_if(map.begin(), map.end(),
-		[&param](const std::pair<std::string_view, T>& entry) {
-			return entry.first == param;
-		});
-	if (found_map != map.end()) {
-		return found_map->second;
-	}
-
-	std::string exception = std::string(field_name) + " value must be one of: ";
-	for (int x = 0; x < map.size() - 1; x++) {
-		exception += std::string(map[x].first) + ", ";
-	}
-	exception += map[map.size() - 1].first;
-	throw std::logic_error(exception.c_str());
-}
-
-void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_cfg)
+void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_cfg)
 {
 	using namespace enumbra::cpp;
 	try {
 		enumbra::cpp::cpp_config& c = enumbra_config.cpp_config;
 		c.output_namespace = get_array<std::string>(cpp_cfg, "output_namespace");
 		c.output_extension = get_required<std::string>(cpp_cfg, "output_extension");
-
-		auto output_line_ending_style = get_required<std::string>(cpp_cfg, "output_line_ending_style");
-		c.line_ending_style = get_mapped<LineEndingStyle>(LineEndingStyleMapped, "output_line_ending_style", output_line_ending_style);
-
+		c.line_ending_style = get_mapped<LineEndingStyle>(LineEndingStyleMapped, cpp_cfg, "output_line_ending_style");
+		c.output_tab_characters = get_required<std::string>(cpp_cfg, "output_tab_characters");
 		c.preamble_text = get_array<std::string>(cpp_cfg, "preamble_text");
-
-		auto include_guard_text = get_required<std::string>(cpp_cfg, "include_guard");
-		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, "include_guard", include_guard_text);
-
+		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, cpp_cfg, "include_guard");
 		c.use_cstdint = get_required<bool>(cpp_cfg, "use_cstdint");
-
 		c.additional_includes = get_array<std::string>(cpp_cfg, "additional_includes");
 
 		c.value_enum_name_prefix = get_required<std::string>(cpp_cfg, "value_enum_name_prefix");
@@ -235,16 +225,16 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 
 		{
 			std::string default_value_enum_size_type = get_required<std::string>(cpp_cfg, "default_value_enum_size_type");
-			c.default_value_enum_size_type_index = c.get_size_type_index(default_value_enum_size_type);
-			if (c.default_value_enum_size_type_index < 0) {
+			c.default_value_enum_size_type_index = c.get_size_type_index_from_name(default_value_enum_size_type);
+			if (c.default_value_enum_size_type_index == SIZE_MAX) {
 				throw std::logic_error("default_value_enum_size_type must reference an existing size_type.");
 			}
 		}
 
 		{
 			std::string default_flags_enum_size_type = get_required<std::string>(cpp_cfg, "default_flags_enum_size_type");
-			c.default_flags_enum_size_type_index = c.get_size_type_index(default_flags_enum_size_type);
-			if (c.default_flags_enum_size_type_index < 0) {
+			c.default_flags_enum_size_type_index = c.get_size_type_index_from_name(default_flags_enum_size_type);
+			if (c.default_flags_enum_size_type_index == SIZE_MAX) {
 				throw std::logic_error("default_flags_enum_size_type must reference an existing size_type.");
 			}
 		}
@@ -252,8 +242,8 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 		{
 			std::vector<std::string> flags_enum_smallest_unsigned_evaluation_order = get_array<std::string>(cpp_cfg, "flags_enum_smallest_unsigned_evaluation_order");
 			for (auto& str : flags_enum_smallest_unsigned_evaluation_order) {
-				auto index = c.get_size_type_index(str);
-				if (index < 0) {
+				auto index = c.get_size_type_index_from_name(str);
+				if (index == SIZE_MAX) {
 					throw std::logic_error("flags_enum_smallest_unsigned_evaluation_order must reference an existing size_type.");
 				}
 				c.flags_enum_smallest_unsigned_evaluation_order.push_back(index);
@@ -263,8 +253,8 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 		{
 			std::vector<std::string> value_enum_smallest_unsigned_evaluation_order = get_array<std::string>(cpp_cfg, "value_enum_smallest_unsigned_evaluation_order");
 			for (auto& str : value_enum_smallest_unsigned_evaluation_order) {
-				auto index = c.get_size_type_index(str);
-				if (index < 0) {
+				auto index = c.get_size_type_index_from_name(str);
+				if (index == SIZE_MAX) {
 					throw std::logic_error("value_enum_smallest_unsigned_evaluation_order must reference an existing size_type.");
 				}
 				c.value_enum_smallest_unsigned_evaluation_order.push_back(index);
@@ -274,8 +264,8 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 		{
 			std::vector<std::string> value_enum_smallest_signed_evaluation_order = get_array<std::string>(cpp_cfg, "value_enum_smallest_signed_evaluation_order");
 			for (auto& str : value_enum_smallest_signed_evaluation_order) {
-				auto index = c.get_size_type_index(str);
-				if (index < 0) {
+				auto index = c.get_size_type_index_from_name(str);
+				if (index == SIZE_MAX) {
 					throw std::logic_error("value_enum_smallest_signed_evaluation_order must reference an existing size_type.");
 				}
 				c.value_enum_smallest_signed_evaluation_order.push_back(index);
@@ -283,12 +273,9 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 		}
 
 		{
-			auto string_table_layout = get_required<std::string>(cpp_cfg, "string_table_layout");
-			c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, "string_table_layout", string_table_layout);
-			
+			c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_cfg, "string_table_layout");
 			if (c.string_table_layout != StringTableLayout::None) {
-				auto string_table_type = get_required<std::string>(cpp_cfg, "string_table_type");
-				c.string_table_type = get_mapped<StringTableType>(StringTableTypeMapped, "string_table_type", string_table_type);
+				c.string_table_type = get_mapped<StringTableType>(StringTableTypeMapped, cpp_cfg, "string_table_type");
 			}
 		}
 
@@ -303,23 +290,47 @@ void load_cpp_config(enumbra::enumbra_config& enumbra_config, toml::node_view<to
 	}
 	catch (const std::exception& e) {
 
-		std::string x = std::string("load_cpp_config: ") + e.what();
+		std::string x = std::string("parse_enumbra_cpp_config: ") + e.what();
 		throw std::logic_error(x.c_str());
 	}
 }
 
-void load_csharp_config(enumbra::enumbra_config& c, toml::node_view<toml::node>& cpp_config)
+void parse_enumbra_csharp(enumbra::enumbra_config& c, toml::node_view<toml::node>& cpp_config)
 {
-	throw std::logic_error("load_csharp_config not implemented. Set generate_csharp to false.");
+	throw std::logic_error("parse_enumbra_csharp not implemented. Set generate_csharp to false.");
 }
 
-int64_t enumbra::cpp::cpp_config::get_size_type_index(std::string_view name)
+void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_config) {
+	enum_config.block_name = get_required<std::string>(meta_config, "block_name");
+	enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(ValueEnumDefaultValueStyleMapped, meta_config, "value_enum_default_value_style");
+	enum_config.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(FlagsEnumDefaultValueStyleMapped, meta_config, "flags_enum_default_value_style");
+	enum_config.value_enum_start_value = get_required<int64_t>(meta_config, "value_enum_start_value");
+	enum_config.flags_enum_start_value = get_required<uint64_t>(meta_config, "flags_enum_start_value");
+	enum_config.value_enum_require_sequential = get_required<bool>(meta_config, "value_enum_require_sequential");
+	enum_config.flags_enum_require_packed_bits = get_required<bool>(meta_config, "flags_enum_require_packed_bits");
+	enum_config.value_enum_require_unique_values = get_required<bool>(meta_config, "value_enum_require_unique_values");
+	enum_config.flags_enum_allow_overlap = get_required<bool>(meta_config, "flags_enum_allow_overlap");
+	enum_config.flags_enum_allow_multi_bit_values = get_required<bool>(meta_config, "flags_enum_allow_multi_bit_values");
+}
+void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config) {
+
+}
+void parse_enum_meta_csharp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_csharp_config) {
+	throw std::logic_error("parse_enum_meta_csharp not implemented. Set generate_csharp to false.");
+}
+
+size_t enumbra::cpp::cpp_config::get_size_type_index_from_name(std::string_view name)
 {
-	auto type = std::find_if(size_types.begin(), size_types.end(), [&name](enumbra::cpp::enum_size_type& size_type) {
-		return size_type.name == name;
-		});
-	if (type != size_types.end()) {
-		return type - size_types.begin();
+	for (size_t i = 0; i < size_types.size(); i++) {
+		if (size_types[i].name == name) {
+			return i;
+		}
 	}
-	return -1;
+	return SIZE_MAX;
+}
+
+const enumbra::cpp::enum_size_type& enumbra::cpp::cpp_config::get_size_type_from_index(size_t index) const
+{
+	// Will throw if index out of bounds
+	return size_types.at(index);
 }

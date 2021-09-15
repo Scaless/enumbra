@@ -10,9 +10,10 @@ generate_cpp = true
 generate_csharp = false
 
 [configuration.cpp_generator]
-# Generated enums will reside in this namespace. Nested namespaces are allowed:
+# All generated enums with this config will reside in this namespace. 
 # ex: output_namespace = ["a", "b"]
 # generates: namespace a { namespace b { ... } }
+# Enums can additionally define their own namespaces which will be nested appropriately.
 output_namespace = ["enumbra"]
 
 # Filename extension for generated files
@@ -23,13 +24,17 @@ output_extension = ".hpp"
 #   "CRLF": "\r\n"
 output_line_ending_style = "LF"
 
-# Freeform text that appears at the top of the generated file. Put your license here.
+# Characters to use for tabs. Default is 4 spaces. 
+# Any valid string can be used here, including "\t". See TOML docs for formatting.
+output_tab_characters = "    "
+
+# Freeform text that appears at the top of the generated file. Put your license and such here.
 #   preamble_text = ["line1", "line2", "line3"]
 preamble_text = []
 
 # Generated include guard. Valid options are:
 #   "pragma_once": A '#pragma once' line will be generated at the top of the file
-#   "c_style": Content will be surrounded by a C-style include guard using #ifndef X #define X #endif 
+#   "c_style": Content will be surrounded by a C-style include guard. Macro name determined by the block_name in enum_config.
 #   "none": No guards will be generated.
 include_guard = "pragma_once"
 
@@ -105,6 +110,9 @@ string_table_layout = "name_and_description"
 #   "const_char_ptr": const char* ... = "";
 #   "const_wchar_ptr": const wchar_t* ... = L"";
 string_table_type = "const_char_ptr"
+
+enum_to_string_functions = true
+string_to_enum_functions = true
 
 # Generate bitwise operators for flags_enums. bitwise ops on value_enums are disallowed.
 bitwise_op_functions = true

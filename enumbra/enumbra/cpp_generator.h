@@ -12,9 +12,38 @@
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 
+struct cpp_enum_intermediate
+{
+	std::string name;
+	std::string description;
+	int64_t value;
+};
+
+struct cpp_enum_generated
+{
+	std::string name;
+	std::vector<cpp_enum_intermediate> values;
+};
+
+struct cpp_enum_config_final
+{
+
+};
+
+class cpp_generator {
+public:
+	std::string generate_cpp_output(const enumbra::enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta);
+
+private:
+	std::string LF; // Line Feed as configured in enumbra_config
+	std::string TAB; // Tabs as configured in enumbra_config
+
+	std::vector<cpp_enum_generated> generate_enums(const cpp_enum_config_final& cfg);
+};
+
 // https://en.cppreference.com/w/cpp/keyword
 
-constexpr std::array<std::string_view, 117> ReservedCPPKeywords {
+constexpr std::array<std::string_view, 117> ReservedCPPKeywords{
 	"alignas",
 	"alignof",
 	"and",
@@ -138,16 +167,4 @@ constexpr std::array<std::string_view, 117> ReservedCPPKeywords {
 
 // https://en.cppreference.com/w/cpp/language/identifiers
 // Other rules
-
-
-class cpp_generator {
-
-public:
-	std::string generate_cpp_output(const enumbra::enumbra_config& cfg, const enumbra::enum_definition& enum_def);
-
-private:
-	std::string LF; // Line Feed
-
-
-};
 

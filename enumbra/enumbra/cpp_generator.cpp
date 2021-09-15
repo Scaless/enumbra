@@ -1,24 +1,38 @@
 #include "cpp_generator.h"
 #include <sstream>
+#include <vector>
+#include <algorithm>
+
 
 using namespace enumbra;
 using namespace enumbra::cpp;
 
-std::string cpp_generator::generate_cpp_output(const enumbra_config& cfg, const enumbra::enum_definition& enum_def)
+// Seriously C++?
+std::string to_upper(const std::string& str)
 {
-	auto& cpp_config = cfg.cpp_config;
+	std::string strcopy = str;
+	std::transform(strcopy.begin(), strcopy.end(), strcopy.begin(), ::toupper);
+	return strcopy;
+}
+
+std::string cpp_generator::generate_cpp_output(const enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta)
+{
+	auto& cpp = cfg.cpp_config;
 
 	std::stringstream output;
 
-	LF = (cpp_config.line_ending_style == cpp::LineEndingStyle::LF) ? "\n" : "\r\n";
+	// Setting up re-usable tokens
+	LF = (cpp.line_ending_style == cpp::LineEndingStyle::LF) ? "\n" : "\r\n";
+	TAB = cpp.output_tab_characters;
+	const std::string def_macro = "ENUMBRA_" + to_upper(enum_meta.block_name) + "_H";
 
 	// PREAMBLE
-	for (const auto& line : cpp_config.preamble_text) {
+	for (const auto& line : cpp.preamble_text) {
 		output << line << LF;
 	}
 
 	// INCLUDE GUARD
-	switch (cpp_config.include_guard_style)
+	switch (cpp.include_guard_style)
 	{
 	case enumbra::cpp::IncludeGuardStyle::None:
 		break;
@@ -27,8 +41,7 @@ std::string cpp_generator::generate_cpp_output(const enumbra_config& cfg, const 
 		break;
 	case enumbra::cpp::IncludeGuardStyle::CStyle:
 	{
-		std::string def = "ENUMBRA_" + enum_def.name + "_H";
-		output << "#ifndef " << def << LF << "#define " << def << LF << LF;
+		output << "#ifndef " << def_macro << LF << "#define " << def_macro << LF << LF;
 		break;
 	}
 	default:
@@ -36,44 +49,52 @@ std::string cpp_generator::generate_cpp_output(const enumbra_config& cfg, const 
 	}
 
 	// INCLUDES
-	if (cpp_config.use_cstdint) {
+	if (cpp.use_cstdint) {
 		output << "#include <cstdint>" << LF;
 	}
 
-	if (cpp_config.string_table_layout != StringTableLayout::None) {
-		if (cpp_config.string_table_type == StringTableType::ConstexprStringView || cpp_config.string_table_type == StringTableType::ConstexprWStringView)
+	if (cpp.string_table_layout != StringTableLayout::None) {
+		if (cpp.string_table_type == StringTableType::ConstexprStringView || cpp.string_table_type == StringTableType::ConstexprWStringView)
 		{
 			output << "#include <string_view>" << LF;
 		}
 	}
 
-	for (const auto& inc : cpp_config.additional_includes) {
+	for (const auto& inc : cpp.additional_includes) {
 		output << "#include " << inc << LF;
 	}
 	output << LF;
 
-	// START NAMESPACE
-	for (const auto& ns : cpp_config.output_namespace) {
+	// START CONFIG NAMESPACE
+	for (const auto& ns : cpp.output_namespace) {
 		output << "namespace " << ns << " {" << LF;
 	}
+	output << LF;
 
 	// ENUM DEFINITIONS
-	for (const auto& e : enum_def.values) {
-		
-	}
-
-
-
-
-	// END NAMESPACE
-	for (auto& ns : cpp_config.output_namespace) {
+	for (const auto& e : enum_meta.enum_definitions) {
+		output << "enum class " << e.name << " : " << cpp.get_size_type_from_index(e.size_type_index).generated_name << " {" << LF;
+		for (const auto& v : e.values) {
+			output << TAB << v.name << " = " << v.value << LF;
+		}
 		output << "}" << LF;
 	}
 
+	// END CONFIG NAMESPACE
+	output << LF;
+	for(auto& ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
+		output << "} // " << *ns << LF;
+	}
+
 	// END INCLUDE GUARD
-	if (cpp_config.include_guard_style == IncludeGuardStyle::CStyle) {
-		output << "#endif" << LF;
+	if (cpp.include_guard_style == IncludeGuardStyle::CStyle) {
+		output << "#endif // " << def_macro << LF;
 	}
 
 	return output.str();
+}
+
+std::vector<cpp_enum_generated> cpp_generator::generate_enums(const cpp_enum_config_final& cfg)
+{
+	throw std::logic_error("Unimplemented");
 }
