@@ -10,7 +10,7 @@ enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fi
 
 # Limitations
 
-1. TOML integers are represented by INT64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values between INT64_MAX and UINT64_MAX. Until then, the toml parser should give you one of the following warnings:
+1. TOML integers are represented by INT64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values not representable by INT64. Until then, the toml parser should give you one of the following warnings:
 	* Error while parsing decimal integer: '9446744073709551615' is not representable in 64 bits
 	* Error while parsing decimal integer: exceeds maximum length of 19 characters
 
@@ -18,9 +18,17 @@ enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fi
 
 Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
-A. The word umbra represents a region where visible light is obscured by another body. C++ enums are used for multiple purposes and their potential is obscured by the rest of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? C++ enums are just in a really weird place. Libraries like magic-enum rely on compiler hacks to function properly. The template syntax to generate the functions and metadata is ugly or plain impossible to fit many desired use-cases. The inability to iterate through an enums values without macros or other hacks is a huge detriment. Large constexpr expressions are slow and cumbersome on compile times / memory. Pre-generating all of the relevant data is just very convenient.
+A. The word umbra represents a region behind a celestial body where light is obscured.
+
+![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
+[Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
+
+C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such. 
+
+Q. Why not use another library like [magic-enum](https://github.com/Neargye/magic_enum)?
+
+Libraries like magic-enum rely on compiler hacks to function properly. For lage enums, constexpr generation is slow and cumbersome on compile times / memory. Pre-generating all of the relevant data is just very convenient. Enumbra will eventually support exporting to multiple langauges, making it easy to define your data in one central place. 
 
 Q. Why are you not using <templates/reflection/language feature>?
 
-A. Because I didn't know how or it was too cumbersome. The entire reason I made this project is because exising solutions are too complicated, lack the features I want, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking.
-
+A. Because I didn't know how or it was too cumbersome. The entire reason I made this project is because exising solutions are too complicated, lack the features I want, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking or submit a PR.

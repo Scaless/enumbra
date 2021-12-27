@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 		if (loaded_enumbra_config.generate_cpp)
 		{
 			cpp_generator cpp_gen;
-			std::string cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
+			const std::string& cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
 
 			if (result.count("p")) {
 				std::cout << cpp_out << std::endl;

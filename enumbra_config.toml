@@ -154,8 +154,7 @@ bit_info_functions = true
 flag_helper_functions = true
 
 # Generate convenience macros for declaring enums
-# Requires bit_functions set to true
-#   enumbra_packed(MyEnum, NameOfVariable); 
+#   ENUMBRA_PACK(MyEnum, NameOfVariable); 
 # generates:
 #   MyEnum NameOfVariable : MyEnum::bits_required_storage();
 packed_declaration_macros = true
@@ -198,10 +197,10 @@ packed_declaration_macros = true
 #warning_value_enum_value_naming_convention = "PascalCase"
 #warning_flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
 #warning_flags_enum_value_naming_convention = "PascalCase"
-value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-value_enum_value_naming_convention = "PascalCase"
-flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-flags_enum_value_naming_convention = "PascalCase"
+#value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#value_enum_value_naming_convention = "PascalCase"
+#flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#flags_enum_value_naming_convention = "PascalCase"
 
 # Treat all warnings as errors and prevents output from being generated.
 #warnings_as_errors = true
