@@ -8,7 +8,6 @@
 #include <cxxopts.hpp>
 #include <toml++/toml.h>
 
-std::string version = "0.0.2";
 
 using namespace enumbra;
 
@@ -27,7 +26,7 @@ void print_help(const cxxopts::Options& options)
 
 void print_version()
 {
-	std::cout << "enumbra v" << version << std::endl;
+	std::cout << "enumbra v" << kEnumbraVersion << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -43,8 +42,7 @@ int main(int argc, char** argv)
 			("o,output", "[Optional] Path to output folder (default: source dir)", cxxopts::value<std::string>())
 			("v,verbose", "Print additional information during processing.")
 			("version", "Prints version information.")
-			("p,print", "Prints output to the console.")
-			;
+			("p,print", "Prints output to the console.");
 
 		auto result = options.parse(argc, argv);
 
@@ -75,47 +73,20 @@ int main(int argc, char** argv)
 
 		auto verbosity = (result.count("v") ? enumbra::Verbosity::High : enumbra::Verbosity::Low);
 		auto loaded_enumbra_config = load_enumbra_config(config_file_path, verbosity);
-
-		//TODO: Load the real enum config
-
 		auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path, verbosity);
 
-		enumbra::enum_meta_config enum_meta;
-		enum_meta.block_name = "EnumMeta";
+		if (loaded_enumbra_config.generate_cpp)
+		{
+			cpp_generator cpp_gen;
+			std::string cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
 
-		enumbra::enum_definition def;
-		def.name = "test";
-		def.size_type_index = 0;
-		def.values = {
-			{"A", "Wow", 1},
-			{"B", "Neat", 2}
-		};
-
-		enumbra::enum_definition def2;
-		def2.name = "test2";
-		def2.size_type_index = 0;
-		def2.values = {
-			{"A", "Wow", 1},
-			{"B", "Neat", 2}
-		};
-
-		enumbra::enum_definition def3;
-		def3.name = "test3";
-		def3.size_type_index = 0;
-		def3.values = {
-			{"A", "Wow", 1},
-			{"B", "Neat", 2}
-		};
-
-		enum_meta.enum_definitions.push_back(def);
-		enum_meta.enum_definitions.push_back(def2);
-		enum_meta.enum_definitions.push_back(def3);
-
-		cpp_generator cpp_gen;
-		std::string cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_meta);
-
-		if (result.count("p")) {
-			std::cout << cpp_out << std::endl;
+			if (result.count("p")) {
+				std::cout << cpp_out << std::endl;
+			}
+		}
+		if (loaded_enumbra_config.generate_csharp)
+		{
+			// TODO
 		}
 	}
 	catch (const std::exception& e) {
@@ -184,7 +155,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 		c.output_tab_characters = get_required<std::string>(cpp_cfg, "output_tab_characters");
 		c.preamble_text = get_array<std::string>(cpp_cfg, "preamble_text");
 		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, cpp_cfg, "include_guard");
-		c.use_cstdint = get_required<bool>(cpp_cfg, "use_cstdint");
 		c.additional_includes = get_array<std::string>(cpp_cfg, "additional_includes");
 
 		c.value_enum_name_prefix = get_required<std::string>(cpp_cfg, "value_enum_name_prefix");
@@ -311,6 +281,62 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 	enum_config.value_enum_require_unique_values = get_required<bool>(meta_config, "value_enum_require_unique_values");
 	enum_config.flags_enum_allow_overlap = get_required<bool>(meta_config, "flags_enum_allow_overlap");
 	enum_config.flags_enum_allow_multi_bit_values = get_required<bool>(meta_config, "flags_enum_allow_multi_bit_values");
+
+	// TODO: Refactor into a function to get an array of struct
+	if (toml::array* value_enums = meta_config["value_enum"].as_array())
+	{
+		for (auto& elem : *value_enums)
+		{
+			elem.visit([&enumbra_config, &enum_config](auto&& el)
+				{
+					if constexpr (toml::is_table<decltype(el)>)
+					{
+						enum_definition def;
+						def.name = get_required<std::string>(el, "name");
+						std::string size_type_string = el["size_type"].value_or("");
+						if (size_type_string != "")
+						{
+							def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
+							if (def.size_type_index == SIZE_MAX) {
+								throw std::logic_error("value_enum size_type does not exist in global types table: " + size_type_string);
+							}
+						}
+						else // use the default size_type
+						{
+							def.size_type_index = enumbra_config.cpp_config.default_value_enum_size_type_index;
+						}
+						def.default_value_name = el["default_value"].value_or("");
+
+						if (toml::array* values = el["values"].as_array())
+						{
+							int64_t current_value = enum_config.value_enum_start_value;
+							for (auto& val : *values)
+							{
+								val.visit([&def, &current_value](auto&& elv)
+									{
+										if constexpr (toml::is_table<decltype(elv)>)
+										{
+											enum_entry ee;
+											ee.name = get_required<std::string>(elv, "name");
+											ee.description = elv["description"].value_or("");
+											ee.value = elv["value"].value_or(current_value);
+											current_value = ee.value + 1;
+											def.values.push_back(ee);
+										}
+									});
+							}
+						}
+
+						enum_config.value_enum_definitions.push_back(def);
+					}
+					else {
+						throw std::logic_error("Invalid layout for value_enum entry.");
+					}
+				});
+		}
+	}
+
+
 }
 void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config) {
 

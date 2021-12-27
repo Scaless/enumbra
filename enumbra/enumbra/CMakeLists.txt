@@ -7,7 +7,7 @@ find_package(tomlplusplus)
 find_package(cxxopts)
 
 # Add source to this project's executable.
-add_executable (enumbra "enumbra.cpp"  "cpp_generator.h" "enumbra.h" "cpp_generator.cpp")
+add_executable (enumbra "enumbra.cpp" "cpp_generator.cpp")
 
 target_compile_features(enumbra PRIVATE cxx_std_17)
 

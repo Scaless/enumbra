@@ -5,6 +5,8 @@
 #include <array>
 
 namespace enumbra {
+	constexpr char* kEnumbraVersion = "0.0.3";
+
 	namespace csharp {
 		// ...
 	}
@@ -90,7 +92,6 @@ namespace enumbra {
 			IncludeGuardStyle include_guard_style{ IncludeGuardStyle::PragmaOnce };
 			LineEndingStyle line_ending_style{ LineEndingStyle::LF };
 			std::string output_tab_characters{};
-			bool use_cstdint{ true };
 
 			std::string value_enum_name_prefix;
 			std::string value_enum_name_postfix;
@@ -180,7 +181,7 @@ namespace enumbra {
 	{
 		std::string name;
 		std::vector<enum_entry> values;
-		int64_t default_value{ 0 };
+		std::string default_value_name;
 
 		size_t size_type_index{ SIZE_MAX };
 	};
@@ -199,7 +200,8 @@ namespace enumbra {
 		bool flags_enum_allow_overlap{ false };
 		bool flags_enum_allow_multi_bit_values{ false };
 
-		std::vector<enum_definition> enum_definitions;
+		std::vector<enum_definition> value_enum_definitions;
+		std::vector<enum_definition> flag_enum_definitions;
 	};
 
 	struct value_enum_override_config

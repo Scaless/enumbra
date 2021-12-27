@@ -38,10 +38,6 @@ preamble_text = []
 #   "none": No guards will be generated.
 include_guard = "pragma_once"
 
-# Set flags to #include various headers in the generated output.
-# Disabling may break default outputs unless you specify your own headers and types.
-use_cstdint = true
-
 # Include your own headers here if required, e.g. if you are using your own custom underlying types
 # REMEMBER: In TOML syntax the " character must be escaped.
 # ex: 
@@ -50,7 +46,8 @@ use_cstdint = true
 #   #include <iostream>
 #   #include <string>
 #   #include "my_library.h"
-additional_includes = []
+# cstdint is included by default to satisy the default C++ types. You can modify size_types below if you want to change the default types.
+additional_includes = ["<cstdint>"]
 
 # Generated output will prepend these prefixes for enum names and values.
 value_enum_name_prefix = ""
