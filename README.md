@@ -25,8 +25,8 @@ A. The word umbra represents a region behind a celestial body where light is obs
 
 Q. Why not use another library like [magic-enum](https://github.com/Neargye/magic_enum)?
 
-Compile-time libraries like magic-enum rely on compiler hacks to function properly. For large enums, constexpr generation is slow and cumbersome on compile times / memory. Pre-generating all of the relevant data is just very convenient.
+Compile-time libraries like magic-enum rely on compiler hacks to function properly. For large enums, constexpr generation is slow and cumbersome on compile times / memory. Since enumbra pre-generates all its data, compiling is fast and can provide some additional functionality. magic_enum has convenience in its simplicity, just pop the header in and you're done. Use what works for you.
 
 Q. Why are you not using <templates/reflection/language feature>?
 
-A. Because I didn't know how or it was too cumbersome. The entire reason I made this project is because exising solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking or submit a PR.
+A. The entire reason I made this project is because exising solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue first to discuss if it's an appropriate change.
