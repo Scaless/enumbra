@@ -29,4 +29,4 @@ Compile-time libraries like magic-enum rely on compiler hacks to function proper
 
 Q. Why are you not using <templates/reflection/language feature>?
 
-A. The entire reason I made this project is because exising solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue first to discuss if it's an appropriate change.
+A. The entire reason I made this project is because existing solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue first to discuss if it's an appropriate change.
