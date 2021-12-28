@@ -16,7 +16,65 @@ std::string to_upper(const std::string& str)
 	return strcopy;
 }
 
-const enum_entry& get_enum_entry_value(const ValueEnumDefaultValueStyle& style, const enum_definition& definition)
+const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, const enum_definition& definition)
+{
+	switch (style)
+	{
+	case FlagsEnumDefaultValueStyle::Zero: return 0;
+	case FlagsEnumDefaultValueStyle::Min:
+	{
+		auto& m = std::min_element(definition.values.begin(), definition.values.end(),
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+		if (m != definition.values.end())
+		{
+			return m->value;
+		}
+		else
+		{
+			throw std::logic_error("get_flags_enum_value: FlagsEnumDefaultValueStyle::Min failed somehow.");
+		}
+		break;
+	}
+	case FlagsEnumDefaultValueStyle::Max:
+	{
+		auto& m = std::max_element(definition.values.begin(), definition.values.end(),
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+		if (m != definition.values.end())
+		{
+			return m->value;
+		}
+		else
+		{
+			throw std::logic_error("get_flags_enum_value: FlagsEnumDefaultValueStyle::Max failed somehow.");
+		}
+		break;
+	}
+	case FlagsEnumDefaultValueStyle::UsedBitsSet:
+	{
+		uint64_t bits = 0;
+		for (auto& v : definition.values)
+		{
+			bits |= v.value;
+		}
+		return int64_t(bits);
+		break;
+	}
+	case FlagsEnumDefaultValueStyle::First:
+	{
+		return definition.values.front().value;
+		break;
+	}
+	case FlagsEnumDefaultValueStyle::Last:
+	{
+		return definition.values.back().value;
+		break;
+	}
+	default:
+		throw std::logic_error("get_flags_enum_value: Invalid FlagsEnumDefaultValueStyle");
+	}
+}
+
+const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, const enum_definition& definition)
 {
 	switch (style)
 	{
@@ -49,13 +107,9 @@ const enum_entry& get_enum_entry_value(const ValueEnumDefaultValueStyle& style, 
 		break;
 	}
 	case ValueEnumDefaultValueStyle::First:
-	{
 		return definition.values.front();
-	}
 	case ValueEnumDefaultValueStyle::Last:
-	{
 		return definition.values.back();
-	}
 	default:
 		throw std::logic_error("value_enum_default_value_style: Invalid ValueEnumDefaultValueStyle");
 	}
@@ -210,7 +264,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// MACRO DEFINITIONS
 	if (cfg.cpp_config.packed_declaration_macros)
 	{
-		write("#define ENUMBRA_PACK(Enum, Name) Enum Name : Enum##Ex::bits_required_storage();");
+		write("#define ENUMBRA_PACK(Enum, Name) Enum::Value Name : Enum##::bits_required_storage();");
 		write_linefeed(2);
 	}
 
@@ -244,9 +298,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		}
 
 		// Get references and metadata for relevant enum values that we will need
-		const enum_entry& default_entry = get_enum_entry_value(enum_meta.value_enum_default_value_style, e);
-		const enum_entry& min_entry = get_enum_entry_value(ValueEnumDefaultValueStyle::Min, e);
-		const enum_entry& max_entry = get_enum_entry_value(ValueEnumDefaultValueStyle::Max, e);
+		const enum_entry& default_entry = get_value_enum_entry(enum_meta.value_enum_default_value_style, e);
+		const enum_entry& min_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Min, e);
+		const enum_entry& max_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Max, e);
 		const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = Log2Unsigned(max_entry.value) + 1;
 		const size_t bits_required_transmission = Log2Unsigned(max_entry.value - min_entry.value) + 1;
@@ -265,48 +319,72 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 		// Definition
 		write_line("// {} Definition", e.name);
-		write_line("enum class {} : {} {{", e.name, cpp.get_size_type_from_index(e.size_type_index).generated_name);
-		for (const auto& v : e.values) {
-			write_line_tabbed(1, "{} = {},", v.name, v.value);
-		}
-		write_line("}};");
-		write_linefeed();
-
-		// Iteration and String Conversion
-		write_line("// {} Introspection, Iteration, and String Conversion", e.name);
-		write_line("struct {}Ex {{", e.name);
+		write_line("struct {} {{", e.name);
 		{
-			write_line_tabbed(1, "constexpr {}Ex() = default;", e.name);
-			write_line_tabbed(1, "constexpr static std::array<{}, {}> Values = {{", e.name, entry_count);
+			write_line_tabbed(1, "using ValueType = {};", size_type);
+			write_line_tabbed(1, "enum class Value : {} {{", cpp.get_size_type_from_index(e.size_type_index).generated_name);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{}::{},", e.name, v.name);
+				write_line_tabbed(2, "{} = {},", v.name, v.value);
 			}
 			write_line_tabbed(1, "}};");
 			write_linefeed();
 
+			write_line_tabbed(1, "constexpr {}() : value(Value({})) {{ }};", e.name, default_entry.value);
+			write_line_tabbed(1, "constexpr {}(Value v) : value(v) {{ }}", e.name);
+			write_linefeed();
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			for (const auto& v : e.values) {
+				write_line_tabbed(2, "Value::{},", v.name);
+			}
+			write_line_tabbed(1, "}};");
+			write_linefeed();
+
+			for (const auto& v : e.values) {
+				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
+			}
+			write_linefeed();
+
+			// String Tables
+			/*write_line_tabbed(1, "constexpr static std::array<const char*, {}> Values = {{", entry_count);
+			for (const auto& v : e.values) {
+				write_line_tabbed(2, "Value::{},", v.name);
+			}
+			write_line_tabbed(1, "}};");*/
+
+			// Operators
+			write_line_tabbed(1, "constexpr operator Value() const {{ return value; }}");
+			write_line_tabbed(1, "explicit operator bool() = delete;");
+			write_linefeed();
+
+			// Functions
+			write_line_tabbed(1, "constexpr void reset() {{ value = {}(); }}", e.name);
+			write_linefeed();
+
 			// Introspection
-			write_line_tabbed(1, "static inline constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_entry.value);
-			write_line_tabbed(1, "static inline constexpr {1} max() {{ return {2}; }}", e.name, size_type, max_entry.value);
-			write_line_tabbed(1, "static inline constexpr size_t count() {{ return {1}; }}", e.name, unique_entry_count);
-			//write_line_tabbed(1, "static inline constexpr size_t nonunique_count() {{ return {1}; }}", e.name, entry_count);
-			write_line_tabbed(1, "static inline constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
-			//write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
-			write_line_tabbed(1, "static inline constexpr {0} from_underlying_unsafe({1} v) {{ return static_cast<{0}>(v); }}", e.name, size_type);
-			write_line_tabbed(1, "static inline constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
-			write_line_tabbed(1, "static inline constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
+			write_line_tabbed(1, "static constexpr bool is_enumbra_value_enum() {{ return false; }}");
+			write_line_tabbed(1, "static constexpr bool is_enumbra_flags_enum() {{ return true; }}");
+			write_line_tabbed(1, "static constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_entry.value);
+			write_line_tabbed(1, "static constexpr {1} max() {{ return {2}; }}", e.name, size_type, max_entry.value);
+			write_line_tabbed(1, "static constexpr int count() {{ return {1}; }}", e.name, unique_entry_count);
+			write_line_tabbed(1, "static constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
+			write_line_tabbed(1, "static constexpr {0} from_underlying_unsafe({1} v) {{ return {0}(static_cast<Value>(v)); }}", e.name, size_type);
+			write_line_tabbed(1, "static constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
+			write_line_tabbed(1, "static constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
 			if (is_contiguous)
 			{
-				write_line_tabbed(1, "static inline constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v)) && (static_cast<{1}>(v) <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
-				write_line_tabbed(1, "static inline constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v.value)) && (static_cast<{1}>(v.value) <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
 			}
 			else
 			{
-				write_line_tabbed(1, "static inline constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static inline constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
 			}
+			write_linefeed();
+			write_line("private:");
+			write_line_tabbed(1, "Value value;");
 		}
 		write_line("}};");
-		write_line("static inline constexpr {0}Ex enumbra_get_ex({0}) {{ return {0}Ex();}};", e.name);
 		write_linefeed();
 	}
 
@@ -353,7 +431,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			max_value |= uint64_t(v.value);
 		}
 
-		const enum_entry& default_entry = get_enum_entry_value(enum_meta.value_enum_default_value_style, e);
+		const int64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
 		
 		const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = Log2Unsigned(max_value) + 1;
@@ -367,60 +445,106 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 		// Definition
 		write_line("// {} Definition", e.name);
-		write_line("enum class {} : {} {{", e.name, cpp.get_size_type_from_index(e.size_type_index).generated_name);
-		for (const auto& v : e.values) {
-			write_line_tabbed(1, "{} = {},", v.name, v.value);
-		}
-		write_line("}};");
-		write_linefeed();
-
-		// Iteration and String Conversion
-		write_line("// {} Iteration and String Conversion", e.name);
-		write_line("struct {}Ex {{", e.name);
+		write_line("struct {} {{", e.name);
 		{
-			write_line_tabbed(1, "constexpr {}Ex() = default;", e.name);
-			write_line_tabbed(1, "constexpr static std::array<{}, {}> Values = {{", e.name, entry_count);
+			write_line_tabbed(1, "using ValueType = {};", size_type);
+			write_line_tabbed(1, "enum class Value : {} {{", cpp.get_size_type_from_index(e.size_type_index).generated_name);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{}::{},", e.name, v.name);
+				write_line_tabbed(2, "{} = {},", v.name, v.value);
 			}
 			write_line_tabbed(1, "}};");
 			write_linefeed();
 
+			write_line_tabbed(1, "constexpr {}() : value(Value({})) {{ }};", e.name, default_value);
+			write_line_tabbed(1, "constexpr {}(Value v) : value(v) {{ }}", e.name);
+			write_linefeed();
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			for (const auto& v : e.values) {
+				write_line_tabbed(2, "Value::{},", v.name);
+			}
+			write_line_tabbed(1, "}};");
+			write_linefeed();
+
+			for (const auto& v : e.values) {
+				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
+			}
+			write_linefeed();
+
+			// Operators
+			write_line_tabbed(1, "constexpr operator Value() const {{ return value; }}");
+			write_line_tabbed(1, "explicit operator bool() = delete;");
+			write_linefeed();
+
+			// Functions
+			write_line_tabbed(1, "constexpr void reset() {{ value = {}(); }}", e.name);
+			write_line_tabbed(1, "constexpr bool is_set(Value v) const {{ return (*this & v) == v; }}");
+
+			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value) == {1}; }}", size_type, max_value);
+			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value) > 0; }}", size_type);
+			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value) == 0; }}", size_type);
+			write_linefeed();
+
 			// Introspection
-			write_line_tabbed(1, "static inline constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_value);
-			write_line_tabbed(1, "static inline constexpr {1} max() {{ return {2:#x}; }}", e.name, size_type, max_value);
-			write_line_tabbed(1, "static inline constexpr size_t count() {{ return {1}; }}", e.name, unique_entry_count);
-			//write_line_tabbed(1, "static inline constexpr size_t nonunique_count() {{ return {1}; }}", e.name, entry_count);
-			write_line_tabbed(1, "static inline constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
-			//write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
-			write_line_tabbed(1, "static inline constexpr {0} from_underlying_unsafe({1} v) {{ return static_cast<{0}>(v); }}", e.name, size_type);
-			write_line_tabbed(1, "static inline constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
-			write_line_tabbed(1, "static inline constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
+			write_line_tabbed(1, "static constexpr bool is_enumbra_value_enum() {{ return false; }}");
+			write_line_tabbed(1, "static constexpr bool is_enumbra_flags_enum() {{ return true; }}");
+			write_line_tabbed(1, "static constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_value);
+			write_line_tabbed(1, "static constexpr {1} max() {{ return {2:#x}; }}", e.name, size_type, max_value);
+			write_line_tabbed(1, "static constexpr int count() {{ return {1}; }}", e.name, unique_entry_count);
+			write_line_tabbed(1, "static constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
+			write_line_tabbed(1, "static constexpr {0} from_underlying_unsafe({1} v) {{ return {0}(static_cast<Value>(v)); }}", e.name, size_type);
+			write_line_tabbed(1, "static constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
+			write_line_tabbed(1, "static constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
 			if (is_contiguous)
 			{
-				write_line_tabbed(1, "static inline constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v)) && (static_cast<{1}>(v) <= {3}); }}", e.name, size_type, min_value, max_value);
-				write_line_tabbed(1, "static inline constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
+				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v.value)) && (static_cast<{1}>(v.value) <= {3}); }}", e.name, size_type, min_value, max_value);
+				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
 			}
 			else
 			{
-				write_line_tabbed(1, "static inline constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static inline constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
 			}
+			write_linefeed();
+
+			// Requires Value operators which are defined after the class
+			write_line_tabbed(1, "friend constexpr {0} operator~(const {0} a);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator|(const {0} a, const {0} b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator&(const {0} a, const {0} b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator^(const {0} a, const {0} b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator|(const {0} a, const {0}::Value b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator&(const {0} a, const {0}::Value b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator^(const {0} a, const {0}::Value b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator|(const {0}::Value a, const {0} b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator&(const {0}::Value a, const {0} b);", e.name);
+			write_line_tabbed(1, "friend constexpr {0} operator^(const {0}::Value a, const {0} b);", e.name);
+
+			write_line("private:");
+			write_line_tabbed(1, "Value value;");
 		}
 		write_line("}};");
-		// Hacky way to get the EnumEx static class from the base class. 
-		write_line("static inline constexpr {0}Ex enumbra_get_ex({0}) {{ return {0}Ex();}};", e.name);
 		write_linefeed();
 
-		// Operator Overloads
 		write_line("// {} Operator Overloads", e.name);
-		write_line("constexpr {0} operator~ ({0} a) {{ return static_cast<{0}>(~static_cast<{1}>(a)); }}", e.name, size_type);
-		write_line("constexpr {0} operator| ({0} a, {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}", e.name, size_type);
-		write_line("constexpr {0} operator& ({0} a, {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}", e.name, size_type);
-		write_line("constexpr {0} operator^ ({0} a, {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}", e.name, size_type);
-		write_line("constexpr {0}& operator|= ({0} & a, {0} b) {{ a = a | b; return a; }}", e.name);
-		write_line("constexpr {0}& operator&= ({0} & a, {0} b) {{ a = a & b; return a; }}", e.name);
-		write_line("constexpr {0}& operator^= ({0} & a, {0} b) {{ a = a ^ b; return a; }}", e.name);
+		// Value operators are first because they are required for the Enum operators
+		write_line("constexpr {0}::Value operator~(const {0}::Value a) {{ return static_cast<{0}::Value>(~static_cast<{1}>(a)); }}", e.name, size_type);
+		write_line("constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}", e.name, size_type);
+		write_line("constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}", e.name, size_type);
+		write_line("constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}", e.name, size_type);
+		// Enum operators
+		write_line("constexpr {0} operator~ (const {0} a) {{ return static_cast<{0}>(static_cast<{0}::Value>(~static_cast<{1}>(a.value))); }}", e.name, size_type);
+		write_line("constexpr {0} operator| (const {0} a, const {0} b) {{ return a.value | b.value; }}", e.name);
+		write_line("constexpr {0} operator& (const {0} a, const {0} b) {{ return a.value & b.value; }}", e.name);
+		write_line("constexpr {0} operator^ (const {0} a, const {0} b) {{ return a.value ^ b.value; }}", e.name);
+		write_line("constexpr {0} operator| (const {0} a, const {0}::Value b) {{ return a.value | b; }}", e.name);
+		write_line("constexpr {0} operator& (const {0} a, const {0}::Value b) {{ return a.value & b; }}", e.name);
+		write_line("constexpr {0} operator^ (const {0} a, const {0}::Value b) {{ return a.value ^ b; }}", e.name);
+		write_line("constexpr {0} operator| (const {0}::Value a, const {0} b) {{ return a | b.value; }}", e.name);
+		write_line("constexpr {0} operator& (const {0}::Value a, const {0} b) {{ return a & b.value; }}", e.name);
+		write_line("constexpr {0} operator^ (const {0}::Value a, const {0} b) {{ return a ^ b.value; }}", e.name);
+		write_line("constexpr {0}& operator|= ({0} & a, const {0} b) {{ a = a | b; return a; }}", e.name);
+		write_line("constexpr {0}& operator&= ({0} & a, const {0} b) {{ a = a & b; return a; }}", e.name);
+		write_line("constexpr {0}& operator^= ({0} & a, const {0} b) {{ a = a ^ b; return a; }}", e.name);
+		
 		write_linefeed();
 	}
 

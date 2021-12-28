@@ -8,7 +8,6 @@
 #include <cxxopts.hpp>
 #include <toml++/toml.h>
 
-
 using namespace enumbra;
 
 enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity verbosity);

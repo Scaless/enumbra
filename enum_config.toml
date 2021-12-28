@@ -107,7 +107,7 @@ flags_enum_allow_multi_bit_values = false
 # Value Enums
 ################################################
 [[enum_meta.value_enum]]
-name = "test"
+name = "test_value"
 default_value = "B"
 size_type = "signed32"
 values = [
@@ -132,9 +132,8 @@ values = [
 # Flags Enums
 ################################################
 [[enum_meta.flags_enum]]
-name = "test"
+name = "test_flags"
 values = [
-	{ name = "A", value = 0x0 },
 	{ name = "B", value = 0x1 },
 	{ name = "C", value = 0x2 },
 ]
@@ -144,7 +143,6 @@ name = "test_nodefault"
 default_value = "C"
 size_type = "unsigned16"
 values = [
-	{ name = "A", value = 0x0 },
 	{ name = "B", value = 0x1 },
 	{ name = "C", value = 0x2 },
 ]
