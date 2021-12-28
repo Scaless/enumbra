@@ -4,6 +4,8 @@ A code generator for enums.
 
 # Examples
 
+Annotated config files are provided as enumbra_config.toml and enum_config.toml. 
+
 # Building
 
 enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fit your setup, namely set cmakeToolchain to your vcpkg toolchain file.

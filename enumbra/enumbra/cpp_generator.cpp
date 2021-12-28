@@ -97,6 +97,7 @@ bool enum_meta_has_unique_enum_names(const enumbra::enum_meta_config& enum_meta)
 		}
 		seen_names.insert(v.name);
 	}
+	return true;
 }
 
 bool is_value_set_contiguous(const std::set<int64_t> values)
@@ -128,7 +129,7 @@ bool is_flags_set_contiguous(const std::set<int64_t> flags)
 			skip_first = false;
 			continue;
 		}
-		if (u != (1 << check_bit))
+		if (u != (1LL << check_bit))
 		{
 			return false;
 		}
@@ -275,6 +276,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("// {} Introspection, Iteration, and String Conversion", e.name);
 		write_line("struct {}Ex {{", e.name);
 		{
+			write_line_tabbed(1, "constexpr {}Ex() = default;", e.name);
 			write_line_tabbed(1, "constexpr static std::array<{}, {}> Values = {{", e.name, entry_count);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{}::{},", e.name, v.name);
@@ -288,7 +290,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "static inline constexpr size_t count() {{ return {1}; }}", e.name, unique_entry_count);
 			//write_line_tabbed(1, "static inline constexpr size_t nonunique_count() {{ return {1}; }}", e.name, entry_count);
 			write_line_tabbed(1, "static inline constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
-			write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
+			//write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
 			write_line_tabbed(1, "static inline constexpr {0} from_underlying_unsafe({1} v) {{ return static_cast<{0}>(v); }}", e.name, size_type);
 			write_line_tabbed(1, "static inline constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
 			write_line_tabbed(1, "static inline constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
@@ -304,10 +306,11 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 		}
 		write_line("}};");
+		write_line("static inline constexpr {0}Ex enumbra_get_ex({0}) {{ return {0}Ex();}};", e.name);
 		write_linefeed();
 	}
 
-	// VALUE ENUM DEFINITIONS
+	// Flag ENUM DEFINITIONS
 	for (auto& e : enum_meta.flag_enum_definitions) {
 
 		// Precondition checks
@@ -375,6 +378,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("// {} Iteration and String Conversion", e.name);
 		write_line("struct {}Ex {{", e.name);
 		{
+			write_line_tabbed(1, "constexpr {}Ex() = default;", e.name);
 			write_line_tabbed(1, "constexpr static std::array<{}, {}> Values = {{", e.name, entry_count);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{}::{},", e.name, v.name);
@@ -388,7 +392,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "static inline constexpr size_t count() {{ return {1}; }}", e.name, unique_entry_count);
 			//write_line_tabbed(1, "static inline constexpr size_t nonunique_count() {{ return {1}; }}", e.name, entry_count);
 			write_line_tabbed(1, "static inline constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
-			write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
+			//write_line_tabbed(1, "static inline constexpr {1} to_underlying({0} v) {{ return static_cast<{1}>(v); }}", e.name, size_type);
 			write_line_tabbed(1, "static inline constexpr {0} from_underlying_unsafe({1} v) {{ return static_cast<{0}>(v); }}", e.name, size_type);
 			write_line_tabbed(1, "static inline constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
 			write_line_tabbed(1, "static inline constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
@@ -404,6 +408,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 		}
 		write_line("}};");
+		// Hacky way to get the EnumEx static class from the base class. 
+		write_line("static inline constexpr {0}Ex enumbra_get_ex({0}) {{ return {0}Ex();}};", e.name);
 		write_linefeed();
 
 		// Operator Overloads
