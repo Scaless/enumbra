@@ -37,9 +37,9 @@ int main(int argc, char** argv)
 			.custom_help("-c enumbra_config.toml -s enum.toml")
 			.add_options()
 			("h,help", "You are here.")
-			("c,config", "[Required] Path to enumbra config file (enumbra.toml)", cxxopts::value<std::string>())
-			("s,source", "[Required] Path to enum config file (enum.toml)", cxxopts::value<std::string>())
-			("o,output", "[Optional] Path to output folder (default: source dir)", cxxopts::value<std::string>())
+			("c,config", "[Required] Path to enumbra config file (enumbra.toml).", cxxopts::value<std::string>())
+			("s,source", "[Required] Path to enum config file (enum.toml).", cxxopts::value<std::string>())
+			("cppout", "[Required] Path to output C++ header file.", cxxopts::value<std::string>())
 			("v,verbose", "Print additional information during processing.")
 			("version", "Prints version information.")
 			("p,print", "Prints output to the console.");
@@ -55,14 +55,18 @@ int main(int argc, char** argv)
 			return 0;
 		}
 		if (!result.count("c")) {
-			throw std::logic_error("Config (-c|--config) argument is required.");
+			throw std::logic_error("Enumbra Config File (-c|--config) argument is required.");
 		}
 		if (!result.count("s")) {
-			throw std::logic_error("Source (-s|--source) argument is required.");
+			throw std::logic_error("Enum Source File (-s|--source) argument is required.");
+		}
+		if (!result.count("cppout")) {
+			throw std::logic_error("C++ Output File Path (--cppout) argument is required.");
 		}
 
 		auto config_file_path = result["c"].as<std::string>();
 		auto source_file_path = result["s"].as<std::string>();
+		auto cppout_file_path = result["cppout"].as<std::string>();
 
 		if (!std::filesystem::exists(config_file_path)) {
 			throw std::logic_error("Config file does not exist.");
@@ -78,11 +82,13 @@ int main(int argc, char** argv)
 		if (loaded_enumbra_config.generate_cpp)
 		{
 			cpp_generator cpp_gen;
-			const std::string& cpp_out = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
+			const std::string& generated_cpp = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
 
 			if (result.count("p")) {
-				std::cout << cpp_out << std::endl;
+				std::cout << generated_cpp << std::endl;
 			}
+			std::ofstream file(cppout_file_path);
+			file << generated_cpp;
 		}
 		if (loaded_enumbra_config.generate_csharp)
 		{
@@ -90,6 +96,7 @@ int main(int argc, char** argv)
 		}
 	}
 	catch (const std::exception& e) {
+		// TODO: print a better stacktrace
 		std::cout << e.what();
 		return -1;
 	}
@@ -270,6 +277,11 @@ void parse_enumbra_csharp(enumbra::enumbra_config& c, toml::node_view<toml::node
 	throw std::logic_error("parse_enumbra_csharp not implemented. Set generate_csharp to false.");
 }
 
+bool is_pow_2(int64_t x)
+{
+	return x && !(x & (x - 1));
+}
+
 void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_config) {
 	enum_config.block_name = get_required<std::string>(meta_config, "block_name");
 	enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(ValueEnumDefaultValueStyleMapped, meta_config, "value_enum_default_value_style");
@@ -336,6 +348,66 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 		}
 	}
 
+
+	// TODO: Refactor into a function to get an array of struct
+	if (toml::array* flag_enums = meta_config["flags_enum"].as_array())
+	{
+		for (auto& elem : *flag_enums)
+		{
+			elem.visit([&enumbra_config, &enum_config](auto&& el)
+				{
+					if constexpr (toml::is_table<decltype(el)>)
+					{
+						enum_definition def;
+						def.name = get_required<std::string>(el, "name");
+						std::string size_type_string = el["size_type"].value_or("");
+						if (size_type_string != "")
+						{
+							def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
+							if (def.size_type_index == SIZE_MAX) {
+								throw std::logic_error("flags_enum size_type does not exist in global types table: " + size_type_string);
+							}
+						}
+						else // use the default size_type
+						{
+							def.size_type_index = enumbra_config.cpp_config.default_flags_enum_size_type_index;
+						}
+						def.default_value_name = el["default_value"].value_or("");
+
+						if (toml::array* values = el["values"].as_array())
+						{
+							int64_t current_shift = 0;
+							for (auto& val : *values)
+							{
+								val.visit([&def, &current_shift](auto&& elv)
+									{
+										if constexpr (toml::is_table<decltype(elv)>)
+										{
+											enum_entry ee;
+											ee.name = get_required<std::string>(elv, "name");
+											ee.description = elv["description"].value_or("");
+											ee.value = elv["value"].value_or(1LL << current_shift);
+											if (!is_pow_2(ee.value)) {
+												throw std::logic_error("flags_enum value is not a power of 2 (1 bit set). Non-pow2 values are not currently supported.");
+											}
+											current_shift++;
+											while ((1LL << current_shift) < ee.value) {
+												current_shift++;
+											}
+											def.values.push_back(ee);
+										}
+									});
+							}
+						}
+
+						enum_config.flag_enum_definitions.push_back(def);
+					}
+					else {
+						throw std::logic_error("Invalid layout for value_enum entry.");
+					}
+				});
+		}
+	}
 
 }
 void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config) {

@@ -18,17 +18,15 @@ enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fi
 
 Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
-A. The word umbra represents a region behind a celestial body where light is obscured.
+A. The word umbra represents a region behind a celestial body where light is obscured. C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such. They can be incredibly useful but for some reason feel neglected over shiny new features (reflection, etc).
 
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
 
-C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such. 
-
 Q. Why not use another library like [magic-enum](https://github.com/Neargye/magic_enum)?
 
-Libraries like magic-enum rely on compiler hacks to function properly. For lage enums, constexpr generation is slow and cumbersome on compile times / memory. Pre-generating all of the relevant data is just very convenient. Enumbra will eventually support exporting to multiple langauges, making it easy to define your data in one central place. 
+Compile-time libraries like magic-enum rely on compiler hacks to function properly. For large enums, constexpr generation is slow and cumbersome on compile times / memory. Pre-generating all of the relevant data is just very convenient.
 
 Q. Why are you not using <templates/reflection/language feature>?
 
-A. Because I didn't know how or it was too cumbersome. The entire reason I made this project is because exising solutions are too complicated, lack the features I want, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking or submit a PR.
+A. Because I didn't know how or it was too cumbersome. The entire reason I made this project is because exising solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking or submit a PR.
