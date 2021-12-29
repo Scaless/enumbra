@@ -357,6 +357,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Functions
+			write_line_tabbed(1, "constexpr {0} to_underlying() const {{ return static_cast<{0}>(value); }}", size_type);
 			write_line_tabbed(1, "constexpr void reset() {{ value = {}(); }}", e.name);
 			write_linefeed();
 
@@ -476,6 +477,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Functions
+			write_line_tabbed(1, "constexpr {0} to_underlying() const {{ return static_cast<{0}>(value); }}", size_type);
 			write_line_tabbed(1, "constexpr void reset() {{ value = {}(); }}", e.name);
 			write_line_tabbed(1, "constexpr bool is_set(Value v) const {{ return (*this & v) == v; }}");
 
