@@ -361,8 +361,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Introspection
-			write_line_tabbed(1, "static constexpr bool is_enumbra_value_enum() {{ return false; }}");
-			write_line_tabbed(1, "static constexpr bool is_enumbra_flags_enum() {{ return true; }}");
+			write_line_tabbed(1, "static constexpr bool is_enumbra_value_enum() {{ return true; }}");
+			write_line_tabbed(1, "static constexpr bool is_enumbra_flags_enum() {{ return false; }}");
 			write_line_tabbed(1, "static constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_entry.value);
 			write_line_tabbed(1, "static constexpr {1} max() {{ return {2}; }}", e.name, size_type, max_entry.value);
 			write_line_tabbed(1, "static constexpr int count() {{ return {1}; }}", e.name, unique_entry_count);
