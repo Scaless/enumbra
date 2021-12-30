@@ -5,7 +5,7 @@
 #include <array>
 
 namespace enumbra {
-	constexpr char* kEnumbraVersion = "0.0.3";
+	constexpr char* kEnumbraVersion = "0.0.4";
 
 	namespace csharp {
 		// ...
@@ -85,7 +85,6 @@ namespace enumbra {
 
 		struct cpp_config
 		{
-			std::string output_extension{};
 			std::vector<std::string> output_namespace;
 			std::vector<std::string> preamble_text{};
 			std::vector<std::string> additional_includes;
@@ -114,13 +113,12 @@ namespace enumbra {
 			StringTableLayout string_table_layout{ StringTableLayout::NameAndDescription };
 
 			bool bitwise_op_functions{ true };
-			bool default_functions{ true };
 			bool bounds_check_functions{ true };
 			bool density_functions{ true };
 			bool min_max_functions{ true };
 			bool bit_info_functions{ true };
-			bool flag_helper_functions{ true };
-			bool packed_declaration_macros{ true };
+			bool enumbra_macros{ true };
+			bool templated_extensions{ true };
 
 			bool warnings_as_errors{ true };
 			bool value_enum_name_naming_convention_violation{ true };

@@ -3,6 +3,7 @@
 # See the documentation for enum configuration here: https://github.com/scaless/enumbra
 
 [enum_meta]
+
 # Unique name for this block of enums.
 # This is used in:
 #   c_style header guards (automatically uppercased): ENUMBRA_BLOCKNAME_H
@@ -25,18 +26,15 @@ value_enum_default_value_style = "min"
 #   "max": The largest entry in the values[] table. If an enum contains duplicate maximum values, the name of the first occurrence will be used.
 #   "first": The first entry in the values[] table following the user-defined order.
 #   "last": The last entry in the values[] table following the user-defined order.
-# OVERRIDABLE: YES
 flags_enum_default_value_style = "zero"
 
 # If an entry in a value_enum does not specify a value, the first entry will start at this value.
 # Subsequent entries increment by 1.
-# OVERRIDABLE: YES
 value_enum_start_value = 0
 
 # If an entry in a flags_enum does not specify a value, the first entry will start at this value.
 # Subsequent entries set the next significant bit.
 # This value is required to be a power of two (i.e. one bit set).
-# OVERRIDABLE: YES
 flags_enum_start_value = 1
 
 # If true, a value_enum is required to contain sequential values.
@@ -49,7 +47,6 @@ flags_enum_start_value = 1
 #     { name = "B", value = 2 }, 
 #                           ^ ERROR! 3 is skipped, sequence is not linear
 # ]
-# OVERRIDABLE: YES
 value_enum_require_sequential = true
 
 # If true, a flags_enum must contain values which when OR'd together result in a sequence of set bits starting from the lowest bit.
@@ -62,11 +59,9 @@ value_enum_require_sequential = true
 #     { name = "B", value = 0b0110 }, 
 #                                ^ ERROR! bit is never used
 # ]
-# OVERRIDABLE: YES
 flags_enum_require_packed_bits = true
 
 # Require a value_enum to contain unique name:value pairs
-# OVERRIDABLE: YES
 value_enum_require_unique_values = true 
 
 # Allow a flags_enum to contain values where bit patterns overlap.
@@ -77,7 +72,6 @@ value_enum_require_unique_values = true
 #     { name = "B", value = 0b0110 },
 #                              ^ ERROR! Overlapping bits
 # ]
-# OVERRIDABLE: YES
 flags_enum_allow_overlap = false
 
 # Allow a flags_enum to contain values where multiple bits are set.
@@ -89,7 +83,6 @@ flags_enum_allow_overlap = false
 #     { name = "C", value = 3 }, ERROR!
 #     { name = "D", value = 4 },
 # ]
-# OVERRIDABLE: YES
 flags_enum_allow_multi_bit_values = false
 
 [enum_meta.cpp]

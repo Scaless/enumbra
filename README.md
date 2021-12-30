@@ -13,12 +13,16 @@ Example generating CPP output file and also printing to the console:
 # Generators
 
 #### CPP
-Generated code requires a minimum of C++11.
-
+Generated code requires a minimum of C++11. 
 Currently, `<array>` is the only fully required header in the generated output. 
+There are no extra setup requirements, just drop the generated header(s) into your project.
 
-TODO: Investigating replacing std::array with plain C-style arrays.
-In the default config, `<cstdint>` is included. These can be overridden in your enumbra config by specifying your own types.
+In the default enumbra_config, `<cstdint>` is included. These can be overridden in your enumbra config by specifying your own types.
+
+A warning to Visual Studio users: Iterating on enumbra generated output while the file is open in VS will massively inflate your `.vs` directory. 
+Close VS while making changes or delete your `.vs` directory regularly.
+
+TODO: Investigating replacing std::array with plain C-style arrays to be fully free of the STL.
 
 #### Other Languages
 TBD
@@ -88,22 +92,27 @@ enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fi
 # Q&A
 Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
-A. The word umbra represents a region behind a celestial body where light is obscured. C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such.
+The word umbra represents a region behind a celestial body where light is obscured. C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such.
 
 The name also just sounds cool.
 
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
 
-Q. Why not use another library like [magic-enum](https://github.com/Neargye/magic_enum)?
+Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)?
 
-A. Compile-time libraries like magic-enum rely on compiler hacks to function properly. For large enums, constexpr generation is slow and cumbersome on compile times / memory. Since enumbra pre-generates all its data, compiling is fast and can provide some additional functionality. magic_enum has convenience in its simplicity, just pop the header in and you're done. Use what works for you.
+Compile-time libraries like magic_enum rely on compiler hacks to function properly. 
+For large enums, constexpr generation is slow and cumbersome on compile times / memory. 
+Including the `magic_enum::bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are flags or not.
+Since enumbra pre-generates all its data, compiling is fast and can provide some additional functionality. 
+magic_enum has greater convenience in its simplicity, just pop the header in and you're done. 
+Use what works best for you.
 
 enumbra provides additional features over standard enums such as default constructor values and introspection of various properties of the enum.
 
 Q. Why not use std::bitset?
 
-A. Several reasons:
+Several reasons:
 * It's hip to hate on the STL.
 * std::bitset is more suited for modifying an abstract number of bits at runtime. Enums are static and don't ever grow or shrink.
 * Worse Debug performance due to function calls, bounds checking, and other standard library slowness during runtime. Release-optimized performance is mostly just as good as bit twiddling though.
@@ -118,4 +127,4 @@ Conclusion: Wrong tool for the job.
 
 Q. Why are you not using <templates/reflection/language feature>?
 
-A. The entire reason I made this project is because existing solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue on Github first to discuss if it's an appropriate change.
+The entire reason I made this project is because existing solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue on Github first to discuss if it's an appropriate change.

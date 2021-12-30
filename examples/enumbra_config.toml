@@ -1,0 +1,283 @@
+# This configuration file uses TOML syntax: https://toml.io/en/
+
+# Enumbra will not make implicit decisions for you, if a configuration value is not set then you must set it!
+# Version updates may result in new compile errors, but outputs should not change without warning.
+
+[configuration]
+# Generate C++ Output Files
+generate_cpp = true
+# Generate C# Output Files
+generate_csharp = false
+
+[configuration.cpp_generator]
+# All generated enums with this config will reside in this namespace. 
+# ex: output_namespace = ["a", "b"]
+# generates: 
+#   namespace a { namespace b { ... } }
+# Enums can additionally define their own namespaces which will be nested appropriately.
+output_namespace = ["enums"]
+
+# Line endings to use in output. Valid options are:
+#   "LF": "\n"
+#   "CRLF": "\r\n"
+output_line_ending_style = "LF"
+
+# Characters to use for tabs. Default is 4 spaces. 
+# Any valid string can be used here, including "\t" for real tabs. See TOML docs for formatting.
+output_tab_characters = "    "
+
+# Freeform text that appears at the top of the generated file. Put your license and such here.
+#   preamble_text = ["line1", "line2", "line3"]
+preamble_text = []
+
+# Generated include guard. Valid options are:
+#   "pragma_once": A '#pragma once' line will be generated at the top of the file
+#   "c_style": Content will be surrounded by a C-style include guard. Macro name determined by the block_name in enum_config.
+#   "none": No guards will be generated. I don't know why you'd want this but it's an option.
+include_guard = "pragma_once"
+
+# Include your own headers here if required, e.g. if you are using your own custom underlying types
+# REMEMBER: In TOML syntax the " character must be escaped for relative paths.
+# ex: 
+#   additional_includes = ["<iostream>", "<string>", "\"my_library.h\""]
+# generates:
+#   #include <iostream>
+#   #include <string>
+#   #include "my_library.h"
+# cstdint is included by default to satisy the default size_types. You can modify the size_types array if you want to remove this dependency.
+additional_includes = ["<cstdint>"]
+
+# Generated output will prepend these prefixes for enum names and values.
+value_enum_name_prefix = ""
+value_enum_value_prefix = ""
+flags_enum_name_prefix = ""
+flags_enum_value_prefix = ""
+# Generated output will append these postfixes for enum names and values.
+value_enum_name_postfix = ""
+value_enum_value_postfix = ""
+flags_enum_name_postfix = ""
+flags_enum_value_postfix = ""
+
+# Default type to use for value_enums where size is not specified
+# Value must be a string containing the name of a type contained in size_types, OR one of the special values:
+#   smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain an enum's values.
+#   smallest_signed : Generated enum will use the smallest signed size type that may contain an enum's values.
+default_value_enum_size_type = "signed32"
+
+# Default type to use for flags_enums where size is not specified
+# Value must be a string containing the name of an unsigned type contained in size_types, OR one of the special values:
+#   smallest_unsigned : Generated enum will use the smallest unsigned size type that may contain an enum's values.
+default_flags_enum_size_type = "unsigned32"
+
+# Denotes the order of evaluation when determining special size types
+# Values must exist in the size_types array.
+flags_enum_smallest_unsigned_evaluation_order = [ 
+	"unsigned8",
+	"unsigned16",
+	"unsigned32",
+	"unsigned64",
+]
+value_enum_smallest_unsigned_evaluation_order = [ 
+	"unsigned8",
+	"unsigned16",
+	"unsigned32",
+	"unsigned64",
+]
+value_enum_smallest_signed_evaluation_order = [
+	"signed8",
+	"signed16",
+	"signed32",
+	"signed64",
+]
+
+# String tables to generate.
+#   "none": Do not generate string tables
+#   "name": Generate only name table
+#   "name_and_description": Generate tables with name and description
+string_table_layout = "name_and_description"
+
+# Type to use when generating code for string tables. 
+# Value is ignored when string_table_layout is "none". 
+# If set to a string_view type, the <string_view> header will be included.
+# Valid options:
+#   "constexpr_string_view": constexpr std::string_view ... = ""sv;
+#   "constexpr_wstring_view": constexpr std::wstring_view ... = L""sv;
+#   "const_char_ptr": const char* ... = "";
+#   "const_wchar_ptr": const wchar_t* ... = L"";
+string_table_type = "const_char_ptr"
+
+enum_to_string_functions = true
+string_to_enum_functions = true
+
+# Generate bitwise operators for flags_enums. bitwise ops on value_enums are disallowed.
+bitwise_op_functions = true
+
+# Generate functions for checking if a supplied enum contains a valid value
+# A flags_enum will match any valid set of flags
+bounds_check_functions = true
+
+# Generate functions determining if an enum is dense or sparse
+# A value_enum is considered dense if all values may be iterated consecutively with no gaps
+# A flags_enum is considered dense if all possible flag bits may be set
+density_functions = true
+
+# Generate functions for retrieving the minimum and maximum possible values of an enum. Return value type is the underlying storage type.
+# For Value Enums, this is a simple min/max of the smallest and largest enum values
+# For Flags Enums:
+#   The minimum is always 0 (no bits set).
+#   The maximum is the bitwise OR combination of all possible values.
+#   CAUTION: This is NOT the maximum storage size needed. For that use bits_required_storage and bits_required_transmission. 
+#   Given the following Flags Enum:
+#   enum class X {
+#     A = 0b0010, // 2
+#     B = 0b0100, // 4
+#     C = 0b1000  // 8
+#   }
+#   X.min() == 0; // Always 0 for flags
+#   X.max() == 0b1110; // Maximum = 14
+min_max_functions = true
+
+# Generate functions for returning information on low level bit requirements
+# value_enum::bits_required_storage: Number of bits required to represent any possible valid value contained in the enum. Always > 0.
+#   Useful for storing bits where the least number of bits is desierable, i.e. bitfields
+# value_enum::bits_required_transmission = Number of bits required to represent the range of (maximum - minimum).
+#   Useful for bit packing where the least number of bits is desireable, i.e. serialization
+#   May be different from value_enum::bits_required_storage if the enum minimum starts at a non-zero value.
+# flags_enum::bits_required_storage: Number of bits required to represent all possible valid values contained in the enum. Always > 0.
+# flags_enum::bits_required_transmission: Due to flags_enum minimum always being 0, this value should always be equivalent to flags_enum::bits_required_storage.
+bit_info_functions = true
+
+# Generate global convenience macros
+#   ENUMBRA_PACK(MyEnum, NameOfVariable); 
+# generates:
+#   MyEnum NameOfVariable : MyEnum::bits_required_storage();
+enumbra_macros = true
+
+# Generate template function extensions for working with enumbra enums.
+#   enumbra_base_t<T> : 
+#     Convert an enum class or enumbra type to its base enumbra type.
+#     Useful when using ENUMBRA_PACK elements as template parameters to convert the enum class to its parent class.
+#   bool is_enumbra_type_v<T>
+#     True if T is an enumbra struct OR an enum class contained within an enumbra struct. Non-enumbra enum classes will return false.
+#   bool is_enumbra_struct_v<T>
+#     True if T is an enumbra struct. Non-enumbra classes will return false.
+#   bool is_enumbra_scoped_enum_v<T>
+#     True if T is an enum class contained within an enumbra struct. Non-enumbra enum classes will return false.
+#   bool is_enumbra_value_enum_v<T>
+#     True if enumbra_base_t<T> is an enumbra Value Enum.
+#   bool is_enumbra_flags_enum_v<T>
+#     True if enumbra_base_t<T> is an enumbra Flags Enum.
+templated_extensions = true
+
+# Enable/Disable warnings. Warnings not explicitly set will use default values. See reference documentation for all warnings and their defaults.
+#   strict_ordering: Enforces numerical ordering of values within an enum.
+#   value_enums_allow_sparse: value_enums must contain strict sequential values. 
+#     value_enum: {A=4, B=5, C=6} OK
+#     value_enum: {A=2, B=4, C=6} WARNING, gaps in range
+#   flags_enums_allow_sparse: flags_enums must contain strict sequentials
+#     flags_enum: {A=1, B=2, C=4} OK
+#     flags_enum: {A=1, B=4, C=8} WARNING, gaps in flags
+#   enum_name_naming_convention_violation: Enforce basic naming conventions for enum names
+#   enum_value_naming_convention_violation: Enforce basic naming conventions for enum values
+#     This is really basic checking, there is no lexographical magic here.
+#     ex: reallycoolenum is a valid snake_case name
+# warnings = [
+	# { name = "strict_ordering", enabled = false},
+	# { name = "value_enums_allow_sparse", enabled = true},
+	# { name = "flags_enums_allow_sparse", enabled = true},
+	# { name = "value_enum_name_naming_convention_violation", enabled = true},
+	# { name = "value_enum_value_naming_convention_violation", enabled = true},
+	# { name = "flags_enum_name_naming_convention_violation", enabled = true},
+	# { name = "flags_enum_value_naming_convention_violation", enabled = true},
+# ]
+
+# Type of convention to use when determining if a naming_convention_violation warning should be raised.
+# This configuration value is case-sensitive and must match the convention it represents.
+# Possible values are: 
+#   none
+#   snake_case
+#     Requirements: All lowercase, may contain underscores
+#   SCREAMING_SNAKE_CASE
+#     Requirements: All uppercase, may contain underscores
+#   camelCase
+#     Requirements: First letter must be lowercase, must not contain underscores
+#   PascalCase
+#     Requirements: First letter must be Uppercase, must not contain underscores
+#warning_value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#warning_value_enum_value_naming_convention = "PascalCase"
+#warning_flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#warning_flags_enum_value_naming_convention = "PascalCase"
+#value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#value_enum_value_naming_convention = "PascalCase"
+#flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
+#flags_enum_value_naming_convention = "PascalCase"
+
+# Treat all warnings as errors and prevents output from being generated.
+#warnings_as_errors = true
+
+# Errors
+# warning_as_error: A warning was elevated to an error
+# out_of_range: Enum contains a value that is outside of the representable values with the specified storage type
+
+# List of types used by enums. 
+#   name: Name of the type when referenced elsewhere in configuration files.
+#   bits: Number of bits that the storage type represents. MUST be accurate for warnings/errors about type size to be correct.
+#   signed: Is the type signed or unsigned. MUST be accurate or generated code will fail miserably.
+#   generated_name: Name of the type that is used in the generated C++ output.
+[[configuration.cpp_generator.size_types]]
+name = "unsigned8"
+bits = 8
+is_signed = false
+generated_name = "uint8_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "unsigned16"
+bits = 16
+is_signed = false
+generated_name = "uint16_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "unsigned32"
+bits = 32
+is_signed = false
+generated_name = "uint32_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "unsigned64"
+bits = 64
+is_signed = false
+generated_name = "uint64_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "signed8"
+bits = 8
+is_signed = true
+generated_name = "int8_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "signed16"
+bits = 16
+is_signed = true
+generated_name = "int16_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "signed32"
+bits = 32
+is_signed = true
+generated_name = "int32_t"
+
+[[configuration.cpp_generator.size_types]]
+name = "signed64"
+bits = 64
+is_signed = true
+generated_name = "int64_t"
+
+# Example custom type
+#[[configuration.cpp_generator.size_types]]
+#name = "custom_type1"
+#bits = 64
+#is_signed = true
+#generated_name = "simd_aligned64"
+
+[configuration.csharp_generator]
+# TODO...

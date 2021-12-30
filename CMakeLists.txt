@@ -3,6 +3,8 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
+project ("enumbra")
+
 find_package(tomlplusplus)
 find_package(cxxopts)
 find_package(fmt)
@@ -16,7 +18,6 @@ target_link_libraries(enumbra PRIVATE
 	cxxopts::cxxopts
 	fmt::fmt)
 
-add_executable (enumbra_cpp_test "cpp_test.cpp")
-target_compile_features(enumbra_cpp_test PRIVATE cxx_std_17)
+add_subdirectory(examples)
 
 # TODO: Add tests and install targets if needed.

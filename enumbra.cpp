@@ -156,7 +156,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 	try {
 		enumbra::cpp::cpp_config& c = enumbra_config.cpp_config;
 		c.output_namespace = get_array<std::string>(cpp_cfg, "output_namespace");
-		c.output_extension = get_required<std::string>(cpp_cfg, "output_extension");
 		c.line_ending_style = get_mapped<LineEndingStyle>(LineEndingStyleMapped, cpp_cfg, "output_line_ending_style");
 		c.output_tab_characters = get_required<std::string>(cpp_cfg, "output_tab_characters");
 		c.preamble_text = get_array<std::string>(cpp_cfg, "preamble_text");
@@ -256,13 +255,12 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 		}
 
 		c.bitwise_op_functions = get_required<bool>(cpp_cfg, "bitwise_op_functions");
-		c.default_functions = get_required<bool>(cpp_cfg, "default_functions");
 		c.bounds_check_functions = get_required<bool>(cpp_cfg, "bounds_check_functions");
 		c.density_functions = get_required<bool>(cpp_cfg, "density_functions");
 		c.min_max_functions = get_required<bool>(cpp_cfg, "min_max_functions");
 		c.bit_info_functions = get_required<bool>(cpp_cfg, "bit_info_functions");
-		c.flag_helper_functions = get_required<bool>(cpp_cfg, "flag_helper_functions");
-		c.packed_declaration_macros = get_required<bool>(cpp_cfg, "packed_declaration_macros");
+		c.enumbra_macros = get_required<bool>(cpp_cfg, "enumbra_macros");
+		c.templated_extensions = get_required<bool>(cpp_cfg, "templated_extensions");
 	}
 	catch (const std::exception& e) {
 

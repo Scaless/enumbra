@@ -1,0 +1,13 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "",
+      "name": "enumbra",
+      "args": [ "-c C:/Repos/enumbra/examples/enumbra_config.toml -s C:/Repos/enumbra/examples/enum_config.toml --cppout C:/Repos/enumbra/examples/enumbra_test.hpp -p" ]
+    }
+  ]
+}
