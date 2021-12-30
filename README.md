@@ -97,7 +97,7 @@ C++ enums sit in that region of the language. They're integers, kind of?
 They're flags, kind of? They're an *enumeration*, yet not *enumerable*? 
 They are widely used as bit flags but there are few built-in resources for safely using them as such.
 
-The name also just sounds cool. This is where I'd put the cool logo ... if I had one.
+The name also just sounds cool.
 
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
