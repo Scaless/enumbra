@@ -51,11 +51,11 @@ A standard C++ flags enum would look like:
 Say we're making an adventure game and want to store the possible directions available to the player:
 ```
 EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::West;
-possible_directions.unset(EDirectionFlags::North)
 ```
 
 ##### Packed Bit Field Enums
 Both Value Enums and Flag Enums can be packed more tightly within a struct:
+
 ```
 struct Packed
 {
@@ -92,9 +92,12 @@ enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fi
 # Q&A
 Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
-The word umbra represents a region behind a celestial body where light is obscured. C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*? They are widely used as bit flags but there are few built-in resources for safely using them as such.
+The word umbra represents a region behind a celestial body where light is obscured.
+C++ enums sit in that region of the language. They're integers, kind of? 
+They're flags, kind of? They're an *enumeration*, yet not *enumerable*? 
+They are widely used as bit flags but there are few built-in resources for safely using them as such.
 
-The name also just sounds cool.
+The name also just sounds cool. This is where I'd put the cool logo ... if I had one.
 
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
@@ -116,11 +119,11 @@ Several reasons:
 * std::bitset is more suited for modifying an abstract number of bits at runtime. Enums are static and don't ever grow or shrink.
 * Worse Debug performance due to function calls, bounds checking, and other standard library slowness during runtime. Release-optimized performance is mostly just as good as bit twiddling though.
 * Can't be packed into bitfields.
-* Size is implementation dependent. A std::bitset containing 16 bits ([godbolt](https://godbolt.org/z/v3vxe9oYf)):
+* Size is implementation dependent. A std::bitset containing 16 bits will consume a minimum of: ([godbolt](https://godbolt.org/z/v3vxe9oYf)):
     * GCC & Clang x64: 8 bytes
     * GCC & Clang x86: 4 bytes
     * MSVC x64 and x86: 4 bytes
-    * uint16_t: 2 bytes
+    * enumbra: 2 bytes
 
 Conclusion: Wrong tool for the job.
 
