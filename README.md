@@ -99,16 +99,15 @@ The name also just sounds cool.
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
 
-Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)?
+Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
 
-Compile-time libraries like magic_enum rely on compiler hacks to function properly. 
-For large enums, constexpr generation is slow and cumbersome on compile times / memory. 
-Including the `magic_enum::bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are flags or not.
-Since enumbra pre-generates all its data, compiling is fast and can provide some additional functionality. 
-magic_enum has greater convenience in its simplicity, just pop the header in and you're done. 
-Use what works best for you.
+* Compile-time libraries like these rely on compiler hacks to function properly. 
+* For large enums, constexpr generation is slow and cumbersome on compile times / memory.
+* The number of constants is usually limited to around 128 due to compiler limits.
+* Including `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are flags or not.
+* Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
-enumbra provides additional features over standard enums such as default constructor values and introspection of various properties of the enum.
+Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
 
 Q. Why not use std::bitset?
 
