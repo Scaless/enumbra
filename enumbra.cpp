@@ -15,8 +15,6 @@ enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_conf
 void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
 void parse_enumbra_csharp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
 void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_config);
-void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config);
-void parse_enum_meta_csharp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_csharp_config);
 
 void print_help(const cxxopts::Options& options)
 {
@@ -104,18 +102,18 @@ int main(int argc, char** argv)
 }
 
 
-enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity verbosity)
+enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity /*verbosity*/)
 {
 	enumbra::enumbra_config cfg;
 
 	toml::table tbl = toml::parse_file(config_toml_file);
 
-	auto& configuration = tbl["configuration"];
-	auto& cpp_config = configuration["cpp_generator"];
-	auto& csharp_config = configuration["csharp_generator"];
+	auto configuration = tbl["configuration"];
+	auto cpp_config = configuration["cpp_generator"];
+	auto csharp_config = configuration["csharp_generator"];
 
-	bool generate_cpp = get_required<bool>(configuration, "generate_cpp");
-	bool generate_csharp = get_required<bool>(configuration, "generate_csharp");
+	cfg.generate_cpp = get_required<bool>(configuration, "generate_cpp");
+	cfg.generate_csharp = get_required<bool>(configuration, "generate_csharp");
 
 	if (cfg.generate_cpp) {
 		parse_enumbra_cpp(cfg, cpp_config);
@@ -127,25 +125,17 @@ enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, e
 	return cfg;
 }
 
-enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity verbosity)
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity /*verbosity*/)
 {
 	enumbra::enum_meta_config cfg;
 
 	toml::table tbl = toml::parse_file(config_toml_file);
 
-	auto& enum_meta = tbl["enum_meta"];
-	auto& cpp_meta = enum_meta["cpp"];
-	auto& csharp_meta = enum_meta["csharp"];
+	auto enum_meta = tbl["enum_meta"];
+	auto cpp_meta = enum_meta["cpp"];
+	auto csharp_meta = enum_meta["csharp"];
 
 	parse_enum_meta(enumbra_config, cfg, enum_meta);
-
-	if (enumbra_config.generate_cpp) {
-		parse_enum_meta_cpp(enumbra_config, cfg, cpp_meta);
-	}
-	if (enumbra_config.generate_csharp) {
-		parse_enum_meta_csharp(enumbra_config, cfg, csharp_meta);
-	}
-
 
 	return cfg;
 }
@@ -269,7 +259,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 	}
 }
 
-void parse_enumbra_csharp(enumbra::enumbra_config& c, toml::node_view<toml::node>& cpp_config)
+void parse_enumbra_csharp(enumbra::enumbra_config& /*enumbra_config*/, toml::node_view<toml::node>& /*cpp_config*/)
 {
 	throw std::logic_error("parse_enumbra_csharp not implemented. Set generate_csharp to false.");
 }
@@ -407,10 +397,10 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 	}
 
 }
-void parse_enum_meta_cpp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_cpp_config) {
-
+void parse_enum_meta_cpp(enumbra::enumbra_config& /*enumbra_config*/, enumbra::enum_meta_config& /*enum_config*/, toml::node_view<toml::node>& /*meta_cpp_config*/) {
+	//throw std::logic_error("parse_enum_meta_cpp not implemented.");
 }
-void parse_enum_meta_csharp(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_csharp_config) {
+void parse_enum_meta_csharp(enumbra::enumbra_config& /*enumbra_config*/, enumbra::enum_meta_config& /*enum_config*/, toml::node_view<toml::node>& /*meta_csharp_config*/) {
 	throw std::logic_error("parse_enum_meta_csharp not implemented. Set generate_csharp to false.");
 }
 

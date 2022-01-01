@@ -74,7 +74,6 @@ private:
 };
 
 // https://en.cppreference.com/w/cpp/keyword
-
 constexpr std::array<std::string_view, 117> ReservedCPPKeywords{
 	"alignas",
 	"alignof",

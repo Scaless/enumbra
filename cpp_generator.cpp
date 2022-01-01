@@ -5,6 +5,7 @@
 #include <chrono>
 #include <set>
 #include <fmt/format.h>
+#include <locale>
 
 using namespace enumbra;
 using namespace enumbra::cpp;
@@ -12,7 +13,9 @@ using namespace enumbra::cpp;
 std::string to_upper(const std::string& str)
 {
 	std::string strcopy = str;
-	std::transform(strcopy.begin(), strcopy.end(), strcopy.begin(), ::toupper);
+	for (auto& c : strcopy) {
+		c = std::toupper(c, std::locale("en_US.utf8"));
+	}
 	return strcopy;
 }
 
@@ -23,7 +26,7 @@ const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, cons
 	case FlagsEnumDefaultValueStyle::Zero: return 0;
 	case FlagsEnumDefaultValueStyle::Min:
 	{
-		auto& m = std::min_element(definition.values.begin(), definition.values.end(),
+		auto m = std::min_element(definition.values.begin(), definition.values.end(),
 			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
 		if (m != definition.values.end())
 		{
@@ -37,7 +40,7 @@ const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, cons
 	}
 	case FlagsEnumDefaultValueStyle::Max:
 	{
-		auto& m = std::max_element(definition.values.begin(), definition.values.end(),
+		auto m = std::max_element(definition.values.begin(), definition.values.end(),
 			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
 		if (m != definition.values.end())
 		{
@@ -80,7 +83,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 	{
 	case ValueEnumDefaultValueStyle::Min:
 	{
-		auto& m = std::min_element(definition.values.begin(), definition.values.end(),
+		auto m = std::min_element(definition.values.begin(), definition.values.end(),
 			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
 		if (m != definition.values.end())
 		{
@@ -94,7 +97,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 	}
 	case ValueEnumDefaultValueStyle::Max:
 	{
-		auto& m = std::max_element(definition.values.begin(), definition.values.end(),
+		auto m = std::max_element(definition.values.begin(), definition.values.end(),
 			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
 		if (m != definition.values.end())
 		{
@@ -135,7 +138,7 @@ bool enum_meta_has_unique_enum_names(const enumbra::enum_meta_config& enum_meta)
 	std::set<std::string> seen_names;
 	for (auto& v : enum_meta.value_enum_definitions)
 	{
-		auto& seen = seen_names.find(v.name);
+		auto seen = seen_names.find(v.name);
 		if (seen != seen_names.end())
 		{
 			throw std::logic_error("enum_meta_has_unique_enum_names: Value-Enum name is not unique (name = " + *seen + ")");
@@ -144,7 +147,7 @@ bool enum_meta_has_unique_enum_names(const enumbra::enum_meta_config& enum_meta)
 	}
 	for (auto& v : enum_meta.flag_enum_definitions)
 	{
-		auto& seen = seen_names.find(v.name);
+		auto seen = seen_names.find(v.name);
 		if (seen != seen_names.end())
 		{
 			throw std::logic_error("enum_meta_has_unique_enum_names: Flags-Enum name is not unique (name = " + *seen + ")");
@@ -263,18 +266,18 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	{
 		const int enumbra_macros_version = 2;
 		std::vector<const char*> macro_strings = {
-			{ "#if defined(ENUMBRA_MACROS_VERSION)" },
-			{ "#if (ENUMBRA_MACROS_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_MACROS_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_MACROS_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra." },
-			{ "#elif (ENUMBRA_MACROS_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra." },
-			{ "#endif" },
-			{ "#else" },
-			{ "#define ENUMBRA_MACROS_VERSION {1}" },
-			{ "#define ENUMBRA_PACK(Enum, Name) Enum::Value Name : Enum##::bits_required_storage();" },
-			{ "#endif // ENUMBRA_MACROS_VERSION" },
+			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
+			{ "#define ENUMBRA_OPTIONAL_MACROS_VERSION {1}" },
+			{ "#define ENUMBRA_PACK(Enum, Name) Enum::Value Name : Enum::bits_required_storage();" },
+			{ "#else // check existing version supported" },
+			{ "#if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0" },
+			{ "#error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system." },
+			{ "#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < {1}" },
+			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
+			{ "#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > {1}" },
+			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
+			{ "#endif // end check existing version supported" },
+			{ "#endif // ENUMBRA_OPTIONAL_MACROS_VERSION" },
 		};
 		for (auto& str : macro_strings) {
 			write_line(str, TAB, enumbra_macros_version);
@@ -282,47 +285,36 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_linefeed();
 	}
 
-	if (cfg.cpp_config.templated_extensions)
+	// REQUIRED MACROS
 	{
-		// The macro will allow us to update versions later and warn if old versions of the template are in use.
-		const int base_template_version = 2;
-		std::vector<const char*> template_strings = {
-			{ "#if defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
-			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra." },
-			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra." },
+		const int enumbra_required_macros_version = 2;
+		std::vector<const char*> macro_strings = {
+			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
+			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
+			{ "#if !defined(__cpp_constexpr)"},
+			{ "#error enumbra requires a C++11 or higher compiler."},
+			{ "#elif __cpp_constexpr >= 201304L"},
+			{ "// Non-const constexpr functions were added in C++14"},
+			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
+			{ "#else"},
+			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
 			{ "#endif" },
-			{ "#else" },
-			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
-			{ "namespace enumbra {{" },
-			{ "{0}namespace detail {{" },
-			{ "{0}{0}// Base templates for non-enumbra types" },
-			{ "{0}{0}template<class T>" },
-			{ "{0}{0}struct enumbra_base_helper {{ " },
-			{ "{0}{0}    static constexpr bool enumbra_type = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_enum_class = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_value_enum = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
-			{ "{0}{0}    using base_type = T; " },
-			{ "{0}{0}}};" },
-			{ "{0}}} // end namespace enumbra::detail" },
-			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
-			{ "{0}template<class T> inline constexpr bool is_enumbra_type_v = detail::enumbra_base_helper<T>::enumbra_type;" },
-			{ "{0}template<class T> inline constexpr bool is_enumbra_struct_v = is_enumbra_type_v<T> && !detail::enumbra_base_helper<T>::enumbra_enum_class;" },
-			{ "{0}template<class T> inline constexpr bool is_enumbra_scoped_enum_v = is_enumbra_type_v<T> && detail::enumbra_base_helper<T>::enumbra_enum_class;" },
-			{ "{0}template<class T> inline constexpr bool is_enumbra_value_enum_v = is_enumbra_type_v<T> && detail::enumbra_base_helper<T>::enumbra_value_enum;" },
-			{ "{0}template<class T> inline constexpr bool is_enumbra_flags_enum_v = is_enumbra_type_v<T> && detail::enumbra_base_helper<T>::enumbra_flags_enum;" },
-			{ "}} // end namespace enumbra" },
-			{ "#endif // ENUMBRA_BASE_TEMPLATES_VERSION" },
+			{ "#else // check existing version supported" },
+			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
+			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
+			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < {1}" },
+			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
+			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > {1}" },
+			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
+			{ "#endif // end check existing version supported"},
+			{ "#endif // ENUMBRA_REQUIRED_MACROS_VERSION" },
 		};
-		for (auto& str : template_strings) {
-			write_line(str, TAB, base_template_version);
+		for (auto& str : macro_strings) {
+			write_line(str, TAB, enumbra_required_macros_version);
 		}
 		write_linefeed();
 	}
+
 
 	// START NAMESPACE
 	for (const auto& ns : cpp.output_namespace) {
@@ -333,12 +325,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// VALUE ENUM DEFINITIONS
 	for (auto& e : enum_meta.value_enum_definitions) {
 
+		// TODO: We should move all these precondition checks outside of the actual generation
+		// and cache the results since we're going to need them for other languages eventually.
+
 		// Precondition checks
 		// 1. Names of contained values must be unique
 		std::set<std::string> seen_names;
 		for (auto& v : e.values)
 		{
-			auto& seen = seen_names.find(v.name);
+			auto seen = seen_names.find(v.name);
 			if (seen != seen_names.end())
 			{
 				throw std::runtime_error("ENUM DEFINITIONS Precondition Check 1: Enum Value Name is not unique (name = " + *seen + ")");
@@ -361,6 +356,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const size_t bits_required_storage = Log2Unsigned(max_entry.value) + 1;
 		const size_t bits_required_transmission = Log2Unsigned(max_entry.value - min_entry.value) + 1;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
+		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 
 		// Determine if all values are unique, or if some enum value names overlap.
 		// TODO: Enforce if flag is set
@@ -378,7 +374,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("struct {} {{", e.name);
 		{
 			write_line_tabbed(1, "using UnderlyingType = {};", size_type);
-			write_line_tabbed(1, "enum class Value : {} {{", cpp.get_size_type_from_index(e.size_type_index).generated_name);
+			write_line_tabbed(1, "enum class Value : {} {{", size_type);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{} = {},", v.name, v.value);
 			}
@@ -415,7 +411,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 			// Functions
 			write_line_tabbed(1, "constexpr {0} to_underlying() const {{ return static_cast<{0}>(value_); }}", size_type);
-			write_line_tabbed(1, "constexpr void reset_default() {{ value_ = {}(); }}", e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void reset_default() {{ value_ = {}(); }}", e.name);
 			write_linefeed();
 
 			// Introspection
@@ -430,13 +426,21 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "static constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
 			if (is_contiguous)
 			{
-				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
-				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+				if (min_entry.value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
+				{
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_entry.value);
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_entry.value);
+				}
+				else
+				{
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+				}
 			}
 			else
 			{
-				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
 			}
 			write_linefeed();
 			write_line("private:");
@@ -450,12 +454,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// Flags ENUM DEFINITIONS
 	for (auto& e : enum_meta.flag_enum_definitions) {
 
+		// TODO: We should move all these precondition checks outside of the actual generation
+		// and cache the results since we're going to need them for other languages eventually.
+
 		// Precondition checks
 		// 1. Names of contained values must be unique
 		std::set<std::string> seen_names;
 		for (auto& v : e.values)
 		{
-			auto& seen = seen_names.find(v.name);
+			auto seen = seen_names.find(v.name);
 			if (seen != seen_names.end())
 			{
 				throw std::logic_error("ENUM DEFINITIONS Check 1: Enum Value Name is not unique (enum name = " + *seen + ")");
@@ -496,6 +503,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const size_t bits_required_storage = Log2Unsigned(max_value) + 1;
 		const size_t bits_required_transmission = bits_required_storage;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
+		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 
 		// Determine if range is contiguous
 		// Enables some minor optimizations for range-checking values if true
@@ -507,7 +515,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("struct {} {{", e.name);
 		{
 			write_line_tabbed(1, "using UnderlyingType = {};", size_type);
-			write_line_tabbed(1, "enum class Value : {} {{", cpp.get_size_type_from_index(e.size_type_index).generated_name);
+			write_line_tabbed(1, "enum class Value : {} {{", size_type);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{} = {},", v.name, v.value);
 			}
@@ -537,11 +545,11 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 			// Functions
 			write_line_tabbed(1, "constexpr {0} to_underlying() const {{ return static_cast<{0}>(value_); }}", size_type);
-			write_line_tabbed(1, "constexpr void reset_default() {{ *this = {}(); }}", e.name);
-			write_line_tabbed(1, "constexpr void reset_zero() {{ value_ = static_cast<Value>(0); }}", e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void reset_default() {{ *this = {}(); }}", e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void reset_zero() {{ value_ = static_cast<Value>(0); }}", e.name);
 			write_line_tabbed(1, "constexpr bool test(Value v) const {{ return (static_cast<{0}>(value_) & static_cast<{0}>(v)) == static_cast<{0}>(v); }}", size_type);
-			write_line_tabbed(1, "constexpr void unset(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) & (~static_cast<{0}>(v))); }}", size_type);
-			write_line_tabbed(1, "constexpr void flip(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) ^ static_cast<{0}>(v)); }}", size_type);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void unset(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) & (~static_cast<{0}>(v))); }}", size_type);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void flip(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) ^ static_cast<{0}>(v)); }}", size_type);
 			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1}; }}", size_type, max_value);
 			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
 			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
@@ -559,25 +567,23 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "static constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
 			if (is_contiguous)
 			{
-				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
-				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
+				if (min_value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
+				{
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
+				}
+				else
+				{
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
+				}
 			}
 			else
 			{
-				write_line_tabbed(1, "static constexpr bool contains({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static constexpr bool contains({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
 			}
 			write_linefeed();
-
-			// Some internal funcs require these ops so we need to know about them before we define them later
-			// Replaced with static_cast to underlying internally, shouldn't need anymore
-			//write_line_tabbed(1, "friend constexpr {0}::Value operator~(const {0}::Value a);", e.name, size_type);
-			//write_line_tabbed(1, "friend constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b);", e.name);
-			//write_line_tabbed(1, "friend constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b);", e.name);
-			//write_line_tabbed(1, "friend constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b);", e.name);
-			//write_line_tabbed(1, "friend constexpr {0} operator|(const {0} a, const {0}::Value b);", e.name);
-			//write_line_tabbed(1, "friend constexpr {0} operator&(const {0} a, const {0}::Value b);", e.name);
-			//write_line_tabbed(1, "friend constexpr {0} operator^(const {0} a, const {0}::Value b);", e.name);
 
 			write_line("private:");
 			write_line_tabbed(1, "Value value_;");
@@ -585,38 +591,41 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("}};");
 		write_linefeed();
 
-		write_line("// {} Operator Overloads", e.name);
-		// Value operators are first because they are required for the operators below
-		write_line("constexpr {0}::Value operator~(const {0}::Value a) {{ return static_cast<{0}::Value>(~static_cast<{1}>(a)); }}", e.name, size_type);
-		write_line("constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}", e.name, size_type);
-		write_line("constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}", e.name, size_type);
-		write_line("constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}", e.name, size_type);
-		// Enum operators
-		write_line("constexpr {0} operator~ (const {0} a) {{ return ~a.value(); }}", e.name);
-		write_line("constexpr {0} operator| (const {0} a, const {0} b) {{ return a.value() | b.value(); }}", e.name);
-		write_line("constexpr {0} operator& (const {0} a, const {0} b) {{ return a.value() & b.value(); }}", e.name);
-		write_line("constexpr {0} operator^ (const {0} a, const {0} b) {{ return a.value() ^ b.value(); }}", e.name);
-		write_line("constexpr {0} operator| (const {0} a, const {0}::Value b) {{ return a.value() | b; }}", e.name);
-		write_line("constexpr {0} operator& (const {0} a, const {0}::Value b) {{ return a.value() & b; }}", e.name);
-		write_line("constexpr {0} operator^ (const {0} a, const {0}::Value b) {{ return a.value() ^ b; }}", e.name);
-		write_line("constexpr {0} operator| (const {0}::Value a, const {0} b) {{ return a | b.value(); }}", e.name);
-		write_line("constexpr {0} operator& (const {0}::Value a, const {0} b) {{ return a & b.value(); }}", e.name);
-		write_line("constexpr {0} operator^ (const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}", e.name);
-		write_line("constexpr {0}& operator|= ({0} & a, const {0} b) {{ a = a | b; return a; }}", e.name);
-		write_line("constexpr {0}& operator&= ({0} & a, const {0} b) {{ a = a & b; return a; }}", e.name);
-		write_line("constexpr {0}& operator^= ({0} & a, const {0} b) {{ a = a ^ b; return a; }}", e.name);
-
+		std::vector<const char*> operator_strings = {
+			{"// {} Operator Overloads"},
+			// Value operators are first because they are required for the operators afterwards
+			{"constexpr {0}::Value operator~(const {0}::Value a) {{ return static_cast<{0}::Value>(~static_cast<{1}>(a)); }}"},
+			{"constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
+			{"constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
+			{"constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+			{"constexpr {0} operator~(const {0} a) {{ return ~a.value(); }}"},
+			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a.value() | b.value(); }}"},
+			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return a.value() & b.value(); }}"},
+			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return a.value() ^ b.value(); }}"},
+			{"constexpr {0} operator|(const {0} a, const {0}::Value b) {{ return a.value() | b; }}"},
+			{"constexpr {0} operator&(const {0} a, const {0}::Value b) {{ return a.value() & b; }}"},
+			{"constexpr {0} operator^(const {0} a, const {0}::Value b) {{ return a.value() ^ b; }}"},
+			{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
+			{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
+			{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
+		};
+		for (auto& str : operator_strings) {
+			write_line(str, e.name, size_type);
+		}
 		write_linefeed();
 	}
 
 	// END NAMESPACE
-	for (auto& ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
+	for (auto ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
 		write_line("}} // namespace {}", *ns);
 	}
 	write_linefeed();
 
 	// Construct the full namespace for templates
-	std::string full_ns = cpp.output_namespace.size() > 0 ? "::" : "";
+	std::string full_ns;
 	for (auto& ns : cpp.output_namespace) {
 		full_ns += ns + "::";
 	}
@@ -624,6 +633,45 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
 	if (cfg.cpp_config.templated_extensions)
 	{
+		// The macro will allow us to update versions later and warn if old versions of the template are in use.
+		const int base_template_version = 2;
+		std::vector<const char*> base_template_strings = {
+			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
+			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
+			{ "namespace enumbra {{" },
+			{ "{0}namespace detail {{" },
+			{ "{0}{0}// Default templates for non-enumbra types" },
+			{ "{0}{0}template<class T>" },
+			{ "{0}{0}struct enumbra_base_helper {{ " },
+			{ "{0}{0}    static constexpr bool enumbra_type = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_enum_class = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_value_enum = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
+			{ "{0}{0}    using base_type = T; " },
+			{ "{0}{0}}};" },
+			{ "{0}}} // end namespace enumbra::detail" },
+			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
+			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "}} // end namespace enumbra" },
+			{ "#else // check existing version supported" },
+			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
+			{ "#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system." },
+			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < {1}" },
+			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra." },
+			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > {1}" },
+			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra." },
+			{ "#endif // check existing version supported" },
+			{ "#endif // ENUMBRA_BASE_TEMPLATES_VERSION" },
+		};
+		for (auto& str : base_template_strings) {
+			write_line(str, TAB, base_template_version);
+		}
+		write_linefeed();
+
 		for (auto& e : enum_meta.value_enum_definitions) {
 			// Value Enum Template Specializations
 			std::string is_value_enum = "true";
@@ -685,7 +733,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	return Output;
 }
 
-std::vector<cpp_enum_generated> cpp_generator::generate_enums(const cpp_enum_config_final& cfg)
+std::vector<cpp_enum_generated> cpp_generator::generate_enums(const cpp_enum_config_final& /*cfg*/)
 {
 	throw std::logic_error("Unimplemented");
 }

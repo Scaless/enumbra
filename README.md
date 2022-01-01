@@ -17,12 +17,17 @@ Generated code requires a minimum of C++11.
 Currently, `<array>` is the only fully required header in the generated output. 
 There are no extra setup requirements, just drop the generated header(s) into your project.
 
-In the default enumbra_config, `<cstdint>` is included. These can be overridden in your enumbra config by specifying your own types.
+In the default enumbra_config, `<cstdint>` is included. This can be overridden in your enumbra config by specifying your own types.
 
-A warning to Visual Studio users: Iterating on enumbra generated output while the file is open in VS will massively inflate your `.vs` directory. 
-Close VS while making changes or delete your `.vs` directory regularly.
+On MSVC, the generated headers will compile with `/Wall /WX /wd4514`.
+[C4514](https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4514) is irrelevant: `unreferenced inline function has been removed`.
 
-TODO: Investigating replacing std::array with plain C-style arrays to be fully free of the STL.
+On GCC, the generated headers will compile with `-Wall -Wextra -Wpedantic -Werror`.
+
+A warning to Visual Studio users: Rapidly iterating on enumbra generated output while the file is open in VS will inflate your `.vs` directory up to a maximum of 5GB (by default) when automated PCH files are being constantly generated. This size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota.
+Close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
+
+TODO: Investigating replacing std::array with plain C-style arrays to allow users to be fully free of the STL.
 
 #### Other Languages
 TBD
@@ -80,7 +85,8 @@ This section refers to building enumbra itself, not the generated code. See the 
 
 enumbra requires a C++17 compiler and builds on Windows with Visual Studio 2019/2022. 
 If you are on another OS/compiler and would like to add native support, open an issue/PR. I suck at cmake so don't expect any help.
-enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json to fit your setup, namely set cmakeToolchain to your vcpkg toolchain file.
+
+enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg toolchain file.
 
 # Limitations
 1. TOML integers are represented by INT64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values not representable by INT64. Until then, the toml parser should give you one of the following warnings:
@@ -107,7 +113,9 @@ Q. Why not use another library like [magic_enum](https://github.com/Neargye/magi
 * Compile-time libraries like these rely on compiler hacks to function properly. 
 * For large enums, constexpr generation is slow and cumbersome on compile times / memory.
 * The number of constants is usually limited to around 128 due to compiler limits.
-* Including `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are flags or not.
+* Lack of configuration options.
+* They provide a `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
+Defining options for each type individually reduces the mistake surface.
 * Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
@@ -126,7 +134,3 @@ Several reasons:
     * enumbra: 2 bytes
 
 Conclusion: Wrong tool for the job.
-
-Q. Why are you not using <templates/reflection/language feature>?
-
-The entire reason I made this project is because existing solutions are too complicated, lack the specific features I need, or are not supported on the compilers that I am restricted to. You are free to fork the project and alter the outputs to your liking, or submit a PR. I suggest making an issue on Github first to discuss if it's an appropriate change.
