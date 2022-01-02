@@ -130,8 +130,6 @@ min_max_functions = true
 # flags_enum::bits_required_transmission: Due to flags_enum minimum always being 0, this value should always be equal to flags_enum::bits_required_storage.
 bit_info_functions = true
 
-
-
 # Generate global convenience macros
 #   ENUMBRA_PACK_UNINITIALIZED(MyEnum, NameOfVariable); 
 # generates:

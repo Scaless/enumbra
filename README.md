@@ -99,8 +99,8 @@ struct Packed
 
     // Constructor to initialize values
     Packed() :
-        Player1Directions(HexDiagonal::default_value()), // Initialize with config-defined default value
-        Player2Directions(HexDiagonal::SOUTH), // Initialize with fixed value
+        Player1Directions(EDirectionFlags::default_value()), // Initialize with config-defined default value
+        Player2Directions(EDirectionFlags::SOUTH), // Initialize with fixed value
         Player3Directions() // NOT RECOMMENDED! 
             // This will zero-initialize the value, but zero may not be a valid value for that enum!
     { }
