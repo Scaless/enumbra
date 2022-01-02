@@ -5,7 +5,8 @@
 #include <array>
 
 namespace enumbra {
-	constexpr char* kEnumbraVersion = "0.0.4";
+	// Remember to update vcpkg.json as well
+	constexpr char* kEnumbraVersion = "0.0.5";
 
 	namespace csharp {
 		// ...

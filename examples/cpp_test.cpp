@@ -3,7 +3,7 @@
 using namespace enumbra;
 using namespace enums;
 
-#if CPP_TEST_VER >= 17
+#if ENUMBRA_CPP_VERSION >= 17
 #define STATIC_ASSERT(x) static_assert(x)
 #define STATIC_ASSERT_MSG(x,y) static_assert(x,y)
 #else
@@ -12,14 +12,14 @@ using namespace enums;
 #endif
 
 struct Errata {
-#if CPP_TEST_VER >= 17
+#if ENUMBRA_CPP_VERSION >= 17
     void enum_class_initializer_list() {
         // BAD but I don't think it's possible for us to stop this without disallowing bitfields.
         // enum class is allowed to be initialized from initializer list with no way to override.
         test_nodefault::Value qq{ 4 };
     }
 #endif
-#if CPP_TEST_VER >= 20
+#if ENUMBRA_CPP_VERSION >= 20
     // C++20 will allow us to also do this with brace/equal initializers on bit-fields.
     //   ENUMBRA_PACK(test_nodefault, X) { 4 };
     // This is legitimately useful though:
@@ -40,7 +40,7 @@ struct V
 };
 STATIC_ASSERT(sizeof(V) == 2);
 
-#if CPP_TEST_VER >= 17
+#if ENUMBRA_CPP_VERSION >= 17
 template<typename T>
 void test_value_vs_flags()
 {
@@ -97,6 +97,21 @@ enum class NonEnumbraEnum
     B = 1
 };
 
+#if ENUMBRA_CPP_VERSION >= 20
+struct Struct20
+{
+    // Correct usage
+    ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B);
+    ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault());
+    ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C);
+
+    // Not allowed
+    // ENUMBRA_PACK_INIT(test_nodefault, Ab, 4);
+    // ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnum::A);
+    // ENUMBRA_PACK_INIT(test_nodefault, C, test_flags::B);
+};
+#endif
+
 int main()
 {
     test_nodefault d;
@@ -121,6 +136,8 @@ int main()
     d = test_nodefault::B | d;
     d = test_nodefault::B & d;
     d = test_nodefault::B ^ d;
+
+
 
     bool b;
     b = (d == d);
@@ -147,7 +164,7 @@ int main()
     vv = ~vv;
 
     
-#if CPP_TEST_VER >= 17
+#if ENUMBRA_CPP_VERSION >= 17
     test_is_enumbra_type(d);
     test_is_enumbra_type(d.value());
     test_is_enumbra_type(v.X);

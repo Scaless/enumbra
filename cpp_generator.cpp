@@ -266,6 +266,49 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	}
 	write_linefeed();
 
+	// REQUIRED MACROS
+	{
+		const int enumbra_required_macros_version = 2;
+		std::vector<const char*> macro_strings = {
+			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
+			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
+			{ "" },
+			{ "// Find out what language version we're using"},
+			{ "#if (_MSVC_LANG >= 202002L) || (__cplusplus >= 202002L)"},
+			{ "#define ENUMBRA_CPP_VERSION 20"},
+			{ "#elif (_MSVC_LANG >= 201703L) || (__cplusplus >= 201703L)"},
+			{ "#define ENUMBRA_CPP_VERSION 17"},
+			{ "#elif (_MSVC_LANG >= 201402L) || (__cplusplus >= 201402L)"},
+			{ "#define ENUMBRA_CPP_VERSION 14"},
+			{ "#elif (_MSVC_LANG >= 201103L) || (__cplusplus >= 201103L)"},
+			{ "#define ENUMBRA_CPP_VERSION 11"},
+			{ "#else"},
+			{ "#error enumbra generated headers require a C++11 or higher compiler."},
+			{ "#endif"},
+			{ "" },
+			{"// Non-const constexpr functions were added in C++14"},
+			{"#if __cpp_constexpr >= 201304L"},
+			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
+			{"#else"},
+			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
+			{"#endif"},
+			{ "" },
+			{ "#else // check existing version supported" },
+			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
+			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
+			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < {1}" },
+			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
+			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > {1}" },
+			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
+			{ "#endif // end check existing version supported"},
+			{ "#endif // ENUMBRA_REQUIRED_MACROS_VERSION" },
+		};
+		for (auto& str : macro_strings) {
+			write_line(str, TAB, enumbra_required_macros_version);
+		}
+		write_linefeed();
+	}
+
 	// MACRO DEFINITIONS
 	if (cfg.cpp_config.enumbra_macros)
 	{
@@ -273,7 +316,18 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
 			{ "#define ENUMBRA_OPTIONAL_MACROS_VERSION {1}" },
+			{ "" },
+			{ "// Bit field storage helper" },
 			{ "#define ENUMBRA_PACK(Enum, Name) Enum::Value Name : Enum::bits_required_storage();" },
+			{ "" },
+			{ "#if ENUMBRA_CPP_VERSION >= 20" },
+			{ "// Bit field storage helper with type-checked member initialization" },
+			{ "#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum::Value Name : Enum::bits_required_storage() {{ InitValue }}; \\" },
+			{ "{0}static_assert(is_enumbra_type(InitValue), \"InitValue passed to ENUMBRA_PACK_INIT is not a valid enumbra type.\");" },
+			{ "// Bit field storage helper with default value initialization" },
+			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::Value Name : Enum::bits_required_storage() {{ Enum() }};" },
+			{ "#endif" },
+			{ "" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0" },
 			{ "#error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system." },
@@ -290,35 +344,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_linefeed();
 	}
 
-	// REQUIRED MACROS
-	{
-		const int enumbra_required_macros_version = 2;
-		std::vector<const char*> macro_strings = {
-			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
-			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
-			{ "#if !defined(__cpp_constexpr)"},
-			{ "#error enumbra generated headers requires a C++11 or higher compiler."},
-			{ "#elif __cpp_constexpr >= 201304L"},
-			{ "// Non-const constexpr functions were added in C++14"},
-			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
-			{ "#else"},
-			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
-			{ "#endif" },
-			{ "#else // check existing version supported" },
-			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
-			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
-			{ "#endif // end check existing version supported"},
-			{ "#endif // ENUMBRA_REQUIRED_MACROS_VERSION" },
-		};
-		for (auto& str : macro_strings) {
-			write_line(str, TAB, enumbra_required_macros_version);
-		}
-		write_linefeed();
-	}
+
 
 
 	// START NAMESPACE
@@ -381,7 +407,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			if (uint64_t(max_entry.value) > signed_range_max) {
 				bits_required_storage += 1;
 			}
-		} 
+		}
 
 		// Determine if all values are unique, or if some enum value names overlap.
 		// TODO: Enforce if flag is set
@@ -681,10 +707,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "{0}}} // end namespace enumbra::detail" },
 			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
 			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_type(T v) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct(T v) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
 			{ "}} // end namespace enumbra" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
