@@ -99,9 +99,6 @@ enum class NonEnumbraEnum
 
 int main()
 {
-    constexpr test_nodefault a = test_nodefault::B | test_nodefault::C;
-    STATIC_ASSERT(a.test(test_nodefault::B | test_nodefault::C));
-
     test_nodefault d;
 
     d = test_nodefault::B;
@@ -111,9 +108,9 @@ int main()
     d |= test_nodefault::B | test_nodefault::C;
     d &= test_nodefault::B & test_nodefault::C;
     d ^= test_nodefault::B ^ test_nodefault::C;
-    d |= d;
-    d &= d;
-    d ^= d;
+    d |= test_nodefault::B;
+    d &= test_nodefault::B;
+    d ^= test_nodefault::B;
     d = ~d;
     d = d | d;
     d = d & d;
@@ -132,12 +129,18 @@ int main()
     b = (d != test_nodefault::B);
     b = (test_nodefault::B == d);
     b = (test_nodefault::B != d);
+    d = b ? d : d;
 
     // Test packed bitfields
     V v;
     v.X = test_nodefault::B;
     v.Y = test_nodefault::B | test_nodefault::C;
     v.Z = d;
+
+    //v.X |= d.value(); // Not allowed for bit fields
+    v.X = v.X | d.value(); // Do this instead
+
+
     d = v.X; // uses implicit constructor
 
     test_nodefault::Value vv{};

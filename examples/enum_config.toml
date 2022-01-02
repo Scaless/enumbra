@@ -121,6 +121,70 @@ values = [
 	{ name = "NORTH_WEST"},
 ]
 
+[[enum_meta.value_enum]]
+name = "NegativeTest1"
+size_type = "signed8"
+values = [
+	{ name = "A", value = -2 },
+	{ name = "B", value = -1 },
+	{ name = "C", value = 0 },
+	{ name = "D", value = 1 },
+]
+
+[[enum_meta.value_enum]]
+name = "NegativeTest2"
+size_type = "signed8"
+values = [
+	{ name = "A", value = -3 },
+	{ name = "B", value = -2 },
+	{ name = "C", value = -1 },
+	{ name = "D", value = 0 },
+]
+
+[[enum_meta.value_enum]]
+name = "NegativeTest3"
+size_type = "signed8"
+values = [
+	{ name = "A", value = -3 },
+	{ name = "B", value = 4 },
+]
+
+[[enum_meta.value_enum]]
+name = "NegativeTest4"
+size_type = "signed8"
+values = [
+	{ name = "A", value = -4 },
+	{ name = "B", value = 3 },
+]
+
+[[enum_meta.value_enum]]
+name = "EmptyTest1Unsigned"
+size_type = "unsigned8"
+values = [
+	{ name = "A", value = 0 },
+]
+
+[[enum_meta.value_enum]]
+name = "EmptyTest1Signed"
+size_type = "signed8"
+values = [
+	{ name = "A", value = 0 },
+]
+
+[[enum_meta.value_enum]]
+name = "SingleTest1Unsigned"
+size_type = "unsigned8"
+values = [
+	{ name = "A", value = 4 },
+]
+
+[[enum_meta.value_enum]]
+name = "SingleTest1Signed"
+size_type = "signed8"
+values = [
+	{ name = "A", value = 4 },
+]
+
 ################################################
 # Flags Enums
 ################################################
@@ -139,4 +203,15 @@ values = [
 	{ name = "B", value = 0x1 },
 	{ name = "C", value = 0x2 },
 ]
+
+[[enum_meta.flags_enum]]
+name = "TestSparseFlags"
+default_value = "C"
+size_type = "unsigned16"
+values = [
+	{ name = "B", value = 0x1 },
+	{ name = "C", value = 0x4 },
+	{ name = "D", value = 0x10 },
+]
+
 

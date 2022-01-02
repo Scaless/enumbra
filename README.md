@@ -14,59 +14,74 @@ Example generating CPP output file and also printing to the console:
 
 #### CPP
 Generated code requires a minimum of C++11. 
-Currently, `<array>` is the only fully required header in the generated output. 
+
+Currently, `<array>` is the only fully required header in the generated output.
+In the default enumbra_config, `<cstdint>` is also included.
+This can be overridden in your enumbra config by specifying your own types.
+
 There are no extra setup requirements, just drop the generated header(s) into your project.
 
-In the default enumbra_config, `<cstdint>` is included. This can be overridden in your enumbra config by specifying your own types.
-
 On MSVC, the generated headers will compile with `/Wall /WX /wd4514`.
-[C4514](https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4514) is irrelevant: `unreferenced inline function has been removed`.
 
-On GCC, the generated headers will compile with `-Wall -Wextra -Wpedantic -Werror`.
+On GCC/Clang, the generated headers will compile with `-Wall -Wextra -Wpedantic -Werror`.
 
-A warning to Visual Studio users: Rapidly iterating on enumbra generated output while the file is open in VS will inflate your `.vs` directory up to a maximum of 5GB (by default) when automated PCH files are being constantly generated. This size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota.
-Close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
-
-TODO: Investigating replacing std::array with plain C-style arrays to allow users to be fully free of the STL.
+A warning to Visual Studio users: Rapidly iterating on enumbra generated output while the file is open in VS will inflate your `.vs` directory up to a maximum of 5GB (by default) because automated PCH files are being constantly generated. 
+This cache size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota.
+Otherwise, close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
 
 #### Other Languages
 TBD
 
 # Examples
-Example config files are provided as enumbra_config.toml and enum_config.toml.
+Annotated TOML config files are provided in the `examples` directory.
 
-#### Value Enum and Flags Enum
-A problem with using standard enums as flags is that there is no protection against using bitwise operations against an enum that should be a set of values. 
-To solve this, enumbra provides two enum types: Value Enum and Flags Enum. The names should give you a hint as to how they operate.
+An example of C++ generated output is at `examples/enumbra_test.hpp`.
+
+# Usage
+enumbra provides two types of enums: Value Enum and Flags Enum. The names should give you a hint as to how they operate.
 
 ##### Value Enum
 A value enum is just a list of possible single-state values.
 A standard C++ value enum would look like: 
 
-`enum class ENetworkStatus : uint8_t { Disconnected = 0, WaitingForServer = 1, Connected = 2 }`
+```
+enum class ENetworkStatus : uint8_t { Disconnected = 0, WaitingForServer = 1, Connected = 2 }
+enum class ETruthStatus : uint8_t { False, True }
+```
 
-It doesn't make sense for multiple of these values to be set at the same time. Attempting to use bitwise ops on a value enum will result in a compile error.
+It doesn't make sense for multiple of these values to be set at the same time.
+
+Attempting to use bitwise ops on an enumbra value enum will result in a compile error.
 
 ##### Flags Enum
-A flags enum is storage for multiple possible flag values where each flag is toggleable on its own. 
+A flags enum can store multiple possible flag values where each flag is toggleable on its own. 
+
 A standard C++ flags enum would look like: 
 
-`enum class EDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 }`
+```
+enum class EDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 }
+```
 
 Say we're making an adventure game and want to store the possible directions available to the player:
 ```
 EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::West;
+// Make sure user is not cheating and pressing multiple directions at once by using single().
+if (user_input.direction.single() && possible_directions.test(user_input.direction)) {
+    // Move the player
+} else {
+    // No valid input
+}
 ```
 
 ##### Packed Bit Field Enums
-Both Value Enums and Flag Enums can be packed more tightly within a struct:
+Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields:
 
 ```
 struct Packed
 {
     // We are using the EDirectionFlags enum from above.
     // ENUMBRA_PACK macro will expand to:
-    // EDirectionFlags::Value Player1 : EDirectionFlags::bits_required_storage();
+    //   EDirectionFlags::Value Player1 : EDirectionFlags::bits_required_storage();
     ENUMBRA_PACK(EDirectionFlags, Player1);
     ENUMBRA_PACK(EDirectionFlags, Player2);
     ENUMBRA_PACK(EDirectionFlags, Player3);
@@ -77,16 +92,19 @@ static_assert(sizeof(Packed) == 2); // passes, each enum requires 4 bits and the
 
 All of the general rules of [C++ bit fields](https://en.cppreference.com/w/cpp/language/bit_field) still apply:
 * Their layout is implementation defined and non-portable, so do not transfer them over the network or serialize without a conversion method.
-* The underlying type of an enum determines the minimum storage, padding, and alignment. Adjacent bit fields with mixed underlying types cannot share storage.
+* The underlying type of an enum determines the minimum storage, padding, and alignment.
+* Adjacent bit fields with mixed underlying types may or may not share storage.
+* It is implementation defined if bit fields may straddle type boundaries vs. introduce padding.
 * The `|=`,`&=`, and `^=` operators require returning a non-const reference which cannot be done with bit fields. You can still assign using a temporary like so: `V.x = V.x | EDirectionFlags::North`.
 
 # Building
 This section refers to building enumbra itself, not the generated code. See the Generators section for generated code requirements.
 
-enumbra requires a C++17 compiler and builds on Windows with Visual Studio 2019/2022. 
+enumbra requires a C++17 compiler and is primarily tested to build on Windows with Visual Studio 2019/2022. 
+
 If you are on another OS/compiler and would like to add native support, open an issue/PR. I suck at cmake so don't expect any help.
 
-enumbra uses vcpkg for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg toolchain file.
+enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg installation.
 
 # Limitations
 1. TOML integers are represented by INT64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values not representable by INT64. Until then, the toml parser should give you one of the following warnings:
@@ -115,7 +133,7 @@ Q. Why not use another library like [magic_enum](https://github.com/Neargye/magi
 * The number of constants is usually limited to around 128 due to compiler limits.
 * Lack of configuration options.
 * They provide a `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
-Defining options for each type individually reduces the mistake surface.
+Defining options for each enum type individually reduces the mistake surface.
 * Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
@@ -127,10 +145,7 @@ Several reasons:
 * std::bitset is more suited for modifying an abstract number of bits at runtime. Enums are static and don't ever grow or shrink.
 * Worse Debug performance due to function calls, bounds checking, and other standard library slowness during runtime. Release-optimized performance is mostly just as good as bit twiddling though.
 * Can't be packed into bitfields.
-* Size is implementation dependent. A std::bitset containing 16 bits will consume a minimum of: ([godbolt](https://godbolt.org/z/v3vxe9oYf)):
+* Size is implementation dependent. A std::bitset containing 16 bits will consume a minimum of ([godbolt](https://godbolt.org/z/v3vxe9oYf)):
     * GCC & Clang x64: 8 bytes
     * GCC & Clang x86: 4 bytes
     * MSVC x64 and x86: 4 bytes
-    * enumbra: 2 bytes
-
-Conclusion: Wrong tool for the job.

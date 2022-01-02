@@ -119,7 +119,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 }
 
 // Log2 of unsigned int
-constexpr uint64_t Log2Unsigned(uint64_t x)
+constexpr uint64_t log_2_unsigned(uint64_t x)
 {
 	if (x == 0)
 	{
@@ -130,6 +130,11 @@ constexpr uint64_t Log2Unsigned(uint64_t x)
 	while (x >>= 1)
 		++targetlevel;
 	return targetlevel;
+}
+
+constexpr uint64_t unsigned_bits_required(uint64_t x)
+{
+	return log_2_unsigned(x) + 1;
 }
 
 // Enum names must be unique across value and flag enums
@@ -178,7 +183,7 @@ bool is_value_set_contiguous(const std::set<int64_t> values)
 
 bool is_flags_set_contiguous(const std::set<int64_t> flags)
 {
-	int64_t check_bit = Log2Unsigned(*flags.begin()) + 1;
+	int64_t check_bit = unsigned_bits_required(*flags.begin());
 	bool skip_first = true;
 	for (auto& u : flags)
 	{
@@ -353,10 +358,30 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const enum_entry& min_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Min, e);
 		const enum_entry& max_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Max, e);
 		const size_t entry_count = e.values.size();
-		const size_t bits_required_storage = Log2Unsigned(max_entry.value) + 1;
-		const size_t bits_required_transmission = Log2Unsigned(max_entry.value - min_entry.value) + 1;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
+
+		int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
+		size_t bits_required_storage = unsigned_bits_required(max_abs_representable);
+		const size_t bits_required_transmission = log_2_unsigned(max_entry.value - min_entry.value);
+
+		// Because of the way signed integers map to bit fields, a bit field may require an additional
+		// bit of storage to accomodate the sign bit even if it is unused. For example, given the following enum:
+		//   enum class ESignedValueBits : int8_t { A = 0, B = 1, C = 2, D = 3 }
+		// To properly store and assign to this enum, we need 3 bits:
+		//   int8_t Value : 2; // ERROR: maps to the range -2 - 1
+		//   int8_t Value : 3; // OK:    maps to the range -4 - 3, but we're wasting space
+		// For this reason, when utilizing packed enums it is recommended to always prefer an unsigned underlying
+		// type unless your enum actually contains negative values.
+		if (is_size_type_signed && max_entry.value > 0) {
+			uint64_t signed_range_max = 0;
+			for (int i = 0; i < bits_required_storage - 1; i++) {
+				signed_range_max |= 1ULL << i;
+			}
+			if (uint64_t(max_entry.value) > signed_range_max) {
+				bits_required_storage += 1;
+			}
+		} 
 
 		// Determine if all values are unique, or if some enum value names overlap.
 		// TODO: Enforce if flag is set
@@ -439,8 +464,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			else
 			{
-				write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static inline bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static inline bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), from_underlying_unsafe(v)) != Values.end(); }}", e.name, size_type);
 			}
 			write_linefeed();
 			write_line("private:");
@@ -500,10 +525,13 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const int64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
 
 		const size_t entry_count = e.values.size();
-		const size_t bits_required_storage = Log2Unsigned(max_value) + 1;
-		const size_t bits_required_transmission = bits_required_storage;
+		const size_t bits_required_storage = unsigned_bits_required(max_value);
+		const size_t bits_required_transmission = log_2_unsigned(max_value - min_value);
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
+		if (is_size_type_signed) {
+			throw std::logic_error("Size type for flags enum is signed. Not a supported configuration.");
+		}
 
 		// Determine if range is contiguous
 		// Enables some minor optimizations for range-checking values if true
@@ -550,9 +578,10 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr bool test(Value v) const {{ return (static_cast<{0}>(value_) & static_cast<{0}>(v)) == static_cast<{0}>(v); }}", size_type);
 			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void unset(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) & (~static_cast<{0}>(v))); }}", size_type);
 			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void flip(Value v) {{ value_ = static_cast<Value>(static_cast<{0}>(value_) ^ static_cast<{0}>(v)); }}", size_type);
-			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1}; }}", size_type, max_value);
+			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1:#x}; }}", size_type, max_value);
 			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
 			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
+			write_line_tabbed(1, "constexpr bool single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
 			write_linefeed();
 
 			// Introspection
@@ -580,8 +609,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			else
 			{
-				write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), static_cast<{0}>(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static inline bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
+				write_line_tabbed(1, "static inline bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), from_underlying_unsafe(v)) != Values.end(); }}", e.name, size_type);
 			}
 			write_linefeed();
 
