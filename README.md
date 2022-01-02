@@ -58,9 +58,9 @@ enum class EDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 
 
 EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::West;
 
-// Make sure user is not cheating and pressing multiple directions at once by using single().
+// Make sure user is not cheating and pressing multiple directions at once by using is_single().
 // Then test if the direction is in our possible directions with test().
-if (user_input.direction.single() && possible_directions.test(user_input.direction)) {
+if (user_input.direction.is_single() && possible_directions.test(user_input.direction)) {
     // Move the player
 }
 ```

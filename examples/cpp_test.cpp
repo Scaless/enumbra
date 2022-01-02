@@ -19,16 +19,6 @@ struct Errata {
 		test_nodefault::Value qq{ 4 };
 	}
 #endif
-#if ENUMBRA_CPP_VERSION >= 20
-	// C++20 will allow us to also do this with brace/equal initializers on bit-fields.
-	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X) { 4 };
-	// This is legitimately useful though:
-	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y) { test_nodefault::C };
-	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z) = test_nodefault::C;
-	// We could stop this by adding a second macro that does initialization and does type checking?
-	// The ENUMBRA_PACK_UNINITIALIZED #define would then have a ; at the end to prevent accidental initialization.
-	//   ENUMBRA_PACK_INIT(test_nodefault, Z, test_nodefault::C);
-#endif
 };
 
 struct V
@@ -180,8 +170,8 @@ int main()
 	TestSparseFlags::Value q = TestSparseFlags::B;
 	q |= q;
 
-	v.X |= d.value(); // Not allowed for bit fields
-	v.X = v.X | d.value(); // Do this instead
+	v.X |= d.value();
+	v.X = v.X | d.value();
 
 	struct D {
 		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);

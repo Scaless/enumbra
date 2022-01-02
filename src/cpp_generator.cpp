@@ -684,7 +684,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1:#x}; }}", size_type, max_value);
 			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
 			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
 			write_linefeed();
 
 			// Introspection
