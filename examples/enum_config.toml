@@ -76,17 +76,6 @@ flags_enum_allow_overlap = false
 # ]
 flags_enum_allow_multi_bit_values = false
 
-[enum_meta.cpp]
-#C++ specific overrides
-
-# Enums within this file will reside in this namespace, nested within the enumbra_config namespace if defined.
-# ex: output_namespace = ["a", "b"]
-# generates: namespace a { namespace b { ... } }
-# output_namespace = []
-
-[enum_meta.csharp]
-#CSharp specific overrides
-
 ################################################
 # Value Enums
 ################################################
