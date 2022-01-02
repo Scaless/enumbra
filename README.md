@@ -73,7 +73,7 @@ if (user_input.direction.single() && possible_directions.test(user_input.directi
 Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields.
 Several macros are provided to handle this:
 
-#### ENUMBRA_PACK(Enum, Name)
+#### ENUMBRA_PACK_UNINITIALIZED(Enum, Name)
 
 Declare an enum. The value is NOT initialized, you must do so through your own constructor.
 
@@ -90,12 +90,12 @@ Declare and initialize an enum with the config-specified default value.
 struct Packed
 {
     // We are using the EDirectionFlags enum from above.
-    // ENUMBRA_PACK does NOT initialize values unlike the struct version.
-    // ENUMBRA_PACK macro will expand to:
+    // ENUMBRA_PACK_UNINITIALIZED does NOT initialize values unlike the struct version.
+    // ENUMBRA_PACK_UNINITIALIZED macro will expand to:
     //   EDirectionFlags::Value Player1Directions : EDirectionFlags::bits_required_storage();
-    ENUMBRA_PACK(EDirectionFlags, Player1Directions);
-    ENUMBRA_PACK(EDirectionFlags, Player2Directions);
-    ENUMBRA_PACK(EDirectionFlags, Player3Directions);
+    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player1Directions);
+    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player2Directions);
+    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player3Directions);
 
     // Constructor to initialize values
     Packed() :

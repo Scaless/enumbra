@@ -50,7 +50,7 @@
 #define ENUMBRA_OPTIONAL_MACROS_VERSION 2
 
 // Bit field storage helper
-#define ENUMBRA_PACK(Enum, Name) Enum::Value Name : Enum::bits_required_storage();
+#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum::Value Name : Enum::bits_required_storage();
 
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization

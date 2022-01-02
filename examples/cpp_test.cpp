@@ -21,22 +21,22 @@ struct Errata {
 #endif
 #if ENUMBRA_CPP_VERSION >= 20
 	// C++20 will allow us to also do this with brace/equal initializers on bit-fields.
-	//   ENUMBRA_PACK(test_nodefault, X) { 4 };
+	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X) { 4 };
 	// This is legitimately useful though:
-	//   ENUMBRA_PACK(test_nodefault, Y) { test_nodefault::C };
-	//   ENUMBRA_PACK(test_nodefault, Z) = test_nodefault::C;
+	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y) { test_nodefault::C };
+	//   ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z) = test_nodefault::C;
 	// We could stop this by adding a second macro that does initialization and does type checking?
-	// The ENUMBRA_PACK #define would then have a ; at the end to prevent accidental initialization.
+	// The ENUMBRA_PACK_UNINITIALIZED #define would then have a ; at the end to prevent accidental initialization.
 	//   ENUMBRA_PACK_INIT(test_nodefault, Z, test_nodefault::C);
 #endif
 };
 
 struct V
 {
-	ENUMBRA_PACK(test_nodefault, W);
-	ENUMBRA_PACK(test_nodefault, X);
-	ENUMBRA_PACK(test_nodefault, Y);
-	ENUMBRA_PACK(test_nodefault, Z);
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W);
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X);
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y);
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z);
 
 	V() :
 		W(test_nodefault::default_value()),
@@ -184,7 +184,7 @@ int main()
 	v.X = v.X | d.value(); // Do this instead
 
 	struct D {
-		ENUMBRA_PACK(NegativeTest3, dd);
+		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);
 	};
 
 	D bigD{};

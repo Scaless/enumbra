@@ -133,7 +133,7 @@ bit_info_functions = true
 
 
 # Generate global convenience macros
-#   ENUMBRA_PACK(MyEnum, NameOfVariable); 
+#   ENUMBRA_PACK_UNINITIALIZED(MyEnum, NameOfVariable); 
 # generates:
 #   MyEnum NameOfVariable : MyEnum::bits_required_storage();
 enumbra_macros = true
