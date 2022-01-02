@@ -144,7 +144,10 @@ int main()
 	d = test_nodefault::B & d;
 	d = test_nodefault::B ^ d;
 
-
+	switch (d.value()) {
+		// Possible but error prone
+		// Better to use if/elseif with explicit checks
+	}
 
 	bool b;
 	b = (d == d);
@@ -164,15 +167,37 @@ int main()
 	b = (HexDiagonal::NORTH != f);
 	f = b ? f : f;
 
+	switch (f) {
+		case HexDiagonal::NORTH: break;
+	}
+
 	// Test packed bitfields
 	V v;
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
 	v.Z = d.value();
 
+	TestSparseFlags::Value q = TestSparseFlags::B;
+	q |= q;
+
 	v.X |= d.value(); // Not allowed for bit fields
 	v.X = v.X | d.value(); // Do this instead
 
+	struct D {
+		ENUMBRA_PACK(NegativeTest3, dd);
+	};
+
+	D bigD{};
+	NegativeTest3::to_string(bigD.dd);
+
+	NegativeTest3 t3;
+	NegativeTest3::to_string(t3);
+	NegativeTest3::to_string(t3.value());
+
+	bool success;
+	NegativeTest3 t4 = NegativeTest3::from_string("", success);
+
+	bigD.dd = NegativeTest3::from_string("", success);
 
 	d = v.X; // uses implicit constructor
 

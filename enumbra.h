@@ -26,15 +26,11 @@ namespace enumbra {
 		} };
 
 		enum class StringTableType {
-			ConstexprStringView,
-			ConstexprWStringView,
 			ConstCharPtr,
 			ConstWCharPtr
 		};
 		constexpr std::array<std::pair<std::string_view, StringTableType>, 4> StringTableTypeMapped
 		{ {
-			{ "constexpr_string_view", StringTableType::ConstexprStringView },
-			{ "constexpr_wstring_view", StringTableType::ConstexprWStringView },
 			{ "const_char_ptr", StringTableType::ConstCharPtr },
 			{ "const_wchar_ptr", StringTableType::ConstWCharPtr },
 		} };
@@ -97,9 +93,6 @@ namespace enumbra {
 			StringTableType string_table_type{ StringTableType::ConstCharPtr };
 			StringTableLayout string_table_layout{ StringTableLayout::NameAndDescription };
 
-			bool bitwise_op_functions{ true };
-			bool bounds_check_functions{ true };
-			bool density_functions{ true };
 			bool min_max_functions{ true };
 			bool bit_info_functions{ true };
 			bool enumbra_macros{ true };

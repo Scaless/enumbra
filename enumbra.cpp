@@ -244,9 +244,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 			}
 		}
 
-		c.bitwise_op_functions = get_required<bool>(cpp_cfg, "bitwise_op_functions");
-		c.bounds_check_functions = get_required<bool>(cpp_cfg, "bounds_check_functions");
-		c.density_functions = get_required<bool>(cpp_cfg, "density_functions");
 		c.min_max_functions = get_required<bool>(cpp_cfg, "min_max_functions");
 		c.bit_info_functions = get_required<bool>(cpp_cfg, "bit_info_functions");
 		c.enumbra_macros = get_required<bool>(cpp_cfg, "enumbra_macros");

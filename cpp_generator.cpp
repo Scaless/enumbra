@@ -249,20 +249,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	}
 
 	// INCLUDES
-	write_line("#include <array>"); // Required currently, could we use C-style arrays to remove dependency?
+	write_line("#include <array>");
 	for (const auto& inc : cpp.additional_includes) {
 		write_line("#include {}", inc);
-	}
-	if (cpp.string_table_layout != StringTableLayout::None) {
-		switch (cpp.string_table_type)
-		{
-		case StringTableType::ConstexprStringView:
-		case StringTableType::ConstexprWStringView:
-			write_line("#include <string_view>");
-			break;
-		default:
-			break;
-		}
 	}
 	write_linefeed();
 
@@ -292,6 +281,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"#else"},
 			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
 			{"#endif"},
+			{ "" },
+			
 			{ "" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
@@ -344,6 +335,55 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_linefeed();
 	}
 
+	if (cfg.cpp_config.templated_extensions) {
+		// The macro will allow us to update versions later and warn if old versions of the template are in use.
+		const int base_template_version = 2;
+		std::vector<const char*> base_template_strings = {
+			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
+			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
+			{ "namespace enumbra {{" },
+			{ "{0}namespace detail {{" },
+			{ "{0}{0}// Default templates for non-enumbra types" },
+			{ "{0}{0}template<class T>" },
+			{ "{0}{0}struct enumbra_base_helper {{ " },
+			{ "{0}{0}    static constexpr bool enumbra_type = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_enum_class = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_value_enum = false;" },
+			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
+			{ "{0}{0}    using base_type = T; " },
+			{ "{0}{0}}};" },
+			{ "{0}{0}template<class T> constexpr bool streq(T* a, T* b) {{"},
+			{ "{0}{0}{0}return *a == *b && (*a == '\\0' || streq(a + 1, b + 1));"},
+			{ "{0}{0}}}"},
+			{ "{0}}} // end namespace enumbra::detail" },
+			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
+			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_type(T v) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct(T v) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "}} // end namespace enumbra" },
+			{ "#else // check existing version supported" },
+			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
+			{ "#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system." },
+			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < {1}" },
+			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra." },
+			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > {1}" },
+			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra." },
+			{ "#endif // check existing version supported" },
+			{ "#endif // ENUMBRA_BASE_TEMPLATES_VERSION" },
+		};
+		for (auto& str : base_template_strings) {
+			write_line(str, TAB, base_template_version);
+		}
+		write_linefeed();
+	}
+
 	// START NAMESPACE
 	for (const auto& ns : cpp.output_namespace) {
 		write_line("namespace {} {{", ns);
@@ -383,6 +423,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const size_t entry_count = e.values.size();
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
+		const std::string char_type = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
+		const std::string literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
 
 		int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
 		size_t bits_required_storage = unsigned_bits_required(max_abs_representable);
@@ -432,27 +474,22 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr {}() : value_(Value({})) {{ }}", e.name, default_entry.value);
 			write_line_tabbed(1, "constexpr {}(Value v) : value_(v) {{ }}", e.name);
 			write_linefeed();
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
-			for (const auto& v : e.values) {
-				write_line_tabbed(2, "Value::{},", v.name);
-			}
-			write_line_tabbed(1, "}};");
-			write_linefeed();
 
 			for (const auto& v : e.values) {
 				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
 			}
 			write_linefeed();
 
-			// TODO: String Tables
-			/*write_line_tabbed(1, "constexpr static std::array<const char*, {}> Values = {{", entry_count);
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "Value::{},", v.name);
+				write_line_tabbed(2, "{},", v.name);
 			}
-			write_line_tabbed(1, "}};");*/
+			write_line_tabbed(1, "}};");
+			write_linefeed();
 
 			// Operators
 			write_line_tabbed(1, "constexpr Value value() const {{ return value_; }}");
+			write_line_tabbed(1, "constexpr operator Value() const {{ return value_; }}");
 			write_line_tabbed(1, "explicit operator bool() = delete;");
 			write_linefeed();
 
@@ -472,6 +509,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "static constexpr {0} from_underlying_unsafe({1} v) {{ return {0}(static_cast<Value>(v)); }}", e.name, size_type);
 			write_line_tabbed(1, "static constexpr {1} bits_required_storage() {{ return {2}; }}", e.name, size_type, bits_required_storage);
 			write_line_tabbed(1, "static constexpr {1} bits_required_transmission() {{ return {2}; }}", e.name, size_type, bits_required_transmission);
+
+			// is_valid variations
 			if (is_contiguous)
 			{
 				if (min_entry.value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
@@ -487,23 +526,54 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			else
 			{
-				write_line_tabbed(1, "static inline bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static inline bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), from_underlying_unsafe(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid({0} v) {{ for(std::size_t i = 0; i < Values.size(); i++) {{ auto& val = Values[i]; if(val == v) return true; }} return false; }}", e.name);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid({1} v) {{ for(std::size_t i = 0; i < Values.size(); i++) {{ auto& val = Values[i]; if(val == Value(v)) return true; }} return false; }}", e.name, size_type);
 			}
+			write_linefeed();
+
+			// String Functions
+			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_string(const {1}::Value v) {{", char_type, e.name);
+			write_line_tabbed(2, "switch (v) {{");
+			for (auto v : e.values) {
+				write_line_tabbed(3, "case {0}: return {1}\"{0}\";", v.name, literal_prefix);
+			}
+			write_line_tabbed(3, "default: return \"\";");
+			write_line_tabbed(2, "}}");
+			write_line_tabbed(1, "}}");
+
+			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}::Value from_string({1} str, bool& success) {{", e.name, char_type);
+			write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
+			write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str) == 0) {{");
+			write_line_tabbed(4, "return string_lookup_[i].first;");
+			write_line_tabbed(3, "}}");
+			write_line_tabbed(2, "}}");
+			write_line_tabbed(2, "success = false;");
+			write_line_tabbed(2, "return default_value();", e.name);
+			write_line_tabbed(1, "}}");
+
+			// Private Members
 			write_linefeed();
 			write_line("private:");
 			write_line_tabbed(1, "Value value_;");
+
+			// Value String Table
+			write_line_tabbed(1, "constexpr static std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{", char_type, entry_count);
+			for (const auto& v : e.values) {
+				write_line_tabbed(2, "std::make_pair({1}, {0}\"{1}\"),", literal_prefix, v.name, size_type);
+			}
+			write_line_tabbed(1, "}};");
+
 		}
 		write_line("}};");
 
-		std::vector<const char*> operator_strings = {
+		/*std::vector<const char*> operator_strings = {
 			{"// {} Operator Overloads"},
 			{"constexpr bool operator==(const {0}& a, const {0}& b) {{ return a.value() == b.value(); }}"},
 			{"constexpr bool operator!=(const {0}& a, const {0}& b) {{ return a.value() != b.value(); }}"},
 		};
 		for (auto& str : operator_strings) {
 			write_line(str, e.name);
-		}
+		}*/
 
 		write_linefeed();
 	}
@@ -585,16 +655,17 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr {}() : value_(Value({})) {{ }}", e.name, default_value);
 			write_line_tabbed(1, "constexpr {}(Value v) : value_(v) {{ }}", e.name);
 			write_linefeed();
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
-			for (const auto& v : e.values) {
-				write_line_tabbed(2, "Value::{},", v.name);
-			}
-			write_line_tabbed(1, "}};");
-			write_linefeed();
 
 			for (const auto& v : e.values) {
 				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
 			}
+			write_linefeed();
+
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			for (const auto& v : e.values) {
+				write_line_tabbed(2, "{},", v.name);
+			}
+			write_line_tabbed(1, "}};");
 			write_linefeed();
 
 			// Operators
@@ -612,7 +683,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1:#x}; }}", size_type, max_value);
 			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
 			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
-			write_line_tabbed(1, "constexpr bool single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
 			write_linefeed();
 
 			// Introspection
@@ -641,8 +712,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			else
 			{
-				write_line_tabbed(1, "static inline bool is_valid({0} v) {{ return std::find(Values.begin(), Values.end(), v) != Values.end(); }}", e.name);
-				write_line_tabbed(1, "static inline bool is_valid({1} v) {{ return std::find(Values.begin(), Values.end(), from_underlying_unsafe(v)) != Values.end(); }}", e.name, size_type);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid({0} v) {{ for(std::size_t i = 0; i < Values.size(); i++) {{ auto& val = Values[i]; if(val == v.value()) return true; }} return false; }}", e.name);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid({1} v) {{ for(std::size_t i = 0; i < Values.size(); i++) {{ auto& val = Values[i]; if(val == Value(v)) return true; }} return false; }}", e.name, size_type);
 			}
 			write_linefeed();
 
@@ -662,11 +733,11 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
 			{"constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
 			{"constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
-			
-			{"constexpr void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
-			{"constexpr void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
-			{"constexpr void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
-			
+
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
+			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+
 			{"constexpr {0} operator~(const {0} a) {{ return ~a.value(); }}"},
 			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a.value() | b.value(); }}"},
 			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return a.value() & b.value(); }}"},
@@ -677,7 +748,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
 			{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
 			{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
-			
+
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
@@ -703,50 +774,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
 	if (cfg.cpp_config.templated_extensions)
 	{
-		// The macro will allow us to update versions later and warn if old versions of the template are in use.
-		const int base_template_version = 2;
-		std::vector<const char*> base_template_strings = {
-			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
-			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
-			{ "namespace enumbra {{" },
-			{ "{0}namespace detail {{" },
-			{ "{0}{0}// Default templates for non-enumbra types" },
-			{ "{0}{0}template<class T>" },
-			{ "{0}{0}struct enumbra_base_helper {{ " },
-			{ "{0}{0}    static constexpr bool enumbra_type = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_enum_class = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_value_enum = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
-			{ "{0}{0}    using base_type = T; " },
-			{ "{0}{0}}};" },
-			{ "{0}}} // end namespace enumbra::detail" },
-			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
-			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_type(T v) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_struct(T v) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
-			{ "}} // end namespace enumbra" },
-			{ "#else // check existing version supported" },
-			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra." },
-			{ "#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra." },
-			{ "#endif // check existing version supported" },
-			{ "#endif // ENUMBRA_BASE_TEMPLATES_VERSION" },
-		};
-		for (auto& str : base_template_strings) {
-			write_line(str, TAB, base_template_version);
-		}
-		write_linefeed();
-
 		for (auto& e : enum_meta.value_enum_definitions) {
 			// Value Enum Template Specializations
 			std::string is_value_enum = "true";
