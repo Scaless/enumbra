@@ -10,6 +10,11 @@ Example generating CPP output file and also printing to the console:
 
 `./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp -p`
 
+# Examples
+Annotated TOML config files are provided in the `examples` directory.
+
+An example of C++ generated output is at `examples/enumbra_test.hpp`.
+
 # Generators
 
 ### CPP
@@ -30,36 +35,31 @@ This cache size can be globally configured in Tools > Options > Text Editor > C/
 Otherwise, close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
 
 ### Other Languages
-TBD
-
-# Examples
-Annotated TOML config files are provided in the `examples` directory.
-
-An example of C++ generated output is at `examples/enumbra_test.hpp`.
+TBD, C# Planned
 
 # Usage
 enumbra provides two types of enums: Value Enum and Flags Enum. The names should give you a hint as to how they operate.
 
 ### Value Enum
 A value enum is just a list of possible single-state values.
-A standard C++ value enum would look like: 
+It doesn't make sense for multiple of these values to be set at the same time.
+Bitwise operations are not provided for these types.
+
+An equivalent standard C++ enum class would look like: 
 
 ```
 enum class ENetworkStatus : uint8_t { Disconnected = 0, WaitingForServer = 1, Connected = 2 }
 enum class ETruthStatus : uint8_t { False, True }
 ```
 
-It doesn't make sense for multiple of these values to be set at the same time. Bitwise operations are not provided for these types.
-
 ### Flags Enum
 A flags enum can store multiple possible flag values where each flag is toggleable on its own. 
 
+Say we're making an adventure game and want to store the possible directions available to the player:
+
 ```
 enum class EDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 }
-```
 
-Say we're making an adventure game and want to store the possible directions available to the player:
-```
 EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::West;
 // Make sure user is not cheating and pressing multiple directions at once by using single().
 // Then test if the direction is in our possible directions with test().
@@ -89,12 +89,20 @@ Declare and initialize an enum with the config-specified default value.
 struct Packed
 {
     // We are using the EDirectionFlags enum from above.
+    // ENUMBRA_PACK does NOT initialize values unlike the struct version.
     // ENUMBRA_PACK macro will expand to:
-    //   EDirectionFlags::Value Player1 : EDirectionFlags::bits_required_storage();
-    ENUMBRA_PACK(EDirectionFlags, Player1);
-    ENUMBRA_PACK(EDirectionFlags, Player2);
-    ENUMBRA_PACK(EDirectionFlags, Player3);
-    ENUMBRA_PACK(EDirectionFlags, Player4);
+    //   EDirectionFlags::Value Player1Directions : EDirectionFlags::bits_required_storage();
+    ENUMBRA_PACK(EDirectionFlags, Player1Directions);
+    ENUMBRA_PACK(EDirectionFlags, Player2Directions);
+    ENUMBRA_PACK(EDirectionFlags, Player3Directions);
+
+    // Constructor to initialize values
+    Packed() :
+        Player1Directions(HexDiagonal::default_value()), // Initialize with config-defined default value
+        Player2Directions(HexDiagonal::SOUTH), // Initialize with fixed value
+        Player3Directions() // NOT RECOMMENDED! 
+            // This will zero-initialize the value, but zero may not be a valid value for that enum!
+    { }
 };
 static_assert(sizeof(Packed) == 2); // each enum requires 4 bits and the underlying type is uint8_t
 
@@ -104,7 +112,8 @@ struct PackedInit
     ENUMBRA_PACK_INIT(EDirectionFlags, Player1, EDirectionFlags::West);
     ENUMBRA_PACK_INIT(EDirectionFlags, Player2, EDirectionFlags::North | EDirectionFlags::South);
     ENUMBRA_PACK_INIT_DEFAULT(EDirectionFlags, Player3);
-    ENUMBRA_PACK_INIT_DEFAULT(EDirectionFlags, Player4);
+
+    // Constructor not required
 };
 ```
 
