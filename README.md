@@ -17,7 +17,7 @@ Generated code requires a minimum of C++11.
 
 Currently, `<array>` is the only fully required header in the generated output.
 In the default enumbra_config, `<cstdint>` is also included.
-This can be overridden in your enumbra config by specifying your own types.
+This can be overridden in your enumbra_config by specifying your own types.
 
 There are no extra setup requirements, just drop the generated header(s) into your project.
 
@@ -65,13 +65,12 @@ EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::
 // Then test if the direction is in our possible directions with test().
 if (user_input.direction.single() && possible_directions.test(user_input.direction)) {
     // Move the player
-} else {
-    // No valid input
 }
 ```
 
 ### Packed Bit Field Enums
-Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields. Several macros are provided to do so:
+Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields.
+Several macros are provided to handle this:
 
 #### ENUMBRA_PACK(Enum, Name)
 
@@ -133,7 +132,7 @@ enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.
 3. All Enums require unique values.
 
 # Q&A
-Q. Why is the library called enumbra (pronounced e-num-bruh)?
+### Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
 The word umbra represents a region behind a celestial body where light is obscured.
 C++ enums sit in that region of the language. They're integers, kind of? 
@@ -145,19 +144,19 @@ The name also just sounds cool.
 ![umbra](https://www.nasa.gov/sites/default/files/umbra-penumbra.jpg)
 [Source: NASA.gov](https://www.nasa.gov/audience/forstudents/k-4/stories/umbra-and-penumbra)
 
-Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
+### Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
 
 * Compile-time libraries like these rely on compiler hacks to function properly. 
 * For large enums, constexpr generation is slow and cumbersome on compile times / memory.
 * The number of constants is usually limited to around 128 due to compiler limits.
 * Lack of configuration options.
 * They provide a `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
-enumbra defines operators each enum type individually reduces the mistake surface.
+enumbra defines operators each enum type individually, reducing the chance for mistake.
 * Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
 
-Q. Why not use std::bitset?
+### Q. Why not use std::bitset?
 
 Several reasons:
 * It's hip to hate on the STL.
