@@ -325,7 +325,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum::Value Name : Enum::bits_required_storage() {{ InitValue }}; \\" },
 			{ "{0}static_assert(is_enumbra_type(InitValue), \"InitValue passed to ENUMBRA_PACK_INIT is not a valid enumbra type.\");" },
 			{ "// Bit field storage helper with default value initialization" },
-			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::Value Name : Enum::bits_required_storage() {{ Enum() }};" },
+			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::Value Name : Enum::bits_required_storage() {{ Enum().value() }};" },
 			{ "#endif" },
 			{ "" },
 			{ "#else // check existing version supported" },
@@ -343,9 +343,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		}
 		write_linefeed();
 	}
-
-
-
 
 	// START NAMESPACE
 	for (const auto& ns : cpp.output_namespace) {
@@ -456,13 +453,12 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 			// Operators
 			write_line_tabbed(1, "constexpr Value value() const {{ return value_; }}");
-			write_line_tabbed(1, "constexpr operator Value() const {{ return value_; }}");
 			write_line_tabbed(1, "explicit operator bool() = delete;");
 			write_linefeed();
 
 			// Functions
 			write_line_tabbed(1, "constexpr {0} to_underlying() const {{ return static_cast<{0}>(value_); }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void reset_default() {{ value_ = {}(); }}", e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void reset_default() {{ *this = {0}(); }}", e.name);
 			write_linefeed();
 
 			// Introspection
@@ -498,6 +494,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "Value value_;");
 		}
 		write_line("}};");
+
+		std::vector<const char*> operator_strings = {
+			{"// {} Operator Overloads"},
+			{"constexpr bool operator==(const {0}& a, const {0}& b) {{ return a.value() == b.value(); }}"},
+			{"constexpr bool operator!=(const {0}& a, const {0}& b) {{ return a.value() != b.value(); }}"},
+		};
+		for (auto& str : operator_strings) {
+			write_line(str, e.name);
+		}
 
 		write_linefeed();
 	}
@@ -593,7 +598,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 			// Operators
 			write_line_tabbed(1, "constexpr Value value() const {{ return value_; }}");
-			write_line_tabbed(1, "constexpr operator Value() const {{ return value_; }}");
 			write_line_tabbed(1, "constexpr explicit operator bool() const = delete;");
 			write_linefeed();
 
@@ -648,11 +652,19 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 		std::vector<const char*> operator_strings = {
 			{"// {} Operator Overloads"},
+			{"constexpr bool operator==(const {0}& a, const {0}& b) {{ return a.value() == b.value(); }}"},
+			{"constexpr bool operator!=(const {0}& a, const {0}& b) {{ return a.value() != b.value(); }}"},
+
 			// Value operators are first because they are required for the operators afterwards
 			{"constexpr {0}::Value operator~(const {0}::Value a) {{ return static_cast<{0}::Value>(~static_cast<{1}>(a)); }}"},
 			{"constexpr {0}::Value operator|(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
 			{"constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
 			{"constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+			
+			{"constexpr void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
+			{"constexpr void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
+			{"constexpr void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+			
 			{"constexpr {0} operator~(const {0} a) {{ return ~a.value(); }}"},
 			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a.value() | b.value(); }}"},
 			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return a.value() & b.value(); }}"},
@@ -663,6 +675,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
 			{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
 			{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
+			
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},

@@ -1,7 +1,7 @@
 # enumbra
 A code generator for enums.
 
-#### Running
+### Running
 Display help and list all available options:
 
 `./enumbra.exe -h`
@@ -12,7 +12,7 @@ Example generating CPP output file and also printing to the console:
 
 # Generators
 
-#### CPP
+### CPP
 Generated code requires a minimum of C++11. 
 
 Currently, `<array>` is the only fully required header in the generated output.
@@ -29,7 +29,7 @@ A warning to Visual Studio users: Rapidly iterating on enumbra generated output 
 This cache size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota.
 Otherwise, close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
 
-#### Other Languages
+### Other Languages
 TBD
 
 # Examples
@@ -40,7 +40,7 @@ An example of C++ generated output is at `examples/enumbra_test.hpp`.
 # Usage
 enumbra provides two types of enums: Value Enum and Flags Enum. The names should give you a hint as to how they operate.
 
-##### Value Enum
+### Value Enum
 A value enum is just a list of possible single-state values.
 A standard C++ value enum would look like: 
 
@@ -49,14 +49,10 @@ enum class ENetworkStatus : uint8_t { Disconnected = 0, WaitingForServer = 1, Co
 enum class ETruthStatus : uint8_t { False, True }
 ```
 
-It doesn't make sense for multiple of these values to be set at the same time.
+It doesn't make sense for multiple of these values to be set at the same time. Bitwise operations are not provided for these types.
 
-Attempting to use bitwise ops on an enumbra value enum will result in a compile error.
-
-##### Flags Enum
+### Flags Enum
 A flags enum can store multiple possible flag values where each flag is toggleable on its own. 
-
-A standard C++ flags enum would look like: 
 
 ```
 enum class EDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 }
@@ -66,6 +62,7 @@ Say we're making an adventure game and want to store the possible directions ava
 ```
 EDirectionFlags possible_directions = EDirectionFlags::North | EDirectionFlags::West;
 // Make sure user is not cheating and pressing multiple directions at once by using single().
+// Then test if the direction is in our possible directions with test().
 if (user_input.direction.single() && possible_directions.test(user_input.direction)) {
     // Move the player
 } else {
@@ -73,8 +70,21 @@ if (user_input.direction.single() && possible_directions.test(user_input.directi
 }
 ```
 
-##### Packed Bit Field Enums
-Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields:
+### Packed Bit Field Enums
+Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields. Several macros are provided to do so:
+
+#### ENUMBRA_PACK(Enum, Name)
+
+Declare an enum. The value is NOT initialized, you must do so through your own constructor.
+
+#### ENUMBRA_PACK_INIT(Enum, Name, InitValue) (REQUIRES C++20)
+
+Declare and initialize an enum with a user-given value.
+The type of InitValue is checked at compile-time to make sure it is a valid enumbra type.
+
+#### ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) (REQUIRES C++20)
+
+Declare and initialize an enum with the config-specified default value.
 
 ```
 struct Packed
@@ -87,15 +97,24 @@ struct Packed
     ENUMBRA_PACK(EDirectionFlags, Player3);
     ENUMBRA_PACK(EDirectionFlags, Player4);
 };
-static_assert(sizeof(Packed) == 2); // passes, each enum requires 4 bits and the underlying type is uint8_t
+static_assert(sizeof(Packed) == 2); // each enum requires 4 bits and the underlying type is uint8_t
+
+// Bit field initializers are also supported on C++20 compilers:
+struct PackedInit
+{
+    ENUMBRA_PACK_INIT(EDirectionFlags, Player1, EDirectionFlags::West);
+    ENUMBRA_PACK_INIT(EDirectionFlags, Player2, EDirectionFlags::North | EDirectionFlags::South);
+    ENUMBRA_PACK_INIT_DEFAULT(EDirectionFlags, Player3);
+    ENUMBRA_PACK_INIT_DEFAULT(EDirectionFlags, Player4);
+};
 ```
 
 All of the general rules of [C++ bit fields](https://en.cppreference.com/w/cpp/language/bit_field) still apply:
 * Their layout is implementation defined and non-portable, so do not transfer them over the network or serialize without a conversion method.
+It is implementation defined if bit fields may straddle type boundaries or introduce padding.
 * The underlying type of an enum determines the minimum storage, padding, and alignment.
 * Adjacent bit fields with mixed underlying types may or may not share storage.
-* It is implementation defined if bit fields may straddle type boundaries vs. introduce padding.
-* The `|=`,`&=`, and `^=` operators require returning a non-const reference which cannot be done with bit fields. You can still assign using a temporary like so: `V.x = V.x | EDirectionFlags::North`.
+* enumbra specific: The provided `|=`,`&=`, and `^=` operator overloads for flags DO NOT return a reference, since doing so is not possible with bit fields.
 
 # Building
 This section refers to building enumbra itself, not the generated code. See the Generators section for generated code requirements.
@@ -133,7 +152,7 @@ Q. Why not use another library like [magic_enum](https://github.com/Neargye/magi
 * The number of constants is usually limited to around 128 due to compiler limits.
 * Lack of configuration options.
 * They provide a `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
-Defining options for each enum type individually reduces the mistake surface.
+enumbra defines operators each enum type individually reduces the mistake surface.
 * Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.

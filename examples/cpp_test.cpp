@@ -101,8 +101,8 @@ enum class NonEnumbraEnum
 struct Struct20
 {
     // Correct usage
-    ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B);
-    ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault());
+    ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C);
+    ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault().value());
     ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C);
 
     // Not allowed
@@ -148,13 +148,22 @@ int main()
     b = (test_nodefault::B != d);
     d = b ? d : d;
 
+    HexDiagonal f;
+    b = (f == f);
+    b = (f != f);
+    b = (f == HexDiagonal::NORTH);
+    b = (f != HexDiagonal::NORTH);
+    b = (HexDiagonal::NORTH == f);
+    b = (HexDiagonal::NORTH != f);
+    f = b ? f : f;
+
     // Test packed bitfields
     V v;
     v.X = test_nodefault::B;
     v.Y = test_nodefault::B | test_nodefault::C;
-    v.Z = d;
+    v.Z = d.value();
 
-    //v.X |= d.value(); // Not allowed for bit fields
+    v.X |= d.value(); // Not allowed for bit fields
     v.X = v.X | d.value(); // Do this instead
 
 
