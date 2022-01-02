@@ -9,7 +9,7 @@ find_package(cxxopts)
 find_package(fmt)
 
 # Add source to this project's executable.
-add_executable (enumbra "enumbra.cpp" "cpp_generator.cpp")
+add_executable (enumbra "src/enumbra.cpp" "src/cpp_generator.cpp")
 target_compile_features(enumbra PRIVATE cxx_std_17)
 
 if(MSVC)
