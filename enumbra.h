@@ -12,22 +12,6 @@ namespace enumbra {
 	}
 
 	namespace cpp {
-		enum class NamingConvention {
-			None,				// No enforced style
-			SnakeCase,			// enforced_style
-			ScreamingSnakeCase, // ENFORCED_STYLE
-			CamelCase,			// enforcedStyle
-			PascalCase			// EnforcedStyle
-		};
-		constexpr std::array<std::pair<std::string_view, NamingConvention>, 5> NamingConventionMapped 
-		{ {
-			{ "none", NamingConvention::None },
-			{ "snake_case", NamingConvention::SnakeCase },
-			{ "SCREAMING_SNAKE_CASE", NamingConvention::ScreamingSnakeCase },
-			{ "camelCase", NamingConvention::CamelCase },
-			{ "PascalCase", NamingConvention::PascalCase },
-		} };
-
 		enum class IncludeGuardStyle {
 			None,
 			PragmaOnce,
@@ -119,12 +103,6 @@ namespace enumbra {
 			bool bit_info_functions{ true };
 			bool enumbra_macros{ true };
 			bool templated_extensions{ true };
-
-			bool warnings_as_errors{ true };
-			bool value_enum_name_naming_convention_violation{ true };
-			bool value_enum_value_naming_convention_violation{ true };
-			bool flags_enum_name_naming_convention_violation{ true };
-			bool flags_enum_value_naming_convention_violation{ true };
 
 			size_t get_size_type_index_from_name(std::string_view name);
 			const enum_size_type& get_size_type_from_index(size_t index) const;

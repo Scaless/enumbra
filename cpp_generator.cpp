@@ -297,7 +297,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
 			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
 			{ "#if !defined(__cpp_constexpr)"},
-			{ "#error enumbra requires a C++11 or higher compiler."},
+			{ "#error enumbra generated headers requires a C++11 or higher compiler."},
 			{ "#elif __cpp_constexpr >= 201304L"},
 			{ "// Non-const constexpr functions were added in C++14"},
 			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
@@ -526,7 +526,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 		const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = unsigned_bits_required(max_value);
-		const size_t bits_required_transmission = log_2_unsigned(max_value - min_value);
+		const size_t bits_required_transmission = bits_required_storage;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 		if (is_size_type_signed) {

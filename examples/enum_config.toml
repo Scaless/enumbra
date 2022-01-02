@@ -15,7 +15,6 @@ block_name = "blockname"
 #   "max": The largest entry in the values[] table. If an enum contains duplicate maximum values, the name of the first occurrence will be used.
 #   "first": The first entry in the values[] table following the user-defined order.
 #   "last": The last entry in the values[] table following the user-defined order.
-# OVERRIDABLE: YES
 value_enum_default_value_style = "min"
 
 # Value to use when generating default enum_flags functions. 
@@ -39,21 +38,17 @@ flags_enum_start_value = 1
 
 # If true, a value_enum is required to contain sequential values.
 # Sequential values may allow generated functions to create slightly faster code since gaps do not need to be handled.
-# ex:
-# value_enum_require_sequential = true
 # values = [
-#     { name = "C", value = 4 }, 
 #     { name = "A", value = 1 },
 #     { name = "B", value = 2 }, 
+#     { name = "C", value = 4 }, 
 #                           ^ ERROR! 3 is skipped, sequence is not linear
 # ]
 value_enum_require_sequential = true
 
 # If true, a flags_enum must contain values which when OR'd together result in a sequence of set bits starting from the lowest bit.
 # This is useful for making sure your enums are as packed as possible.
-# If you do not have control over the bit patterns that you are using, you'll probably want to override this.
-# ex:
-# flags_enum_require_packed_bits = true
+# If you do not have control over the bit patterns that you are using, you'll probably wont want to use this.
 # values = [
 #     { name = "A", value = 0b1000 },
 #     { name = "B", value = 0b0110 }, 
@@ -65,8 +60,6 @@ flags_enum_require_packed_bits = true
 value_enum_require_unique_values = true 
 
 # Allow a flags_enum to contain values where bit patterns overlap.
-# ex: 
-# flags_enum_allow_overlap = false
 # values = [
 #     { name = "A", value = 0b1100 },
 #     { name = "B", value = 0b0110 },
@@ -75,8 +68,6 @@ value_enum_require_unique_values = true
 flags_enum_allow_overlap = false
 
 # Allow a flags_enum to contain values where multiple bits are set.
-# ex: 
-# flags_enum_allow_multi_bit_values = false
 # values = [
 #     { name = "A", value = 1 },
 #     { name = "B", value = 2 }, 
@@ -213,5 +204,15 @@ values = [
 	{ name = "C", value = 0x4 },
 	{ name = "D", value = 0x10 },
 ]
+
+
+[[enum_meta.flags_enum]]
+name = "TestSingleFlag"
+default_value = "C"
+size_type = "unsigned16"
+values = [
+	{ name = "C", value = 0x4 },
+]
+
 
 

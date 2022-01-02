@@ -138,13 +138,15 @@ density_functions = true
 min_max_functions = true
 
 # Generate functions for returning information on low level bit requirements
-# value_enum::bits_required_storage: Number of bits required to represent any possible valid value contained in the enum. Always > 0.
+# value_enum::bits_required_storage: Number of bits required to represent any possible valid value contained in the enum.
 #   Useful for storing bits where the least number of bits is desierable, i.e. bitfields
-# value_enum::bits_required_transmission = Number of bits required to represent the range of (maximum - minimum).
-#   Useful for bit packing where the least number of bits is desireable, i.e. serialization
+#   Always > 0.
+# value_enum::bits_required_transmission: Number of bits required to represent the range of (maximum - minimum).
+#   Useful for sending bits over the wire where the least number of bits is desireable, i.e. serialization
 #   May be different from value_enum::bits_required_storage if the enum minimum starts at a non-zero value.
+#   Can be 0 if the enum contains only 1 value since no bits need to be transferred to represent a singular state.
 # flags_enum::bits_required_storage: Number of bits required to represent all possible valid values contained in the enum. Always > 0.
-# flags_enum::bits_required_transmission: Due to flags_enum minimum always being 0, this value should always be equivalent to flags_enum::bits_required_storage.
+# flags_enum::bits_required_transmission: Due to flags_enum minimum always being 0, this value should always be equal to flags_enum::bits_required_storage.
 bit_info_functions = true
 
 # Generate global convenience macros
@@ -169,57 +171,7 @@ enumbra_macros = true
 #     True if enumbra_base_t<T> is an enumbra Flags Enum.
 templated_extensions = true
 
-# Enable/Disable warnings. Warnings not explicitly set will use default values. See reference documentation for all warnings and their defaults.
-#   strict_ordering: Enforces numerical ordering of values within an enum.
-#   value_enums_allow_sparse: value_enums must contain strict sequential values. 
-#     value_enum: {A=4, B=5, C=6} OK
-#     value_enum: {A=2, B=4, C=6} WARNING, gaps in range
-#   flags_enums_allow_sparse: flags_enums must contain strict sequentials
-#     flags_enum: {A=1, B=2, C=4} OK
-#     flags_enum: {A=1, B=4, C=8} WARNING, gaps in flags
-#   enum_name_naming_convention_violation: Enforce basic naming conventions for enum names
-#   enum_value_naming_convention_violation: Enforce basic naming conventions for enum values
-#     This is really basic checking, there is no lexographical magic here.
-#     ex: reallycoolenum is a valid snake_case name
-# warnings = [
-	# { name = "strict_ordering", enabled = false},
-	# { name = "value_enums_allow_sparse", enabled = true},
-	# { name = "flags_enums_allow_sparse", enabled = true},
-	# { name = "value_enum_name_naming_convention_violation", enabled = true},
-	# { name = "value_enum_value_naming_convention_violation", enabled = true},
-	# { name = "flags_enum_name_naming_convention_violation", enabled = true},
-	# { name = "flags_enum_value_naming_convention_violation", enabled = true},
-# ]
-
-# Type of convention to use when determining if a naming_convention_violation warning should be raised.
-# This configuration value is case-sensitive and must match the convention it represents.
-# Possible values are: 
-#   none
-#   snake_case
-#     Requirements: All lowercase, may contain underscores
-#   SCREAMING_SNAKE_CASE
-#     Requirements: All uppercase, may contain underscores
-#   camelCase
-#     Requirements: First letter must be lowercase, must not contain underscores
-#   PascalCase
-#     Requirements: First letter must be Uppercase, must not contain underscores
-#warning_value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-#warning_value_enum_value_naming_convention = "PascalCase"
-#warning_flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-#warning_flags_enum_value_naming_convention = "PascalCase"
-#value_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-#value_enum_value_naming_convention = "PascalCase"
-#flags_enum_name_naming_convention = "SCREAMING_SNAKE_CASE"
-#flags_enum_value_naming_convention = "PascalCase"
-
-# Treat all warnings as errors and prevents output from being generated.
-#warnings_as_errors = true
-
-# Errors
-# warning_as_error: A warning was elevated to an error
-# out_of_range: Enum contains a value that is outside of the representable values with the specified storage type
-
-# List of types used by enums. 
+# List of types used by enums. All values are required.
 #   name: Name of the type when referenced elsewhere in configuration files.
 #   bits: Number of bits that the storage type represents. MUST be accurate for warnings/errors about type size to be correct.
 #   signed: Is the type signed or unsigned. MUST be accurate or generated code will fail miserably.
@@ -279,5 +231,5 @@ generated_name = "int64_t"
 #is_signed = true
 #generated_name = "simd_aligned64"
 
-[configuration.csharp_generator]
+#[[configuration.csharp_generator.size_types]]
 # TODO...
