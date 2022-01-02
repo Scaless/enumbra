@@ -1,14 +1,10 @@
-# enumbra
 A code generator for enums.
 
 ### Running
-Display help and list all available options:
-
-`./enumbra.exe -h`
-
 Example generating CPP output file and also printing to the console:
-
-`./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp -p`
+```
+./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp -p
+```
 
 # Examples
 Annotated TOML config files are provided in the `examples` directory.
@@ -18,7 +14,7 @@ An example of C++ generated output is at `examples/enumbra_test.hpp`.
 # Generators
 
 ### CPP
-Generated code requires a minimum of C++11. 
+Generated code requires a minimum of C++11. Additional features are optionally enabled up to C++20.
 
 Currently, `<array>` is the only fully required header in the generated output.
 In the default enumbra_config, `<cstdint>` is also included.
@@ -104,6 +100,7 @@ The name also just sounds cool.
 * For large enums, constexpr generation is slow and cumbersome on compile times / memory.
 * The number of constants within a single enum is usually limited to around 128 due to compiler limits.
 * Lack of configuration options.
+* Limited to one language (C++).
 * magic_enum `to_string()` on flags enum where multiple bits are set returns the bare integer value instead of a meaningful string.
 * The provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
 enumbra defines operators each enum type individually, reducing the chance for mistake.
@@ -122,3 +119,5 @@ Several reasons:
     * GCC & Clang x64: 8 bytes
     * GCC & Clang x86: 4 bytes
     * MSVC x64 and x86: 4 bytes
+
+The one advantage std::bitset has is that it can represent more than 64 bits at once.

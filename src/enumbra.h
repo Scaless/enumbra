@@ -6,7 +6,7 @@
 
 namespace enumbra {
 	// Remember to update vcpkg.json as well
-	constexpr char* kEnumbraVersion = "0.0.5";
+	constexpr char* kEnumbraVersion = "0.0.6";
 
 	namespace csharp {
 		// ...
