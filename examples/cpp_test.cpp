@@ -39,8 +39,8 @@ struct V
 	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z);
 
 	V() :
-		W(test_nodefault::default_value()),
-		X(test_nodefault::default_value()),
+		ENUMBRA_INIT_DEFAULT(W),
+		ENUMBRA_INIT(X, test_nodefault::B),
 		Y(test_nodefault::default_value()),
 		Z(test_nodefault::default_value())
 	{ }
@@ -168,7 +168,7 @@ int main()
 	f = b ? f : f;
 
 	switch (f) {
-		case HexDiagonal::NORTH: break;
+	case HexDiagonal::NORTH: break;
 	}
 
 	// Test packed bitfields

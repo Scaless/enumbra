@@ -69,63 +69,6 @@ if (user_input.direction.single() && possible_directions.test(user_input.directi
 }
 ```
 
-### Packed Bit Field Enums
-Both Value Enums and Flag Enums can be packed more tightly within a struct by utilizing bit fields.
-Several macros are provided to handle this:
-
-#### ENUMBRA_PACK_UNINITIALIZED(Enum, Name)
-
-Declare an enum. The value is NOT initialized, you must do so through your own constructor.
-
-#### ENUMBRA_PACK_INIT(Enum, Name, InitValue) (REQUIRES C++20)
-
-Declare and initialize an enum with a user-given value.
-The type of InitValue is checked at compile-time to make sure it is a valid enumbra type.
-
-#### ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) (REQUIRES C++20)
-
-Declare and initialize an enum with the config-specified default value.
-
-```
-struct Packed
-{
-    // We are using the EDirectionFlags enum from above.
-    // ENUMBRA_PACK_UNINITIALIZED does NOT initialize values unlike the struct version.
-    // ENUMBRA_PACK_UNINITIALIZED macro will expand to:
-    //   EDirectionFlags::Value Player1Directions : EDirectionFlags::bits_required_storage();
-    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player1Directions);
-    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player2Directions);
-    ENUMBRA_PACK_UNINITIALIZED(EDirectionFlags, Player3Directions);
-
-    // Constructor to initialize values
-    Packed() :
-        Player1Directions(EDirectionFlags::default_value()), // Initialize with config-defined default value
-        Player2Directions(EDirectionFlags::SOUTH), // Initialize with fixed value
-        Player3Directions() // NOT RECOMMENDED! 
-            // This will zero-initialize the value, but zero may not be a valid value for that enum!
-    { }
-};
-static_assert(sizeof(Packed) == 2); // each enum requires 4 bits and the underlying type is uint8_t
-
-// Bit field initializers are also supported on C++20 compilers:
-struct PackedInit
-{
-    ENUMBRA_PACK_INIT(EDirectionFlags, Player1, EDirectionFlags::West);
-    ENUMBRA_PACK_INIT(EDirectionFlags, Player2, EDirectionFlags::North | EDirectionFlags::South);
-    ENUMBRA_PACK_INIT_DEFAULT(EDirectionFlags, Player3);
-
-    // Constructor not required
-};
-```
-
-All of the general rules of [C++ bit fields](https://en.cppreference.com/w/cpp/language/bit_field) still apply:
-* Their layout is implementation defined and non-portable, so do not transfer them over the network or serialize without a conversion method.
-It is implementation defined if bit fields may straddle type boundaries or introduce padding.
-* The underlying type of an enum determines the minimum storage, padding, and alignment.
-* Adjacent bit fields with differing underlying types may or may not share storage.
-* Bit fields are more compact in memory but require extra instructions to pack/unpack. Benchmark your use-case to determine if they are the right choice.
-* enumbra specific: The provided `|=`,`&=`, and `^=` operator overloads for flags DO NOT return a reference, since doing so is not possible with bit fields.
-
 # Building
 This section refers to building enumbra itself, not the generated code. See the Generators section for generated code requirements.
 
@@ -162,7 +105,7 @@ The name also just sounds cool.
 * The number of constants within a single enum is usually limited to around 128 due to compiler limits.
 * Lack of configuration options.
 * magic_enum `to_string()` on flags enum where multiple bits are set returns the bare integer value instead of a meaningful string.
-* They provide a `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
+* The provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
 enumbra defines operators each enum type individually, reducing the chance for mistake.
 * Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
 
