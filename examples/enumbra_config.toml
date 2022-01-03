@@ -134,23 +134,7 @@ bit_info_functions = true
 #   ENUMBRA_PACK_UNINITIALIZED(MyEnum, NameOfVariable); 
 # generates:
 #   MyEnum NameOfVariable : MyEnum::bits_required_storage();
-enumbra_macros = true
-
-# Generate template function extensions for working with enumbra enums.
-#   enumbra_base_t<T> : 
-#     Convert an enum class or enumbra type to its base enumbra type.
-#     Useful when using ENUMBRA_PACK elements as template parameters to convert the enum class to its parent class.
-#   bool is_enumbra_type_v<T>
-#     True if T is an enumbra struct OR an enum class contained within an enumbra struct. Non-enumbra enum classes will return false.
-#   bool is_enumbra_struct_v<T>
-#     True if T is an enumbra struct. Non-enumbra classes will return false.
-#   bool is_enumbra_scoped_enum_v<T>
-#     True if T is an enum class contained within an enumbra struct. Non-enumbra enum classes will return false.
-#   bool is_enumbra_value_enum_v<T>
-#     True if enumbra_base_t<T> is an enumbra Value Enum.
-#   bool is_enumbra_flags_enum_v<T>
-#     True if enumbra_base_t<T> is an enumbra Flags Enum.
-templated_extensions = true
+enumbra_bitfield_macros = true
 
 # List of types used by enums. All values are required.
 #   name: Name of the type when referenced elsewhere in configuration files.

@@ -246,8 +246,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 
 		c.min_max_functions = get_required<bool>(cpp_cfg, "min_max_functions");
 		c.bit_info_functions = get_required<bool>(cpp_cfg, "bit_info_functions");
-		c.enumbra_macros = get_required<bool>(cpp_cfg, "enumbra_macros");
-		c.templated_extensions = get_required<bool>(cpp_cfg, "templated_extensions");
+		c.enumbra_bitfield_macros = get_required<bool>(cpp_cfg, "enumbra_bitfield_macros");
 	}
 	catch (const std::exception& e) {
 

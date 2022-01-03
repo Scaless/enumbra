@@ -20,7 +20,7 @@ Currently, `<array>` is the only fully required header in the generated output.
 In the default enumbra_config, `<cstdint>` is also included.
 This can be overridden in your enumbra_config by specifying your own types.
 
-There are no extra setup requirements, just drop the generated header(s) into your project.
+All generated headers are self-sufficient, just drop them into your project and include them.
 
 On MSVC, the generated headers will compile with `/Wall /WX /wd4514`.
 

@@ -7,6 +7,7 @@
 namespace enumbra {
 	// Remember to update vcpkg.json as well
 	constexpr char* kEnumbraVersion = "0.0.6";
+	constexpr int kEnumbraCompatibilityVersion = 2;
 
 	namespace csharp {
 		// ...
@@ -95,8 +96,7 @@ namespace enumbra {
 
 			bool min_max_functions{ true };
 			bool bit_info_functions{ true };
-			bool enumbra_macros{ true };
-			bool templated_extensions{ true };
+			bool enumbra_bitfield_macros{ true };
 
 			size_t get_size_type_index_from_name(std::string_view name);
 			const enum_size_type& get_size_type_from_index(size_t index) const;

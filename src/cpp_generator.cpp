@@ -257,6 +257,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 	// REQUIRED MACROS
 	{
+		// Increment this if macros below are modified.
 		const int enumbra_required_macros_version = 2;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
@@ -300,9 +301,10 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_linefeed();
 	}
 
-	// MACRO DEFINITIONS
-	if (cfg.cpp_config.enumbra_macros)
+	// OPTIONAL MACRO DEFINITIONS
+	if (cfg.cpp_config.enumbra_bitfield_macros)
 	{
+		// Increment this if macros below are modified.
 		const int enumbra_macros_version = 2;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
@@ -336,8 +338,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_linefeed();
 	}
 
-	if (cfg.cpp_config.templated_extensions) {
-		// The macro will allow us to update versions later and warn if old versions of the template are in use.
+	// TEMPLATES
+	{
+		// Increment this if templates below are modified.
 		const int base_template_version = 2;
 		std::vector<const char*> base_template_strings = {
 			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
@@ -769,7 +772,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	}
 
 	// MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
-	if (cfg.cpp_config.templated_extensions)
 	{
 		for (auto& e : enum_meta.value_enum_definitions) {
 			// Value Enum Template Specializations
