@@ -1,15 +1,15 @@
 A code generator for enums.
 
-### Running
+# Getting Started
+Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.
+
+To get started, annotated TOML config files are provided in the `examples` directory.
+
 Example generating CPP output file and also printing to the console:
 ```
 ./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp -p
+// An example of C++ generated output is at examples/enumbra_test.hpp.
 ```
-
-# Examples
-Annotated TOML config files are provided in the `examples` directory.
-
-An example of C++ generated output is at `examples/enumbra_test.hpp`.
 
 # Generators
 
@@ -22,13 +22,9 @@ This can be overridden in your enumbra_config by specifying your own types.
 
 All generated headers are self-sufficient, just drop them into your project and include them.
 
-On MSVC, the generated headers will compile with `/Wall /WX /wd4514`.
-
-On GCC/Clang, the generated headers will compile with `-Wall -Wextra -Wpedantic -Werror`.
-
-A warning to Visual Studio users: Rapidly iterating on enumbra generated output while the file is open in VS will inflate your `.vs` directory up to a maximum of 5GB (by default) because automated PCH files are being constantly generated. 
-This cache size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota.
-Otherwise, close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly.
+A warning to Visual Studio users: Rapidly iterating on enumbra generated output while the file is open in VS will inflate your `.vs` directory up to a maximum of 5GB (by default) because automated PCH files are being constantly generated.  
+This cache size can be globally configured in Tools > Options > Text Editor > C/C++ > Advanced > Automatic Precompiled Header Cache Quota. 
+Otherwise, close VS while making changes or delete your `.vs/v16/ipch/AutoPCH` directory regularly. 
 
 ### Other Languages
 TBD, C# Planned

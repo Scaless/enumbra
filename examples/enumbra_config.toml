@@ -131,9 +131,11 @@ min_max_functions = true
 bit_info_functions = true
 
 # Generate global convenience macros
-#   ENUMBRA_PACK_UNINITIALIZED(MyEnum, NameOfVariable); 
-# generates:
-#   MyEnum NameOfVariable : MyEnum::bits_required_storage();
+#   ENUMBRA_PACK_UNINITIALIZED(MyEnum, NameOfVariable)
+#   ENUMBRA_INIT(Name, InitValue)
+#   ENUMBRA_INIT_DEFAULT(Name)
+#   ENUMBRA_PACK_INIT(Enum, Name, InitValue)
+#   ENUMBRA_PACK_INIT_DEFAULT(Enum, Name)
 enumbra_bitfield_macros = true
 
 # List of types used by enums. All values are required.
