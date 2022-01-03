@@ -356,9 +356,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
 			{ "{0}{0}    using base_type = T; " },
 			{ "{0}{0}}};" },
-			{ "{0}{0}template<class T> constexpr bool streq(T* a, T* b) {{"},
-			{ "{0}{0}{0}return *a == *b && (*a == '\\0' || streq(a + 1, b + 1));"},
-			{ "{0}{0}}}"},
+			{ "{0}{0}template<class T> constexpr bool streq(T* a, T* b) {{ return *a == *b && (*a == '\\0' || streq(a + 1, b + 1)); }}"},
 			{ "{0}}} // end namespace enumbra::detail" },
 			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
 			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
@@ -545,7 +543,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}::Value from_string({1} str, bool& success) {{", e.name, char_type);
 			write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
-			write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str) == 0) {{");
+			write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str)) {{");
 			write_line_tabbed(4, "return string_lookup_[i].first;");
 			write_line_tabbed(3, "}}");
 			write_line_tabbed(2, "}}");

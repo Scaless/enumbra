@@ -180,12 +180,13 @@ int main()
 	D bigD{};
 	NegativeTest3::to_string(bigD.dd);
 
-	NegativeTest3 t3;
+	constexpr NegativeTest3 t3 = NegativeTest3::A;
 	NegativeTest3::to_string(t3);
 	NegativeTest3::to_string(t3.value());
 
 	bool success;
-	NegativeTest3 t4 = NegativeTest3::from_string("", success);
+	constexpr NegativeTest3 t4 = NegativeTest3::from_string(NegativeTest3::to_string(t3) , success);
+	STATIC_ASSERT(t3 == t4);
 
 	bigD.dd = NegativeTest3::from_string("", success);
 
