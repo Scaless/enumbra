@@ -166,11 +166,6 @@ int main()
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
 	v.Z = d.value();
-
-	TestSparseFlags::Value q = TestSparseFlags::B;
-	q |= q;
-
-	v.X |= d.value();
 	v.X = v.X | d.value();
 
 	struct D {

@@ -436,8 +436,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		// bit of storage to accomodate the sign bit even if it is unused. For example, given the following enum:
 		//   enum class ESignedValueBits : int8_t { A = 0, B = 1, C = 2, D = 3 }
 		// To properly store and assign to this enum, we need 3 bits:
-		//   int8_t Value : 2; // ERROR: maps to the range -2 - 1
-		//   int8_t Value : 3; // OK:    maps to the range -4 - 3, but we're wasting space
+		//   int8_t Value : 1; // maps to the range -1 - 0, unexpected!
+		//   int8_t Value : 2; // maps to the range -2 - 1, still not big enough
+		//   int8_t Value : 3; // maps to the range -4 - 3, big enough but we're wasting space
 		// For this reason, when utilizing packed enums it is recommended to always prefer an unsigned underlying
 		// type unless your enum actually contains negative values.
 		if (is_size_type_signed && max_entry.value > 0) {
@@ -732,9 +733,10 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"constexpr {0}::Value operator&(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
 			{"constexpr {0}::Value operator^(const {0}::Value a, const {0}::Value b) {{ return static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
 
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+			// Just not possible without being able to do non-const reference to bit field
+			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
+			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
+			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
 
 			{"constexpr {0} operator~(const {0} a) {{ return ~a.value(); }}"},
 			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a.value() | b.value(); }}"},
