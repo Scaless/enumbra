@@ -1,32 +1,37 @@
 enumbra is a code generator for enums.
 
 # Getting Started
-Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.
+Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.  
 
-Annotated TOML config files are provided in the `examples` directory to get started.
+Annotated TOML config files are provided in the [examples](/examples/) directory.  
+Running the following command will parse the given config files and generate [enumbra_test.hpp](/examples/enumbra_test.hpp).  
 ```
 ./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp
 ```
-An example of C++ generated output is at [examples/enumbra_test.hpp](/examples/enumbra_test.hpp).
 
 # Generators
 
 ### CPP
-Generated code requires a minimum of C++11.  
-Additional features are optionally enabled up to C++20.  
+Generated C++ code requires a minimum of C++11. Additional features are conditionally enabled up to C++20.  
 
-Currently, `<array>` is the only fully required header in the generated output.  
+Currently, `<array>` is the only required header in the generated output.  
 In the default enumbra_config, `<cstdint>` is also included. This can be overridden in your enumbra_config by specifying your own types.  
 
-All generated headers are self-sufficient, just drop them into your project and include them.
+Generated headers are self-sufficient, just drop them into your project and include them. There are no master headers or include order issues to worry about.
+
+Headers generated with different versions of enumbra will throw compiler warnings if they would generate incompatible code.  
+By default, only major differences in templates, macros, class layouts, and function definitions would generate warnings.  
+With `ENUMBRA_STRICT_VERSION` defined, all headers must be generated with the exact same enumbra version regardless of if they would be technically compatible.  
 
 ### Other Languages
-TBD, C# Planned
+C#: Planned, not started yet.  
+C: No plans, but interested.  
+C++98/03: No interest. Without the bare minimum C++11 features you may as well just use C headers.  
 
 # Types
 enumbra provides two core types of enums: Value Enum and Flags Enum.  
 
-| Enum | State | Bitwise Ops | Bit Packing |
+| Enum | State | Bitwise Ops | Bit Packing (C++) |
 | --- | --- | --- | --- |
 | Value | Single Only | No | Yes |
 | Flags | None / Single / Multiple | Yes | Yes |
@@ -50,20 +55,19 @@ If you are on another OS/compiler and would like to add native support, open an 
 enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg installation.
 
 # Limitations
-1. TOML integers are represented by INT64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values not representable by INT64. Until then, the toml parser should give you one of the following warnings:
+1. TOML integers are represented by an int64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values between INT64_MAX and UINT64_MAX. Until then, the toml parser should give you one of the following warnings:
 	* Error while parsing decimal integer: '9446744073709551615' is not representable in 64 bits
 	* Error while parsing decimal integer: exceeds maximum length of 19 characters
 2. Flags Enums are required to have an unsigned underlying type.
-3. Values within Flags Enums may not span multiple bits. A single value must control a single bit.
-4. All Enums require unique values.
+3. Values within Flags Enums may not span multiple bits. A single value must control a single bit. (TODO: A separate mechanism for definining multi-bit flags should be added.)
+4. Values and names within an enum must be unique.
 
 # Q&A
 ### Q. Why is the library called enumbra (pronounced e-num-bruh)?
 
-The word umbra represents a region behind a celestial body where light is obscured.
-C++ enums sit in that region of the language. They're integers, kind of? 
-They're flags, kind of? They're an *enumeration*, yet not *enumerable*? 
-They are widely used as bit flags but there are few built-in resources for safely using them as such.
+The word umbra represents a region behind a celestial body where light is obscured.  
+C++ enums sit in that region of the language. They're integers, kind of? They're flags, kind of? They're an *enumeration*, yet not *enumerable*?  
+They are widely used as bit flags but there are no standard resources for safely using them as such.  
 
 The name also just sounds cool.
 
