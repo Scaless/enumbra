@@ -11,7 +11,7 @@ Running the following command will parse the given config files and generate [en
 
 # Generators
 
-### CPP
+### C++
 Generated C++ code requires a minimum of C++11. Additional features are conditionally enabled up to C++20.  
 
 Currently, `<array>` is the only required header in the generated output.  
@@ -26,14 +26,14 @@ With `ENUMBRA_STRICT_VERSION` defined, all headers must be generated with the ex
 ### Other Languages
 C#: Planned, not started yet.  
 C: No plans, but interested.  
-C++98/03: No interest. Without the bare minimum C++11 features you may as well just use C headers.  
+C++98/03: No interest. Without the bare minimum C++11 features you may as well just use C.  
 
 # Types
 enumbra provides two core types of enums: Value Enum and Flags Enum.  
 
-| Enum | State | Bitwise Ops | Bit Packing (C++) |
+| Enum Type | State | Bitwise Ops | Bit Packing (C++) |
 | --- | --- | --- | --- |
-| Value | Single Only | No | Yes |
+| Value | Single Value | No | Yes |
 | Flags | None / Single / Multiple | Yes | Yes |
 
 An typical standard C++ enum for each type would look like: 
@@ -54,8 +54,8 @@ If you are on another OS/compiler and would like to add native support, open an 
 
 enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg installation.
 
-# Limitations
-1. TOML integers are represented by an int64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values between INT64_MAX and UINT64_MAX. Until then, the toml parser should give you one of the following warnings:
+# Known Limitations
+1. The configuration file format, TOML, represents integers as an int64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values between INT64_MAX and UINT64_MAX. Until then, the toml parser should give you one of the following warnings:
 	* Error while parsing decimal integer: '9446744073709551615' is not representable in 64 bits
 	* Error while parsing decimal integer: exceeds maximum length of 19 characters
 2. Flags Enums are required to have an unsigned underlying type.
@@ -77,12 +77,12 @@ The name also just sounds cool.
 ### Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
 
 * For large enums, constexpr generation is slow and cumbersome on compile times / memory.
-* The number of constants within a single enum is usually limited to around 128 due to compiler limits.
+* The number of constants within an enum is usually limited to around 128 due to compiler limits on macros/templates.
 * Lack of configuration options.
 * Limited to one programming language.
-* The provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are inteded to be flags or not.
-enumbra defines operators each enum type individually, reducing the chance for mistake.
-* Since enumbra pre-generates all its data, it can do some more analysis on the values to provide some extra functionality.
+* In magic_enum, the provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are intended to be flags or not.
+enumbra defines operators each enum individually, reducing the chance for mistake.
+* Since enumbra pre-generates all its data, it can do some more analysis on the values to provide extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
 
@@ -90,12 +90,10 @@ Compile-time libraries have greater convenience in their simplicity, just pop th
 
 Several reasons:
 * It's hip to hate on the STL.
-* std::bitset is more suited for modifying an abstract number of bits at runtime. Enums are static and don't ever grow or shrink.
+* std::bitset is not well suited for modifying a small number of bits.
 * Worse Debug performance due to function calls, bounds checking, and other standard library slowness during runtime. Release-optimized performance is mostly just as good as bit twiddling though.
 * Can't be packed into bitfields.
 * Size is implementation dependent. A std::bitset containing 16 bits will consume a minimum of ([godbolt](https://godbolt.org/z/v3vxe9oYf)):
     * GCC & Clang x64: 8 bytes
     * GCC & Clang x86: 4 bytes
     * MSVC x64 and x86: 4 bytes
-
-The one advantage std::bitset has is that it can represent state with more than 64 bits at once.
