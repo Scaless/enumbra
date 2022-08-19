@@ -3,7 +3,7 @@ enumbra is a code generator for enums.
 # Getting Started
 Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.  
 
-Annotated TOML config files are provided in the [examples](/examples/) directory.  
+Annotated starter config files are provided in the [examples](/examples/) directory.  
 Running the following command will parse the given config files and generate [enumbra_test.hpp](/examples/enumbra_test.hpp).  
 ```
 ./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp
@@ -19,9 +19,10 @@ In the default enumbra_config, `<cstdint>` is also included. This can be overrid
 
 Generated headers are self-sufficient, just drop them into your project and include them. There are no master headers or include order issues to worry about.
 
-Headers generated with different versions of enumbra will throw compiler warnings if they would generate incompatible code.  
-By default, only major differences in templates, macros, class layouts, and function definitions would generate warnings.  
-With `ENUMBRA_STRICT_VERSION` defined, all headers must be generated with the exact same enumbra version regardless of if they would be technically compatible.  
+Including headers generated with different versions of enumbra will throw compiler warnings.  
+By default, only major differences in templates, macros, class layouts, and function definitions would generate warnings.
+
+With `ENUMBRA_STRICT_VERSION` defined, all headers must be generated with the exact same enumbra version regardless of if they would be technically compatible. This is useful for making sure your build system is set up to properly regenerate all files.  
 
 ### Other Languages
 C#: Planned, not started yet.  
@@ -76,13 +77,13 @@ The name also just sounds cool.
 
 ### Q. Why not use another library like [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
 
-* For large enums, constexpr generation is slow and cumbersome on compile times / memory.
-* The number of constants within an enum is usually limited to around 128 due to compiler limits on macros/templates.
+* For large enums, constexpr generation is slow on compile times / memory.
+* The number of constants within an enum is usually limited to around 128 due to compiler limits for macros/templates.
 * Lack of configuration options.
 * Limited to one programming language.
 * In magic_enum, the provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are intended to be flags or not.
 enumbra defines operators each enum individually, reducing the chance for mistake.
-* Since enumbra pre-generates all its data, it can do some more analysis on the values to provide extra functionality.
+* Since enumbra pre-generates all of its data, it can do some more analysis on the values to provide extra functionality.
 
 Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
 
