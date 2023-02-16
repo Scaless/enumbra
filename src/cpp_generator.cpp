@@ -426,7 +426,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 		const std::string char_type = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
-		const std::string literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
+		const std::string string_literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
+		const std::string string_function_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "w";
 
 		const int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
 		size_t bits_required_storage = unsigned_bits_required(max_abs_representable);
@@ -545,19 +546,19 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// String Functions
-			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_string(const {1}::Value v) {{", char_type, e.name);
+			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_{1}string(const {2}::Value v) {{", char_type, string_function_prefix, e.name);
 			write_line_tabbed(2, "switch (v) {{");
 			for (auto v : e.values) {
-				write_line_tabbed(3, "case {0}: return {1}\"{0}\";", v.name, literal_prefix);
+				write_line_tabbed(3, "case {0}: return {1}\"{0}\";", v.name, string_literal_prefix);
 			}
-			write_line_tabbed(3, "default: return \"\";");
+			write_line_tabbed(3, "default: return {0}\"\";", string_literal_prefix);
 			write_line_tabbed(2, "}}");
 			write_line_tabbed(1, "}}");
 
 			// MSVC:C28020 complains about the comparision in the loop because it effectively expands to 0 <= x <= 0
 			if (e.values.size() == 1)
 			{
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string({1} str) {{", e.name, char_type);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_{1}string({2} str) {{", e.name, string_function_prefix, char_type);
 				write_line_tabbed(2, "if (enumbra::detail::streq(string_lookup_[0].second, str)) {{");
 				write_line_tabbed(3, "return std::make_pair(true, string_lookup_[0].first);");
 				write_line_tabbed(2, "}}");
@@ -566,7 +567,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			else
 			{
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string({1} str) {{", e.name, char_type);
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_{1}string({2} str) {{", e.name, string_function_prefix, char_type);
 				write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
 				write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str)) {{");
 				write_line_tabbed(4, "return std::make_pair(true, string_lookup_[i].first);");
@@ -584,7 +585,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			// Value String Table
 			write_line_tabbed(1, "constexpr static std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{", char_type, entry_count);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "std::make_pair({1}, {0}\"{1}\"),", literal_prefix, v.name, size_type);
+				write_line_tabbed(2, "std::make_pair({1}, {0}\"{1}\"),", string_literal_prefix, v.name, size_type);
 			}
 			write_line_tabbed(1, "}};");
 

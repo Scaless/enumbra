@@ -172,6 +172,7 @@ int main()
 		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);
 	};
 
+#if 0
 	D bigD{};
 	NegativeTest3::to_string(bigD.dd);
 
@@ -184,6 +185,7 @@ int main()
 
 	constexpr auto res2 = NegativeTest3::from_string("");
 	bigD.dd = res2.second;
+#endif
 
 	d = v.X; // uses implicit constructor
 

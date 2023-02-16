@@ -151,14 +151,10 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 		c.additional_includes = get_array<std::string>(cpp_cfg, "additional_includes");
 
 		c.value_enum_name_prefix = get_required<std::string>(cpp_cfg, "value_enum_name_prefix");
-		c.value_enum_value_prefix = get_required<std::string>(cpp_cfg, "value_enum_value_prefix");
 		c.flags_enum_name_prefix = get_required<std::string>(cpp_cfg, "flags_enum_name_prefix");
-		c.flags_enum_value_prefix = get_required<std::string>(cpp_cfg, "flags_enum_value_prefix");
 
 		c.value_enum_name_postfix = get_required<std::string>(cpp_cfg, "value_enum_name_postfix");
-		c.value_enum_value_postfix = get_required<std::string>(cpp_cfg, "value_enum_value_postfix");
 		c.flags_enum_name_postfix = get_required<std::string>(cpp_cfg, "flags_enum_name_postfix");
-		c.flags_enum_value_postfix = get_required<std::string>(cpp_cfg, "flags_enum_value_postfix");
 
 		// TODO: Refactor into a function to get an array of struct
 		if (toml::array* size_types = cpp_cfg["size_types"].as_array())
@@ -267,8 +263,6 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 	enum_config.block_name = get_required<std::string>(meta_config, "block_name");
 	enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(ValueEnumDefaultValueStyleMapped, meta_config, "value_enum_default_value_style");
 	enum_config.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(FlagsEnumDefaultValueStyleMapped, meta_config, "flags_enum_default_value_style");
-	enum_config.value_enum_start_value = get_required<int64_t>(meta_config, "value_enum_start_value");
-	enum_config.flags_enum_start_value = get_required<uint64_t>(meta_config, "flags_enum_start_value");
 	enum_config.value_enum_require_sequential = get_required<bool>(meta_config, "value_enum_require_sequential");
 	enum_config.flags_enum_require_packed_bits = get_required<bool>(meta_config, "flags_enum_require_packed_bits");
 	enum_config.value_enum_require_unique_values = get_required<bool>(meta_config, "value_enum_require_unique_values");
@@ -302,7 +296,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 
 						if (toml::array* values = el["values"].as_array())
 						{
-							int64_t current_value = enum_config.value_enum_start_value;
+							int64_t current_value = 0;
 							for (auto& val : *values)
 							{
 								val.visit([&def, &current_value](auto&& elv)

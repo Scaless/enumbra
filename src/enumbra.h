@@ -75,12 +75,8 @@ namespace enumbra {
 
 			std::string value_enum_name_prefix;
 			std::string value_enum_name_postfix;
-			std::string value_enum_value_prefix;
-			std::string value_enum_value_postfix;
 			std::string flags_enum_name_prefix;
 			std::string flags_enum_name_postfix;
-			std::string flags_enum_value_prefix;
-			std::string flags_enum_value_postfix;
 
 			std::vector<enum_size_type> size_types;
 			size_t default_value_enum_size_type_index{ SIZE_MAX };
@@ -155,8 +151,6 @@ namespace enumbra {
 		std::string block_name;
 		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
 		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
-		int64_t value_enum_start_value{ 0 };
-		uint64_t flags_enum_start_value{ 1 };
 
 		bool value_enum_require_sequential{ true };
 		bool flags_enum_require_packed_bits{ true };

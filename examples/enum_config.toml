@@ -27,15 +27,6 @@ value_enum_default_value_style = "min"
 #   "last": The last entry in the values[] table following the user-defined order.
 flags_enum_default_value_style = "zero"
 
-# If an entry in a value_enum does not specify a value, the first entry will start at this value.
-# Subsequent entries increment by 1.
-value_enum_start_value = 0
-
-# If an entry in a flags_enum does not specify a value, the first entry will start at this value.
-# Subsequent entries set the next significant bit.
-# This value is required to be a power of two (i.e. one bit set).
-flags_enum_start_value = 1
-
 # If true, a value_enum is required to contain sequential values.
 # Sequential values may allow generated functions to create slightly faster code since gaps do not need to be handled.
 # values = [

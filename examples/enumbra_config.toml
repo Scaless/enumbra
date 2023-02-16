@@ -49,14 +49,10 @@ additional_includes = ["<cstdint>"]
 
 # Generated output will prepend these prefixes for enum names and values.
 value_enum_name_prefix = ""
-value_enum_value_prefix = ""
 flags_enum_name_prefix = ""
-flags_enum_value_prefix = ""
 # Generated output will append these postfixes for enum names and values.
 value_enum_name_postfix = ""
-value_enum_value_postfix = ""
 flags_enum_name_postfix = ""
-flags_enum_value_postfix = ""
 
 # Default type to use for value_enums where size is not specified
 # Value must be a string containing the name of a type contained in size_types, OR one of the special values:
@@ -98,8 +94,8 @@ string_table_layout = "name_and_description"
 
 # Type to use when generating code for string tables. 
 # Value is ignored when string_table_layout is "none". 
-#   "const_char_ptr": const char* ... = "";
-#   "const_wchar_ptr": const wchar_t* ... = L"";
+#   "const_char_ptr": const char* ... = ""; to_string(); from_string();
+#   "const_wchar_ptr": const wchar_t* ... = L""; to_wstring(); from_wstring();
 string_table_type = "const_char_ptr"
 
 # Generate functions for retrieving the minimum and maximum possible values of an enum. Return value type is the underlying storage type.
