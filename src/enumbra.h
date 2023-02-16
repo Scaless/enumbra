@@ -5,8 +5,7 @@
 #include <array>
 
 namespace enumbra {
-	// Remember to update vcpkg.json as well
-	constexpr char* kEnumbraVersion = "0.0.6";
+	constexpr char* kEnumbraVersion = "0.0.7";
 	constexpr int kEnumbraCompatibilityVersion = 2;
 
 	namespace csharp {
@@ -103,11 +102,6 @@ namespace enumbra {
 		};
 	}
 
-	enum class Verbosity {
-		Low,
-		High
-	};
-
 	enum class ValueEnumDefaultValueStyle {
 		Min,
 		Max,
@@ -196,7 +190,6 @@ namespace enumbra {
 		bool generate_cpp{ true };
 		bool generate_csharp{ false };
 		cpp::cpp_config cpp_config{};
-		Verbosity verbosity{ Verbosity::Low };
 	};
 
 	// Get a required value from the toml structure, throwing if not found

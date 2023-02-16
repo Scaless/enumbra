@@ -10,8 +10,8 @@
 
 using namespace enumbra;
 
-enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity verbosity);
-enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity verbosity);
+enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file);
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file);
 void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
 void parse_enumbra_csharp(enumbra::enumbra_config& enumbra_config, toml::node_view<toml::node>& cpp_config);
 void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, toml::node_view<toml::node>& meta_config);
@@ -72,9 +72,8 @@ int main(int argc, char** argv)
 			throw std::logic_error("Source file does not exist.");
 		}
 
-		auto verbosity = (result.count("v") ? enumbra::Verbosity::High : enumbra::Verbosity::Low);
-		auto loaded_enumbra_config = load_enumbra_config(config_file_path, verbosity);
-		auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path, verbosity);
+		auto loaded_enumbra_config = load_enumbra_config(config_file_path);
+		auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path);
 
 		if (loaded_enumbra_config.generate_cpp)
 		{
@@ -102,7 +101,7 @@ int main(int argc, char** argv)
 }
 
 
-enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, enumbra::Verbosity /*verbosity*/)
+enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file)
 {
 	enumbra::enumbra_config cfg;
 
@@ -125,7 +124,7 @@ enumbra::enumbra_config load_enumbra_config(std::string_view config_toml_file, e
 	return cfg;
 }
 
-enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file, enumbra::Verbosity /*verbosity*/)
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, std::string_view config_toml_file)
 {
 	enumbra::enum_meta_config cfg;
 

@@ -283,7 +283,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
 			{"#endif"},
 			{ "" },
-			
+
 			{ "" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
@@ -428,9 +428,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const std::string char_type = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
 		const std::string literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
 
-		int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
+		const int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
 		size_t bits_required_storage = unsigned_bits_required(max_abs_representable);
-		const size_t bits_required_transmission = log_2_unsigned(max_entry.value - min_entry.value);
+		const size_t bits_required_transmission = unsigned_bits_required(max_entry.value - min_entry.value);
 
 		// Because of the way signed integers map to bit fields, a bit field may require an additional
 		// bit of storage to accomodate the sign bit even if it is unused. For example, given the following enum:
@@ -483,10 +483,22 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			write_linefeed();
 
+			// Values Array
 			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			const int MaxValuesWidth = 120;
+			size_t CurrentValuesWidth = 8;
+			write_tab(2);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{},", v.name);
+				CurrentValuesWidth += v.name.length() + 2;
+				if (CurrentValuesWidth < MaxValuesWidth) {
+					write("{}, ", v.name);
+				}
+				else {
+					write_line_tabbed(2, "{},", v.name);
+					CurrentValuesWidth = 8;
+				}
 			}
+			write_linefeed();
 			write_line_tabbed(1, "}};");
 			write_linefeed();
 
@@ -542,15 +554,27 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(2, "}}");
 			write_line_tabbed(1, "}}");
 
-			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}::Value from_string({1} str, bool& success) {{", e.name, char_type);
-			write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
-			write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str)) {{");
-			write_line_tabbed(4, "return string_lookup_[i].first;");
-			write_line_tabbed(3, "}}");
-			write_line_tabbed(2, "}}");
-			write_line_tabbed(2, "success = false;");
-			write_line_tabbed(2, "return default_value();", e.name);
-			write_line_tabbed(1, "}}");
+			// MSVC:C28020 complains about the comparision in the loop because it effectively expands to 0 <= x <= 0
+			if (e.values.size() == 1)
+			{
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string({1} str) {{", e.name, char_type);
+				write_line_tabbed(2, "if (enumbra::detail::streq(string_lookup_[0].second, str)) {{");
+				write_line_tabbed(3, "return std::make_pair(true, string_lookup_[0].first);");
+				write_line_tabbed(2, "}}");
+				write_line_tabbed(2, "return std::make_pair(false, default_value());", e.name);
+				write_line_tabbed(1, "}}");
+			}
+			else
+			{
+				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string({1} str) {{", e.name, char_type);
+				write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
+				write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str)) {{");
+				write_line_tabbed(4, "return std::make_pair(true, string_lookup_[i].first);");
+				write_line_tabbed(3, "}}");
+				write_line_tabbed(2, "}}");
+				write_line_tabbed(2, "return std::make_pair(false, default_value());", e.name);
+				write_line_tabbed(1, "}}");
+			}
 
 			// Private Members
 			write_linefeed();
@@ -662,10 +686,22 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			}
 			write_linefeed();
 
+			// Values Array
 			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			const int MaxValuesWidth = 120;
+			size_t CurrentValuesWidth = 8;
+			write_tab(2);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{},", v.name);
+				CurrentValuesWidth += v.name.length() + 2;
+				if (CurrentValuesWidth < MaxValuesWidth) {
+					write("{}, ", v.name);
+				}
+				else {
+					write_line_tabbed(2, "{},", v.name);
+					CurrentValuesWidth = 8;
+				}
 			}
+			write_linefeed();
 			write_line_tabbed(1, "}};");
 			write_linefeed();
 
@@ -684,7 +720,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "constexpr bool all() const {{ return static_cast<{0}>(value_) >= {1:#x}; }}", size_type, max_value);
 			write_line_tabbed(1, "constexpr bool any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
 			write_line_tabbed(1, "constexpr bool none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_single() const {{ {0} n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }}", size_type);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_single() const {{ {0} n = static_cast<{0}>(value_); return n && !(n & (n - 1)); }}", size_type);
 			write_linefeed();
 
 			// Introspection
@@ -742,12 +778,14 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a.value() | b.value(); }}"},
 			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return a.value() & b.value(); }}"},
 			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return a.value() ^ b.value(); }}"},
-			{"constexpr {0} operator|(const {0} a, const {0}::Value b) {{ return a.value() | b; }}"},
-			{"constexpr {0} operator&(const {0} a, const {0}::Value b) {{ return a.value() & b; }}"},
-			{"constexpr {0} operator^(const {0} a, const {0}::Value b) {{ return a.value() ^ b; }}"},
-			{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
-			{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
-			{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
+
+			// Unnecessary? Value can implicitly construct parent class.
+			//{"constexpr {0} operator|(const {0} a, const {0}::Value b) {{ return a.value() | b; }}"},
+			//{"constexpr {0} operator&(const {0} a, const {0}::Value b) {{ return a.value() & b; }}"},
+			//{"constexpr {0} operator^(const {0} a, const {0}::Value b) {{ return a.value() ^ b; }}"},
+			//{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
+			//{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
+			//{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
 
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},

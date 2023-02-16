@@ -50,7 +50,7 @@ void test_value_vs_flags()
 		STATIC_ASSERT(enumbra_base_t<T>::is_enumbra_value_enum());
 	}
 	else {
-		STATIC_ASSERT_MSG(false, "T is not an enumbra type.");
+		STATIC_ASSERT_MSG(std::false_type::operator(), "T is not an enumbra type.");
 	}
 }
 
@@ -83,7 +83,7 @@ void test_is_enumbra_type(const T& value)
 	}
 	else
 	{
-		static_assert(false, "T is not an enum class or enumbra type.");
+		STATIC_ASSERT_MSG(std::false_type::operator(), "T is not an enum class or enumbra type.");
 	}
 }
 #endif
@@ -179,17 +179,21 @@ int main()
 	NegativeTest3::to_string(t3);
 	NegativeTest3::to_string(t3.value());
 
-	bool success;
-	constexpr NegativeTest3 t4 = NegativeTest3::from_string(NegativeTest3::to_string(t3) , success);
-	STATIC_ASSERT(t3 == t4);
+	constexpr auto res1 = NegativeTest3::from_string(NegativeTest3::to_string(t3));
+	STATIC_ASSERT(res1.first);
 
-	bigD.dd = NegativeTest3::from_string("", success);
+	constexpr auto res2 = NegativeTest3::from_string("");
+	bigD.dd = res2.second;
 
 	d = v.X; // uses implicit constructor
 
 	test_nodefault::Value vv{};
 	vv = ~vv;
 
+	TestSingleFlag z;
+	const bool q = z == z;
+	z |= TestSingleFlag::C;
+	z = z | z;
 
 #if ENUMBRA_CPP_VERSION >= 17
 	test_is_enumbra_type(d);

@@ -7,14 +7,14 @@
       "project": "CMakeLists.txt",
       "projectTarget": "",
       "name": "enumbra",
-      "args": [ "-c C:/Repos/enumbra/examples/enumbra_config.toml -s C:/Repos/enumbra/examples/enum_config.toml --cppout C:/Repos/enumbra/examples/enumbra_test.hpp -p" ],
+      "args": [ "-c C:/Repos/enumbra/examples/enumbra_config.toml -s C:/Repos/enumbra/examples/enum_config.toml --cppout C:/Repos/enumbra/examples/enumbra_test.hpp" ]
     },
     {
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "",
       "name": "rsc",
-      "args": [ "-c C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enumbra_config.toml -s C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enum_config.toml --cppout C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enumbra.hpp -p" ],
+      "args": [ "-c C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enumbra_config.toml -s C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enum_config.toml --cppout C:/Repos/RSClone/rsc/rschexlib/rschexlib/rsc_enumbra.hpp -p" ]
     }
   ]
 }
