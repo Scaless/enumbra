@@ -37,7 +37,6 @@ int main(int argc, char** argv)
 			("c,config", "[Required] Path to enumbra config file (enumbra.toml).", cxxopts::value<std::string>())
 			("s,source", "[Required] Path to enum config file (enum.toml).", cxxopts::value<std::string>())
 			("cppout", "[Required] Path to output C++ header file.", cxxopts::value<std::string>())
-			("v,verbose", "Print additional information during processing.")
 			("version", "Prints version information.")
 			("p,print", "Prints output to the console.");
 
