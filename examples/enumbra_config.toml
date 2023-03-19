@@ -22,6 +22,10 @@ output_namespace = ["enums"]
 #   "CRLF": "\r\n"
 output_line_ending_style = "LF"
 
+# Add the current date/time in generated header.
+# Off by default to allow for regenerating a file idempotently (the same every time)
+time_generated_in_header = false
+
 # Characters to use for tabs. Default is 4 spaces. 
 # Any valid string can be used here, including "\t" for real tabs. See TOML docs for formatting.
 output_tab_characters = "    "
@@ -88,7 +92,7 @@ value_enum_smallest_signed_evaluation_order = [
 
 # String tables to generate.
 #   "none": Do not generate string tables
-#   "name": Generate only name table
+#   "name_only": Generate only name table
 #   "name_and_description": Generate tables with name and description
 string_table_layout = "name_and_description"
 

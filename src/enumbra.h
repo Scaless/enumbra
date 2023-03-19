@@ -5,8 +5,7 @@
 #include <array>
 
 namespace enumbra {
-	constexpr char* kEnumbraVersion = "0.0.7";
-	constexpr int kEnumbraCompatibilityVersion = 2;
+	constexpr char* kEnumbraVersion = "0.0.8";
 
 	namespace csharp {
 		// ...
@@ -43,7 +42,7 @@ namespace enumbra {
 		constexpr std::array<std::pair<std::string_view, StringTableLayout>, 3> StringTableLayoutMapped 
 		{ {
 			{ "none", StringTableLayout::None },
-			{ "block_name", StringTableLayout::NameOnly },
+			{ "name_only", StringTableLayout::NameOnly },
 			{ "name_and_description", StringTableLayout::NameAndDescription },
 		} };
 
@@ -70,6 +69,7 @@ namespace enumbra {
 			std::vector<std::string> preamble_text{};
 			std::vector<std::string> additional_includes;
 			IncludeGuardStyle include_guard_style{ IncludeGuardStyle::PragmaOnce };
+			bool time_generated_in_header{ true };
 			LineEndingStyle line_ending_style{ LineEndingStyle::LF };
 			std::string output_tab_characters{};
 
@@ -152,12 +152,6 @@ namespace enumbra {
 		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
 		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
 
-		bool value_enum_require_sequential{ true };
-		bool flags_enum_require_packed_bits{ true };
-		bool value_enum_require_unique_values{ true };
-		bool flags_enum_allow_overlap{ false };
-		bool flags_enum_allow_multi_bit_values{ false };
-
 		std::vector<enum_definition> value_enum_definitions;
 		std::vector<enum_definition> flag_enum_definitions;
 	};
@@ -166,17 +160,12 @@ namespace enumbra {
 	{
 		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
 		int64_t value_enum_start_value{ 0 };
-		bool value_enum_require_sequential{ true };
-		bool value_enum_require_unique_values{ true };
 	};
 
 	struct flags_enum_override_config
 	{
 		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
 		uint64_t flags_enum_start_value{ 1 };
-		bool flags_enum_require_packed_bits{ true };
-		bool flags_enum_allow_overlap{ false };
-		bool flags_enum_allow_multi_bit_values{ false };
 	};
 
 	struct enumbra_config

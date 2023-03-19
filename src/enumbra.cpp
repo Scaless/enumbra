@@ -145,6 +145,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, toml::node_view<
 		enumbra::cpp::cpp_config& c = enumbra_config.cpp_config;
 		c.output_namespace = get_array<std::string>(cpp_cfg, "output_namespace");
 		c.line_ending_style = get_mapped<LineEndingStyle>(LineEndingStyleMapped, cpp_cfg, "output_line_ending_style");
+		c.time_generated_in_header = get_required<bool>(cpp_cfg, "time_generated_in_header");
 		c.output_tab_characters = get_required<std::string>(cpp_cfg, "output_tab_characters");
 		c.preamble_text = get_array<std::string>(cpp_cfg, "preamble_text");
 		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, cpp_cfg, "include_guard");
@@ -263,11 +264,6 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 	enum_config.block_name = get_required<std::string>(meta_config, "block_name");
 	enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(ValueEnumDefaultValueStyleMapped, meta_config, "value_enum_default_value_style");
 	enum_config.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(FlagsEnumDefaultValueStyleMapped, meta_config, "flags_enum_default_value_style");
-	enum_config.value_enum_require_sequential = get_required<bool>(meta_config, "value_enum_require_sequential");
-	enum_config.flags_enum_require_packed_bits = get_required<bool>(meta_config, "flags_enum_require_packed_bits");
-	enum_config.value_enum_require_unique_values = get_required<bool>(meta_config, "value_enum_require_unique_values");
-	enum_config.flags_enum_allow_overlap = get_required<bool>(meta_config, "flags_enum_allow_overlap");
-	enum_config.flags_enum_allow_multi_bit_values = get_required<bool>(meta_config, "flags_enum_allow_multi_bit_values");
 
 	// TODO: Refactor into a function to get an array of struct
 	if (toml::array* value_enums = meta_config["value_enum"].as_array())
