@@ -29,7 +29,7 @@ void print_version()
 int main(int argc, char** argv)
 {
 	try {
-		cxxopts::Options options("enumbra", "An enum code generator.");
+		cxxopts::Options options("enumbra", "An enum code generator. https://github.com/Scaless/enumbra");
 		options
 			.custom_help("-c enumbra_config.toml -s enum.toml")
 			.add_options()
