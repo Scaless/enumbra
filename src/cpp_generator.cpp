@@ -238,7 +238,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	}
 	if (cpp.preamble_text.size() == 0) {
 		write_line("// You don't have any preamble_text set. If you have a license you want to apply to your");
-		write_line("// generated code, you should put it in your enumbra_config.toml file!");
+		write_line("// generated code, you should put it in your enumbra_config.json file!");
 	}
 	write_linefeed();
 
@@ -431,7 +431,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const enum_entry& min_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Min, e);
 		const enum_entry& max_entry = get_value_enum_entry(ValueEnumDefaultValueStyle::Max, e);
 		const size_t entry_count = e.values.size();
-		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
+		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 		const std::string char_type = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
 		const std::string string_literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
@@ -663,7 +663,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = unsigned_bits_required(max_value);
 		const size_t bits_required_transmission = bits_required_storage;
-		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).generated_name;
+		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
 		if (is_size_type_signed) {
 			throw std::logic_error("Size type for flags enum is signed. Not a supported configuration.");

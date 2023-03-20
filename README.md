@@ -6,7 +6,7 @@ Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full doc
 Annotated starter config files are provided in the [examples](/examples/) directory.  
 Running the following command will parse the given config files and generate [enumbra_test.hpp](/examples/enumbra_test.hpp).  
 ```
-./enumbra.exe -c enumbra_config.toml -s enum_config.toml --cppout enumbra_test.hpp
+./enumbra.exe -c enumbra_config.json -s enum.json --cppout enumbra_test.hpp
 ```
 
 # Generators
@@ -26,7 +26,7 @@ With `ENUMBRA_STRICT_VERSION` defined, all headers must be generated with the ex
 
 ### Other Languages
 C#: Planned, not started yet.  
-C: No plans, but interested.  
+C: No plans.  
 C++98/03: No interest. Without the bare minimum C++11 features you may as well just use C.  
 
 # Types
@@ -37,31 +37,19 @@ enumbra provides two core types of enums: Value Enum and Flags Enum.
 | Value | Single Value | No | Yes |
 | Flags | None / Single / Multiple | Yes | Yes |
 
-An typical standard C++ enum for each type would look like: 
-
-```
-// Value Enum
-enum class ENetworkStatus : uint8_t { Disconnected = 0, WaitingForServer = 1, Connected = 2, Dropped = 3 }
-// Flags Enum
-enum class FDirectionFlags : uint8_t { North = 1, East = 2, South = 4, West = 8 }
-```
-
 # Building
 This section refers to building enumbra itself, not the generated code. See the Generators section for generated code requirements.
 
-enumbra requires a C++17 compiler and is primarily tested to build on Windows with Visual Studio 2019/2022. 
+enumbra requires a C++17 compiler and is primarily tested to build on Windows with Visual Studio 2022. 
 
 If you are on another OS/compiler and would like to add native support, open an issue/PR. I suck at cmake so don't expect any help.
 
 enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.json and set cmakeToolchain to point to your vcpkg installation.
 
 # Known Limitations
-1. The configuration file format, TOML, represents integers as an int64, therefore values greater than INT64_MAX cannot be represented currently. The plan is to eventually support an optional string format for values between INT64_MAX and UINT64_MAX. Until then, the toml parser should give you one of the following warnings:
-	* Error while parsing decimal integer: '9446744073709551615' is not representable in 64 bits
-	* Error while parsing decimal integer: exceeds maximum length of 19 characters
-2. Flags Enums are required to have an unsigned underlying type.
-3. Values within Flags Enums may not span multiple bits. A single value must control a single bit. (TODO: A separate mechanism for definining multi-bit flags should be added.)
-4. Values and names within an enum must be unique.
+1. Flags Enums are required to have an unsigned underlying type.
+2. Values within Flags Enums may not span multiple bits. A single value must control a single bit. (TODO: A separate mechanism for definining multi-bit flags should be added.)
+3. Values and names within an enum must be unique.
 
 # Q&A
 

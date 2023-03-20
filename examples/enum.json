@@ -1,0 +1,234 @@
+{
+  "enums": {
+    "block_name": "blockname",
+    "flags_enum_default_value_style": "zero",
+    "value_enum_default_value_style": "min",
+    "flags_enums": [
+      {
+        "name": "test_flags",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "name": "test_nodefault",
+        "default_value": "C",
+        "size_type": "unsigned16",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "default_value": "C",
+        "name": "TestSparseFlags",
+        "size_type": "unsigned16",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 4
+          },
+          {
+            "name": "D",
+            "value": 16
+          }
+        ]
+      },
+      {
+        "default_value": "C",
+        "name": "TestSingleFlag",
+        "size_type": "unsigned16",
+        "entries": [
+          {
+            "name": "C",
+            "value": 4
+          }
+        ]
+      }
+    ],
+    "value_enums": [
+      {
+        "name": "HugeUnsignedTest",
+        "size_type": "unsigned64",
+        "entries": [
+          {
+            "name": "A",
+            "value": 18446744073709551615
+          }
+        ]
+      },
+      {
+        "name": "test_value",
+        "default_value": "B",
+        "size_type": "signed32",
+        "entries": [
+          {
+            "name": "A",
+            "value": 0
+          },
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "name": "HexDiagonal",
+        "size_type": "unsigned8",
+        "entries": [
+          {
+            "name": "NORTH"
+          },
+          {
+            "name": "NORTH_EAST"
+          },
+          {
+            "name": "SOUTH_EAST"
+          },
+          {
+            "name": "SOUTH"
+          },
+          {
+            "name": "SOUTH_WEST"
+          },
+          {
+            "name": "NORTH_WEST"
+          }
+        ]
+      },
+      {
+        "name": "NegativeTest1",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": -2
+          },
+          {
+            "name": "B",
+            "value": -1
+          },
+          {
+            "name": "C",
+            "value": 0
+          },
+          {
+            "name": "D",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "name": "NegativeTest2",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": -3
+          },
+          {
+            "name": "B",
+            "value": -2
+          },
+          {
+            "name": "C",
+            "value": -1
+          },
+          {
+            "name": "D",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "name": "NegativeTest3",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": -3
+          },
+          {
+            "name": "B",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "name": "NegativeTest4",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": -4
+          },
+          {
+            "name": "B",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "name": "EmptyTest1Unsigned",
+        "size_type": "unsigned8",
+        "entries": [
+          {
+            "name": "A",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "name": "EmptyTest1Signed",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "name": "SingleTest1Unsigned",
+        "size_type": "unsigned8",
+        "entries": [
+          {
+            "name": "A",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "name": "SingleTest1Signed",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "A",
+            "value": 4
+          }
+        ]
+      }
+    ]
+  }
+}

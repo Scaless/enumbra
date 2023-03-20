@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 3.15)
 
 project ("enumbra")
 
-find_package(tomlplusplus)
+find_package(nlohmann_json)
 find_package(cxxopts)
 find_package(fmt)
 
@@ -22,7 +22,6 @@ else()
 endif()
 
 target_link_libraries(enumbra PRIVATE 
-	tomlplusplus::tomlplusplus
 	cxxopts::cxxopts
 	fmt::fmt)
 

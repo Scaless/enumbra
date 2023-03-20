@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <variant>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace enumbra {
 	constexpr char* kEnumbraVersion = "0.0.8";
@@ -60,7 +64,7 @@ namespace enumbra {
 			std::string name;
 			int64_t bits{ 0 };
 			bool is_signed{ true };
-			std::string generated_name;
+			std::string type_name;
 		};
 
 		struct cpp_config
@@ -77,6 +81,10 @@ namespace enumbra {
 			std::string value_enum_name_postfix;
 			std::string flags_enum_name_prefix;
 			std::string flags_enum_name_postfix;
+			std::string value_enum_value_prefix;
+			std::string value_enum_value_postfix;
+			std::string flags_enum_value_prefix;
+			std::string flags_enum_value_postfix;
 
 			std::vector<enum_size_type> size_types;
 			size_t default_value_enum_size_type_index{ SIZE_MAX };
@@ -156,18 +164,6 @@ namespace enumbra {
 		std::vector<enum_definition> flag_enum_definitions;
 	};
 
-	struct value_enum_override_config
-	{
-		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
-		int64_t value_enum_start_value{ 0 };
-	};
-
-	struct flags_enum_override_config
-	{
-		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
-		uint64_t flags_enum_start_value{ 1 };
-	};
-
 	struct enumbra_config
 	{
 		bool generate_cpp{ true };
@@ -175,45 +171,34 @@ namespace enumbra {
 		cpp::cpp_config cpp_config{};
 	};
 
-	// Get a required value from the toml structure, throwing if not found
-	template<typename T, typename node>
-	auto get_required(node& config, std::string_view param) {
-		auto opt = config[param].value<T>();
-		if (opt.has_value()) {
-			return opt.value();
-		}
-
-		std::string x = "Configuration value is required: " + std::string(param);
-		throw std::logic_error(x.c_str());
-	}
-
-	// Get an array of T from the toml structure, possibly empty
-	template<typename T, typename node>
-	std::vector<T> get_array(node& config, std::string_view param) {
+	// Get an array of T from the json structure, possibly empty
+	template<typename T>
+	std::vector<T> get_array(json& config)
+	{
 		std::vector<T> out;
-		if (toml::array* preamble = config[param].as_array()) {
-			for (auto& elem : *preamble) {
-				auto opt_val = elem.value<T>();
-				if (opt_val.has_value()) {
-					out.push_back(opt_val.value());
-				}
-				else {
-					throw std::logic_error("");
-				}
-			}
+
+		if (config.is_null())
+		{
+			return out;
 		}
+
+		for (auto iter : config)
+		{
+			out.push_back(iter.get<T>());
+		}
+
 		return out;
 	}
 
-	// Get a mapped value from the toml structure using a string key, throwing if key is not mapped
+	// Get a mapped value from the json structure, throwing if key is not mapped
 	// Requires a mapping table of the following form: std::array<std::pair<std::string_view, T>, #>
-	template<typename T, typename mapping, typename node>
-	T get_mapped(mapping& map, node& config, std::string_view field_name) {
+	template<typename T, typename mapping>
+	T get_mapped(mapping& map, json& config) {
 		if (map.size() == 0) {
 			throw std::logic_error("Map passed to get_mapped has a size of 0");
 		}
 
-		auto param = get_required<std::string>(config, field_name);
+		auto param = config.get<std::string>();
 
 		using namespace enumbra::cpp;
 		auto found_map = std::find_if(map.begin(), map.end(),
@@ -224,7 +209,7 @@ namespace enumbra {
 			return found_map->second;
 		}
 
-		std::string exception = std::string(field_name) + " value must be one of: ";
+		std::string exception = std::string(param) + " value must be one of: ";
 		for (int x = 0; x < map.size() - 1; x++) {
 			exception += std::string(map[x].first) + ", ";
 		}

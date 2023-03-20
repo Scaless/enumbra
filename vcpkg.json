@@ -1,7 +1,7 @@
 {
   "name": "enumbra",
   "dependencies": [
-    "tomlplusplus",
+    "nlohmann-json",
     "cxxopts",
     "fmt"
   ]
