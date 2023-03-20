@@ -1,5 +1,8 @@
 enumbra is a code generator for enums.
 
+**enumbra is in a volatile state of development where syntax and features may change at any time.  
+If you need stability, wait until the 1.0 release.**
+
 # Getting Started
 Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.  
 
@@ -55,12 +58,15 @@ enumbra uses vcpkg manifests for a couple of dependencies. Modify CMakeSettings.
 
 ### Q. How does enumbra compare to [magic_enum](https://github.com/Neargye/magic_enum)/[Better Enums](http://aantron.github.io/better-enums/index.html)?
 
-* For large enums, constexpr generation is slow on compile times / memory.
+* magic_enum and Better Enums are compile-time generators that work directly on C++ source. All they require is placing a header in your sources.
+  * enumbra is a standalone code generator with its own configuration syntax that requires an additional build step.
+* Constexpr generation slows down compile times / bloats memory. This cost is paid on every compile.
+  * enumbra generates all of the code before compilation, which can be compiled once. Functions still benefit from constexpr where possible. enumbra can analyze enums to provide extra functionality that is not possible with compile-time libraries.
 * The number of constants within an enum is usually limited to around 128 due to compiler limits for macros/templates.
+  * enumbra has no limits on the number of entries within an enum.
 * Lack of configuration options.
-* Limited to one programming language.
+  * enumbra has a wide variety of configuration options and optional validation steps.
+* Limited to one programming language (C++).
+  * enumbra can potentially generate to any language ... but currently only C++.
 * In magic_enum, the provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are intended to be flags or not.
-enumbra defines operators for each enum individually, reducing the chance for mistake.
-* enumbra generates all of its data before compilation, so it can do some more analysis on the values to provide extra functionality.
-
-Compile-time libraries have greater convenience in their simplicity, just pop the header in and you're done. Use what works best for you.
+  * enumbra defines operators for each enum individually, reducing the chance for mistake.
