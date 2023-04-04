@@ -357,7 +357,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	if (cfg.cpp_config.enumbra_bitfield_macros)
 	{
 		// Increment this if macros below are modified.
-		const int enumbra_macros_version = 2;
+		const int enumbra_optinoal_macros_version = 2;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
 			{ "#define ENUMBRA_OPTIONAL_MACROS_VERSION {1}" },
@@ -385,7 +385,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#endif // ENUMBRA_OPTIONAL_MACROS_VERSION" },
 		};
 		for (auto& str : macro_strings) {
-			write_line(str, TAB, enumbra_macros_version);
+			write_line(str, TAB, enumbra_optinoal_macros_version);
 		}
 		write_linefeed();
 	}
@@ -393,34 +393,39 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// TEMPLATES
 	{
 		// Increment this if templates below are modified.
-		const int base_template_version = 3;
+		const int base_template_version = 4;
 		std::vector<const char*> base_template_strings = {
 			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
 			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
 			{ "namespace enumbra {{" },
 			{ "{0}namespace detail {{" },
-			{ "{0}{0}// Default templates for non-enumbra types" },
-			{ "{0}{0}template<class T>" },
-			{ "{0}{0}struct enumbra_base_helper {{ " },
-			{ "{0}{0}    static constexpr bool enumbra_type = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_enum_class = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_value_enum = false;" },
-			{ "{0}{0}    static constexpr bool enumbra_flags_enum = false;" },
-			{ "{0}{0}    using base_type = T; " },
+			{ "{0}{0}// Type info" },
+			{ "{0}{0}template<bool is_enumbra, bool is_enum_class, bool is_value_enum, bool is_flags_enum>" },
+			{ "{0}{0}struct type_info {{ " },
+			{ "{0}{0}    static constexpr bool enumbra_type = is_enumbra;" },
+			{ "{0}{0}    static constexpr bool enumbra_enum_class = is_enum_class;" },
+			{ "{0}{0}    static constexpr bool enumbra_value_enum = is_value_enum;" },
+			{ "{0}{0}    static constexpr bool enumbra_flags_enum = is_flags_enum;" },
 			{ "{0}{0}}};" },
+			{ "{0}{0}" },
+			{ "{0}{0}// Default template for non-enumbra types" },
+			{ "{0}{0}template<class T>" },
+			{ "{0}{0}struct base_helper : type_info<false, false, false, false> {{ using base_type = T; }};" },
+			{ "{0}{0}" },
+			{ "{0}{0}// Constexpr string compare" },
 			{ "{0}{0}template<class T> constexpr bool streq(T* a, T* b) {{ return *a == *b && (*a == '\\0' || streq(a + 1, b + 1)); }}"},
 			{ "{0}}} // end namespace enumbra::detail" },
-			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
-			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_type(T) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_struct(T) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "{0}template<class T> using enumbra_base_t = typename detail::base_helper<T>::base_type;" },
+			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_type(T) {{ return detail::base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct(T) {{ return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }}"},
 			{ "}} // end namespace enumbra" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
@@ -535,12 +540,12 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			for (const auto& v : e.values) {
-				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
+				write_line_tabbed(1, "static constexpr Value {0} = Value::{0};", v.name);
 			}
 			write_linefeed();
 
 			// Values Array
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{{{", entry_count);
+			write_line_tabbed(1, "static constexpr std::array<Value, {}> Values = {{{{", entry_count);
 			const int MaxValuesWidth = 120;
 			size_t CurrentValuesWidth = 8;
 			write_tab(2);
@@ -638,7 +643,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "Value value_;");
 
 			// Value String Table
-			write_line_tabbed(1, "constexpr static std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count);
+			write_line_tabbed(1, "static constexpr std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "std::make_pair({1}, {0}\"{1}\"),", string_literal_prefix, v.name, size_type);
 			}
@@ -739,12 +744,12 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			for (const auto& v : e.values) {
-				write_line_tabbed(1, "constexpr static Value {0} = Value::{0};", v.name);
+				write_line_tabbed(1, "static constexpr Value {0} = Value::{0};", v.name);
 			}
 			write_linefeed();
 
 			// Values Array
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{{{", entry_count);
+			write_line_tabbed(1, "static constexpr std::array<Value, {}> Values = {{{{", entry_count);
 			const int MaxValuesWidth = 120;
 			size_t CurrentValuesWidth = 8;
 			write_tab(2);
@@ -868,57 +873,31 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 	// MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
 	{
+		write_line("// Template Specializations Begin");
+
+		// Value Enum Template Specializations
 		for (auto& e : enum_meta.value_enum_definitions) {
-			// Value Enum Template Specializations
-			std::string is_value_enum = "true";
-			std::string is_flags_enum = "false";
 			std::vector<const char*> template_strings = {
-				{"// {4}{1} Template Specializations"},
-				{"template<> struct enumbra::detail::enumbra_base_helper<{4}{1}::Value> {{"},
-				{"{0}static constexpr bool enumbra_type = true;"},
-				{"{0}static constexpr bool enumbra_enum_class = true;"},
-				{"{0}static constexpr bool enumbra_value_enum = {2};"},
-				{"{0}static constexpr bool enumbra_flags_enum = {3};"},
-				{"{0}using base_type = {4}{1};"},
-				{"}};"},
-				{"template<> struct enumbra::detail::enumbra_base_helper<{4}{1}> {{"},
-				{"{0}static constexpr bool enumbra_type = true;"},
-				{"{0}static constexpr bool enumbra_enum_class = false;"},
-				{"{0}static constexpr bool enumbra_value_enum = {2};"},
-				{"{0}static constexpr bool enumbra_flags_enum = {3};"},
-				{"{0}using base_type = {4}{1};"},
-				{"}};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}::Value> : enumbra::detail::type_info<true, true, {2}, {3}> {{ using base_type = {4}{1}; }};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, false, {2}, {3}> {{ using base_type = {4}{1}; }};"},
 			};
 			for (auto& str : template_strings) {
-				write_line(str, TAB, e.name, is_value_enum, is_flags_enum, full_ns);
+				write_line(str, TAB, e.name, "true", "false", full_ns);
 			}
 		}
 
+		// Flags Enum Template Specializations
 		for (auto& e : enum_meta.flag_enum_definitions) {
-			// Flags Enum Template Specializations
-			std::string is_value_enum = "false";
-			std::string is_flags_enum = "true";
 			std::vector<const char*> template_strings = {
-				{"// {4}{1} Template Specializations"},
-				{"template<> struct enumbra::detail::enumbra_base_helper<{4}{1}::Value> {{"},
-				{"{0}static constexpr bool enumbra_type = true;"},
-				{"{0}static constexpr bool enumbra_enum_class = true;"},
-				{"{0}static constexpr bool enumbra_value_enum = {2};"},
-				{"{0}static constexpr bool enumbra_flags_enum = {3};"},
-				{"{0}using base_type = {4}{1};"},
-				{"}};"},
-				{"template<> struct enumbra::detail::enumbra_base_helper<{4}{1}> {{"},
-				{"{0}static constexpr bool enumbra_type = true;"},
-				{"{0}static constexpr bool enumbra_enum_class = false;"},
-				{"{0}static constexpr bool enumbra_value_enum = {2};"},
-				{"{0}static constexpr bool enumbra_flags_enum = {3};"},
-				{"{0}using base_type = {4}{1};"},
-				{"}};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}::Value> : enumbra::detail::type_info<true, true, {2}, {3}> {{ using base_type = {4}{1}; }};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, false, {2}, {3}> {{ using base_type = {4}{1}; }};"},
 			};
 			for (auto& str : template_strings) {
-				write_line(str, TAB, e.name, is_value_enum, is_flags_enum, full_ns);
+				write_line(str, TAB, e.name, "false", "true", full_ns);
 			}
 		}
+
+		write_line("// Template Specializations End");
 	}
 
 	// END INCLUDE GUARD

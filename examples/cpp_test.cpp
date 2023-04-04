@@ -205,7 +205,13 @@ int main()
 	test_is_enumbra_type(NonEnumbraEnum::A);
 #endif
 
-	// Large unsigned integers
+	// Large integers
+	{
+		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
+		STATIC_ASSERT(Max.to_underlying() == UINT64_MAX);
 
-
+		constexpr auto MaxFromStringResultFail = Unsigned64Test::from_string("NAN");
+		STATIC_ASSERT(MaxFromStringResultFail.first == false);
+	}
+	
 }

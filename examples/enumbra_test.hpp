@@ -71,38 +71,43 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 3
+#define ENUMBRA_BASE_TEMPLATES_VERSION 4
 namespace enumbra {
     namespace detail {
-        // Default templates for non-enumbra types
-        template<class T>
-        struct enumbra_base_helper { 
-            static constexpr bool enumbra_type = false;
-            static constexpr bool enumbra_enum_class = false;
-            static constexpr bool enumbra_value_enum = false;
-            static constexpr bool enumbra_flags_enum = false;
-            using base_type = T; 
+        // Type info
+        template<bool is_enumbra, bool is_enum_class, bool is_value_enum, bool is_flags_enum>
+        struct type_info { 
+            static constexpr bool enumbra_type = is_enumbra;
+            static constexpr bool enumbra_enum_class = is_enum_class;
+            static constexpr bool enumbra_value_enum = is_value_enum;
+            static constexpr bool enumbra_flags_enum = is_flags_enum;
         };
+        
+        // Default template for non-enumbra types
+        template<class T>
+        struct base_helper : type_info<false, false, false, false> { using base_type = T; };
+        
+        // Constexpr string compare
         template<class T> constexpr bool streq(T* a, T* b) { return *a == *b && (*a == '\0' || streq(a + 1, b + 1)); }
     } // end namespace enumbra::detail
-    template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;
-    template<class T> constexpr bool is_enumbra_type() { return detail::enumbra_base_helper<T>::enumbra_type; }
-    template<class T> constexpr bool is_enumbra_type(T) { return detail::enumbra_base_helper<T>::enumbra_type; }
-    template<class T> constexpr bool is_enumbra_struct() { return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_struct(T) { return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_scoped_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_scoped_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_value_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }
-    template<class T> constexpr bool is_enumbra_value_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }
-    template<class T> constexpr bool is_enumbra_flags_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }
-    template<class T> constexpr bool is_enumbra_flags_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }
+    template<class T> using enumbra_base_t = typename detail::base_helper<T>::base_type;
+    template<class T> constexpr bool is_enumbra_type() { return detail::base_helper<T>::enumbra_type; }
+    template<class T> constexpr bool is_enumbra_type(T) { return detail::base_helper<T>::enumbra_type; }
+    template<class T> constexpr bool is_enumbra_struct() { return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_struct(T) { return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_scoped_enum() { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_scoped_enum(T) { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_value_enum() { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }
+    template<class T> constexpr bool is_enumbra_value_enum(T) { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }
+    template<class T> constexpr bool is_enumbra_flags_enum() { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }
+    template<class T> constexpr bool is_enumbra_flags_enum(T) { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 3
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 4
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 3
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 4
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -122,12 +127,12 @@ struct Unsigned64Test {
     constexpr Unsigned64Test() : value_(Value(0)) { }
     constexpr Unsigned64Test(Value v) : value_(v) { }
 
-    constexpr static Value MAX = Value::MAX;
-    constexpr static Value MIN = Value::MIN;
-    constexpr static Value V_UINT16_MAX = Value::V_UINT16_MAX;
-    constexpr static Value V_UINT32_MAX = Value::V_UINT32_MAX;
+    static constexpr Value MAX = Value::MAX;
+    static constexpr Value MIN = Value::MIN;
+    static constexpr Value V_UINT16_MAX = Value::V_UINT16_MAX;
+    static constexpr Value V_UINT32_MAX = Value::V_UINT32_MAX;
 
-    constexpr static std::array<Value, 4> Values = {{
+    static constexpr std::array<Value, 4> Values = {{
         MAX, MIN, V_UINT16_MAX, V_UINT32_MAX, 
     }};
 
@@ -169,7 +174,7 @@ struct Unsigned64Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(MAX, "MAX"),
         std::make_pair(MIN, "MIN"),
         std::make_pair(V_UINT16_MAX, "V_UINT16_MAX"),
@@ -189,11 +194,11 @@ struct Signed64Test {
     constexpr Signed64Test() : value_(Value((-9223372036854775807 - 1))) { }
     constexpr Signed64Test(Value v) : value_(v) { }
 
-    constexpr static Value MIN = Value::MIN;
-    constexpr static Value MAX = Value::MAX;
-    constexpr static Value NEG_ONE = Value::NEG_ONE;
+    static constexpr Value MIN = Value::MIN;
+    static constexpr Value MAX = Value::MAX;
+    static constexpr Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
@@ -234,7 +239,7 @@ struct Signed64Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
@@ -253,11 +258,11 @@ struct Signed32Test {
     constexpr Signed32Test() : value_(Value((-2147483647 - 1))) { }
     constexpr Signed32Test(Value v) : value_(v) { }
 
-    constexpr static Value MIN = Value::MIN;
-    constexpr static Value MAX = Value::MAX;
-    constexpr static Value NEG_ONE = Value::NEG_ONE;
+    static constexpr Value MIN = Value::MIN;
+    static constexpr Value MAX = Value::MAX;
+    static constexpr Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
@@ -298,7 +303,7 @@ struct Signed32Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
@@ -317,11 +322,11 @@ struct Signed16Test {
     constexpr Signed16Test() : value_(Value((-32767 - 1))) { }
     constexpr Signed16Test(Value v) : value_(v) { }
 
-    constexpr static Value MIN = Value::MIN;
-    constexpr static Value MAX = Value::MAX;
-    constexpr static Value NEG_ONE = Value::NEG_ONE;
+    static constexpr Value MIN = Value::MIN;
+    static constexpr Value MAX = Value::MAX;
+    static constexpr Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
@@ -362,7 +367,7 @@ struct Signed16Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
@@ -381,11 +386,11 @@ struct Signed8Test {
     constexpr Signed8Test() : value_(Value((-127 - 1))) { }
     constexpr Signed8Test(Value v) : value_(v) { }
 
-    constexpr static Value V_INT_MIN = Value::V_INT_MIN;
-    constexpr static Value V_INT_MAX = Value::V_INT_MAX;
-    constexpr static Value V_NEG_ONE = Value::V_NEG_ONE;
+    static constexpr Value V_INT_MIN = Value::V_INT_MIN;
+    static constexpr Value V_INT_MAX = Value::V_INT_MAX;
+    static constexpr Value V_NEG_ONE = Value::V_NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         V_INT_MIN, V_INT_MAX, V_NEG_ONE, 
     }};
 
@@ -426,7 +431,7 @@ struct Signed8Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(V_INT_MIN, "V_INT_MIN"),
         std::make_pair(V_INT_MAX, "V_INT_MAX"),
         std::make_pair(V_NEG_ONE, "V_NEG_ONE"),
@@ -445,11 +450,11 @@ struct test_value {
     constexpr test_value() : value_(Value(0)) { }
     constexpr test_value(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
+    static constexpr Value A = Value::A;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         A, B, C, 
     }};
 
@@ -490,7 +495,7 @@ struct test_value {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
@@ -512,14 +517,14 @@ struct HexDiagonal {
     constexpr HexDiagonal() : value_(Value(0)) { }
     constexpr HexDiagonal(Value v) : value_(v) { }
 
-    constexpr static Value NORTH = Value::NORTH;
-    constexpr static Value NORTH_EAST = Value::NORTH_EAST;
-    constexpr static Value SOUTH_EAST = Value::SOUTH_EAST;
-    constexpr static Value SOUTH = Value::SOUTH;
-    constexpr static Value SOUTH_WEST = Value::SOUTH_WEST;
-    constexpr static Value NORTH_WEST = Value::NORTH_WEST;
+    static constexpr Value NORTH = Value::NORTH;
+    static constexpr Value NORTH_EAST = Value::NORTH_EAST;
+    static constexpr Value SOUTH_EAST = Value::SOUTH_EAST;
+    static constexpr Value SOUTH = Value::SOUTH;
+    static constexpr Value SOUTH_WEST = Value::SOUTH_WEST;
+    static constexpr Value NORTH_WEST = Value::NORTH_WEST;
 
-    constexpr static std::array<Value, 6> Values = {{
+    static constexpr std::array<Value, 6> Values = {{
         NORTH, NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST, 
     }};
 
@@ -563,7 +568,7 @@ struct HexDiagonal {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 6> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 6> string_lookup_ = {{
         std::make_pair(NORTH, "NORTH"),
         std::make_pair(NORTH_EAST, "NORTH_EAST"),
         std::make_pair(SOUTH_EAST, "SOUTH_EAST"),
@@ -586,12 +591,12 @@ struct NegativeTest1 {
     constexpr NegativeTest1() : value_(Value(-2)) { }
     constexpr NegativeTest1(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
-    constexpr static Value D = Value::D;
+    static constexpr Value A = Value::A;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
+    static constexpr Value D = Value::D;
 
-    constexpr static std::array<Value, 4> Values = {{
+    static constexpr std::array<Value, 4> Values = {{
         A, B, C, D, 
     }};
 
@@ -633,7 +638,7 @@ struct NegativeTest1 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
@@ -654,12 +659,12 @@ struct NegativeTest2 {
     constexpr NegativeTest2() : value_(Value(-3)) { }
     constexpr NegativeTest2(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
-    constexpr static Value D = Value::D;
+    static constexpr Value A = Value::A;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
+    static constexpr Value D = Value::D;
 
-    constexpr static std::array<Value, 4> Values = {{
+    static constexpr std::array<Value, 4> Values = {{
         A, B, C, D, 
     }};
 
@@ -701,7 +706,7 @@ struct NegativeTest2 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
@@ -720,10 +725,10 @@ struct NegativeTest3 {
     constexpr NegativeTest3() : value_(Value(-3)) { }
     constexpr NegativeTest3(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
-    constexpr static Value B = Value::B;
+    static constexpr Value A = Value::A;
+    static constexpr Value B = Value::B;
 
-    constexpr static std::array<Value, 2> Values = {{
+    static constexpr std::array<Value, 2> Values = {{
         A, B, 
     }};
 
@@ -763,7 +768,7 @@ struct NegativeTest3 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
     }};
@@ -780,10 +785,10 @@ struct NegativeTest4 {
     constexpr NegativeTest4() : value_(Value(-4)) { }
     constexpr NegativeTest4(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
-    constexpr static Value B = Value::B;
+    static constexpr Value A = Value::A;
+    static constexpr Value B = Value::B;
 
-    constexpr static std::array<Value, 2> Values = {{
+    static constexpr std::array<Value, 2> Values = {{
         A, B, 
     }};
 
@@ -823,7 +828,7 @@ struct NegativeTest4 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
     }};
@@ -839,9 +844,9 @@ struct EmptyTest1Unsigned {
     constexpr EmptyTest1Unsigned() : value_(Value(0)) { }
     constexpr EmptyTest1Unsigned(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
+    static constexpr Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {{
+    static constexpr std::array<Value, 1> Values = {{
         A, 
     }};
 
@@ -878,7 +883,7 @@ struct EmptyTest1Unsigned {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
     }};
 };
@@ -893,9 +898,9 @@ struct EmptyTest1Signed {
     constexpr EmptyTest1Signed() : value_(Value(0)) { }
     constexpr EmptyTest1Signed(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
+    static constexpr Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {{
+    static constexpr std::array<Value, 1> Values = {{
         A, 
     }};
 
@@ -932,7 +937,7 @@ struct EmptyTest1Signed {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
     }};
 };
@@ -947,9 +952,9 @@ struct SingleTest1Unsigned {
     constexpr SingleTest1Unsigned() : value_(Value(4)) { }
     constexpr SingleTest1Unsigned(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
+    static constexpr Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {{
+    static constexpr std::array<Value, 1> Values = {{
         A, 
     }};
 
@@ -986,7 +991,7 @@ struct SingleTest1Unsigned {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
     }};
 };
@@ -1001,9 +1006,9 @@ struct SingleTest1Signed {
     constexpr SingleTest1Signed() : value_(Value(4)) { }
     constexpr SingleTest1Signed(Value v) : value_(v) { }
 
-    constexpr static Value A = Value::A;
+    static constexpr Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {{
+    static constexpr std::array<Value, 1> Values = {{
         A, 
     }};
 
@@ -1040,7 +1045,7 @@ struct SingleTest1Signed {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
+    static constexpr std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
     }};
 };
@@ -1056,10 +1061,10 @@ struct test_flags {
     constexpr test_flags() : value_(Value(0)) { }
     constexpr test_flags(Value v) : value_(v) { }
 
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
 
-    constexpr static std::array<Value, 2> Values = {{
+    static constexpr std::array<Value, 2> Values = {{
         B, C, 
     }};
 
@@ -1118,10 +1123,10 @@ struct test_nodefault {
     constexpr test_nodefault() : value_(Value(0)) { }
     constexpr test_nodefault(Value v) : value_(v) { }
 
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
 
-    constexpr static std::array<Value, 2> Values = {{
+    static constexpr std::array<Value, 2> Values = {{
         B, C, 
     }};
 
@@ -1181,11 +1186,11 @@ struct TestSparseFlags {
     constexpr TestSparseFlags() : value_(Value(0)) { }
     constexpr TestSparseFlags(Value v) : value_(v) { }
 
-    constexpr static Value B = Value::B;
-    constexpr static Value C = Value::C;
-    constexpr static Value D = Value::D;
+    static constexpr Value B = Value::B;
+    static constexpr Value C = Value::C;
+    static constexpr Value D = Value::D;
 
-    constexpr static std::array<Value, 3> Values = {{
+    static constexpr std::array<Value, 3> Values = {{
         B, C, D, 
     }};
 
@@ -1243,9 +1248,9 @@ struct TestSingleFlag {
     constexpr TestSingleFlag() : value_(Value(0)) { }
     constexpr TestSingleFlag(Value v) : value_(v) { }
 
-    constexpr static Value C = Value::C;
+    static constexpr Value C = Value::C;
 
-    constexpr static std::array<Value, 1> Values = {{
+    static constexpr std::array<Value, 1> Values = {{
         C, 
     }};
 
@@ -1295,288 +1300,43 @@ ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSingleFlag& operator^=(TestSingleFlag& a, con
 
 } // namespace enums
 
-// enums::Unsigned64Test Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::Unsigned64Test::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Unsigned64Test;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::Unsigned64Test> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Unsigned64Test;
-};
-// enums::Signed64Test Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed64Test::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed64Test;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed64Test> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed64Test;
-};
-// enums::Signed32Test Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed32Test::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed32Test;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed32Test> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed32Test;
-};
-// enums::Signed16Test Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed16Test::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed16Test;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed16Test> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed16Test;
-};
-// enums::Signed8Test Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed8Test::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed8Test;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::Signed8Test> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::Signed8Test;
-};
-// enums::test_value Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_value::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::test_value;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::test_value;
-};
-// enums::HexDiagonal Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::HexDiagonal::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::HexDiagonal;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::HexDiagonal> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::HexDiagonal;
-};
-// enums::NegativeTest1 Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest1::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest1;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest1> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest1;
-};
-// enums::NegativeTest2 Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest2::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest2;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest2> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest2;
-};
-// enums::NegativeTest3 Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest3::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest3;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest3> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest3;
-};
-// enums::NegativeTest4 Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest4::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest4;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::NegativeTest4> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::NegativeTest4;
-};
-// enums::EmptyTest1Unsigned Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::EmptyTest1Unsigned::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::EmptyTest1Unsigned;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::EmptyTest1Unsigned> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::EmptyTest1Unsigned;
-};
-// enums::EmptyTest1Signed Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::EmptyTest1Signed::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::EmptyTest1Signed;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::EmptyTest1Signed> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::EmptyTest1Signed;
-};
-// enums::SingleTest1Unsigned Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::SingleTest1Unsigned::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::SingleTest1Unsigned;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::SingleTest1Unsigned> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::SingleTest1Unsigned;
-};
-// enums::SingleTest1Signed Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::SingleTest1Signed::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::SingleTest1Signed;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::SingleTest1Signed> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = true;
-    static constexpr bool enumbra_flags_enum = false;
-    using base_type = enums::SingleTest1Signed;
-};
-// enums::test_flags Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_flags::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::test_flags;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_flags> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::test_flags;
-};
-// enums::test_nodefault Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_nodefault::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::test_nodefault;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::test_nodefault> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::test_nodefault;
-};
-// enums::TestSparseFlags Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::TestSparseFlags::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::TestSparseFlags;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::TestSparseFlags> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::TestSparseFlags;
-};
-// enums::TestSingleFlag Template Specializations
-template<> struct enumbra::detail::enumbra_base_helper<enums::TestSingleFlag::Value> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = true;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::TestSingleFlag;
-};
-template<> struct enumbra::detail::enumbra_base_helper<enums::TestSingleFlag> {
-    static constexpr bool enumbra_type = true;
-    static constexpr bool enumbra_enum_class = false;
-    static constexpr bool enumbra_value_enum = false;
-    static constexpr bool enumbra_flags_enum = true;
-    using base_type = enums::TestSingleFlag;
-};
+// Template Specializations Begin
+template<> struct enumbra::detail::base_helper<enums::Unsigned64Test::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Unsigned64Test; };
+template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Unsigned64Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed64Test::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed64Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed64Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed32Test::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed32Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed32Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed16Test::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed16Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed16Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed8Test::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed8Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed8Test; };
+template<> struct enumbra::detail::base_helper<enums::test_value::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::test_value; };
+template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::test_value; };
+template<> struct enumbra::detail::base_helper<enums::HexDiagonal::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::HexDiagonal; };
+template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::HexDiagonal; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest1::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest1; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest1; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest2::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest2; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest2; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest3::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest3; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest3; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest4::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest4; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest4; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::EmptyTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::EmptyTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::SingleTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed::Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::SingleTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::test_flags::Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_flags; };
+template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::test_flags; };
+template<> struct enumbra::detail::base_helper<enums::test_nodefault::Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_nodefault; };
+template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::test_nodefault; };
+template<> struct enumbra::detail::base_helper<enums::TestSparseFlags::Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSparseFlags; };
+template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::TestSparseFlags; };
+template<> struct enumbra::detail::base_helper<enums::TestSingleFlag::Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSingleFlag; };
+template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::TestSingleFlag; };
+// Template Specializations End
