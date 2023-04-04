@@ -311,19 +311,19 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// REQUIRED MACROS
 	{
 		// Increment this if macros below are modified.
-		const int enumbra_required_macros_version = 2;
+		const int enumbra_required_macros_version = 3;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
 			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
 			{ "" },
 			{ "// Find out what language version we're using"},
-			{ "#if (_MSVC_LANG >= 202002L) || (__cplusplus >= 202002L)"},
+			{ "#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)"},
 			{ "#define ENUMBRA_CPP_VERSION 20"},
-			{ "#elif (_MSVC_LANG >= 201703L) || (__cplusplus >= 201703L)"},
+			{ "#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)"},
 			{ "#define ENUMBRA_CPP_VERSION 17"},
-			{ "#elif (_MSVC_LANG >= 201402L) || (__cplusplus >= 201402L)"},
+			{ "#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)"},
 			{ "#define ENUMBRA_CPP_VERSION 14"},
-			{ "#elif (_MSVC_LANG >= 201103L) || (__cplusplus >= 201103L)"},
+			{ "#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201103L)) || (__cplusplus >= 201103L)"},
 			{ "#define ENUMBRA_CPP_VERSION 11"},
 			{ "#else"},
 			{ "#error enumbra generated headers require a C++11 or higher compiler."},
@@ -337,7 +337,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{"#endif"},
 			{ "" },
 
-			{ "" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
 			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
@@ -394,7 +393,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// TEMPLATES
 	{
 		// Increment this if templates below are modified.
-		const int base_template_version = 2;
+		const int base_template_version = 3;
 		std::vector<const char*> base_template_strings = {
 			{ "#if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)" },
 			{ "#define ENUMBRA_BASE_TEMPLATES_VERSION {1}" },
@@ -413,15 +412,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "{0}}} // end namespace enumbra::detail" },
 			{ "{0}template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;" },
 			{ "{0}template<class T> constexpr bool is_enumbra_type() {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_type(T v) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_type(T) {{ return detail::enumbra_base_helper<T>::enumbra_type; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_struct(T v) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_struct(T) {{ return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_scoped_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_value_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }}"},
 			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
-			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T v) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
+			{ "{0}template<class T> constexpr bool is_enumbra_flags_enum(T) {{ return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }}"},
 			{ "}} // end namespace enumbra" },
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0" },
@@ -607,8 +606,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			for (auto v : e.values) {
 				write_line_tabbed(3, "case {0}: return {1}\"{0}\";", v.name, string_literal_prefix);
 			}
-			write_line_tabbed(3, "default: return {0}\"\";", string_literal_prefix);
 			write_line_tabbed(2, "}}");
+			write_line_tabbed(2, "return {0}\"\";", string_literal_prefix);
 			write_line_tabbed(1, "}}");
 
 			// MSVC:C28020 complains about the comparision in the loop because it effectively expands to 0 <= x <= 0

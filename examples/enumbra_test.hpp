@@ -13,16 +13,16 @@
 #include <cstdint>
 
 #if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)
-#define ENUMBRA_REQUIRED_MACROS_VERSION 2
+#define ENUMBRA_REQUIRED_MACROS_VERSION 3
 
 // Find out what language version we're using
-#if (_MSVC_LANG >= 202002L) || (__cplusplus >= 202002L)
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)
 #define ENUMBRA_CPP_VERSION 20
-#elif (_MSVC_LANG >= 201703L) || (__cplusplus >= 201703L)
+#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)
 #define ENUMBRA_CPP_VERSION 17
-#elif (_MSVC_LANG >= 201402L) || (__cplusplus >= 201402L)
+#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)
 #define ENUMBRA_CPP_VERSION 14
-#elif (_MSVC_LANG >= 201103L) || (__cplusplus >= 201103L)
+#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201103L)) || (__cplusplus >= 201103L)
 #define ENUMBRA_CPP_VERSION 11
 #else
 #error enumbra generated headers require a C++11 or higher compiler.
@@ -35,13 +35,12 @@
 #define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline
 #endif
 
-
 #else // check existing version supported
 #if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0
 #error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 2
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 3
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 2
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 3
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
@@ -72,7 +71,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 2
+#define ENUMBRA_BASE_TEMPLATES_VERSION 3
 namespace enumbra {
     namespace detail {
         // Default templates for non-enumbra types
@@ -88,22 +87,22 @@ namespace enumbra {
     } // end namespace enumbra::detail
     template<class T> using enumbra_base_t = typename detail::enumbra_base_helper<T>::base_type;
     template<class T> constexpr bool is_enumbra_type() { return detail::enumbra_base_helper<T>::enumbra_type; }
-    template<class T> constexpr bool is_enumbra_type(T v) { return detail::enumbra_base_helper<T>::enumbra_type; }
+    template<class T> constexpr bool is_enumbra_type(T) { return detail::enumbra_base_helper<T>::enumbra_type; }
     template<class T> constexpr bool is_enumbra_struct() { return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_struct(T v) { return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_struct(T) { return is_enumbra_type<T>() && !detail::enumbra_base_helper<T>::enumbra_enum_class; }
     template<class T> constexpr bool is_enumbra_scoped_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }
-    template<class T> constexpr bool is_enumbra_scoped_enum(T v) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }
+    template<class T> constexpr bool is_enumbra_scoped_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_enum_class; }
     template<class T> constexpr bool is_enumbra_value_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }
-    template<class T> constexpr bool is_enumbra_value_enum(T v) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }
+    template<class T> constexpr bool is_enumbra_value_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_value_enum; }
     template<class T> constexpr bool is_enumbra_flags_enum() { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }
-    template<class T> constexpr bool is_enumbra_flags_enum(T v) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }
+    template<class T> constexpr bool is_enumbra_flags_enum(T) { return is_enumbra_type<T>() && detail::enumbra_base_helper<T>::enumbra_flags_enum; }
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 2
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 3
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 2
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 3
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -156,8 +155,8 @@ struct Unsigned64Test {
             case MIN: return "MIN";
             case V_UINT16_MAX: return "V_UINT16_MAX";
             case V_UINT32_MAX: return "V_UINT32_MAX";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -221,8 +220,8 @@ struct Signed64Test {
             case MIN: return "MIN";
             case MAX: return "MAX";
             case NEG_ONE: return "NEG_ONE";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -285,8 +284,8 @@ struct Signed32Test {
             case MIN: return "MIN";
             case MAX: return "MAX";
             case NEG_ONE: return "NEG_ONE";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -349,8 +348,8 @@ struct Signed16Test {
             case MIN: return "MIN";
             case MAX: return "MAX";
             case NEG_ONE: return "NEG_ONE";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -413,8 +412,8 @@ struct Signed8Test {
             case V_INT_MIN: return "V_INT_MIN";
             case V_INT_MAX: return "V_INT_MAX";
             case V_NEG_ONE: return "V_NEG_ONE";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -477,8 +476,8 @@ struct test_value {
             case A: return "A";
             case B: return "B";
             case C: return "C";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -550,8 +549,8 @@ struct HexDiagonal {
             case SOUTH: return "SOUTH";
             case SOUTH_WEST: return "SOUTH_WEST";
             case NORTH_WEST: return "NORTH_WEST";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -620,8 +619,8 @@ struct NegativeTest1 {
             case B: return "B";
             case C: return "C";
             case D: return "D";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -688,8 +687,8 @@ struct NegativeTest2 {
             case B: return "B";
             case C: return "C";
             case D: return "D";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -750,8 +749,8 @@ struct NegativeTest3 {
         switch (v) {
             case A: return "A";
             case B: return "B";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -810,8 +809,8 @@ struct NegativeTest4 {
         switch (v) {
             case A: return "A";
             case B: return "B";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
@@ -867,8 +866,8 @@ struct EmptyTest1Unsigned {
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Unsigned::Value v) {
         switch (v) {
             case A: return "A";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
@@ -921,8 +920,8 @@ struct EmptyTest1Signed {
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Signed::Value v) {
         switch (v) {
             case A: return "A";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
@@ -975,8 +974,8 @@ struct SingleTest1Unsigned {
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Unsigned::Value v) {
         switch (v) {
             case A: return "A";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
@@ -1029,8 +1028,8 @@ struct SingleTest1Signed {
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Signed::Value v) {
         switch (v) {
             case A: return "A";
-            default: return "";
         }
+        return "";
     }
     static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Value> from_string(const char* str) {
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
