@@ -18,11 +18,11 @@
 // Find out what language version we're using
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)
 #define ENUMBRA_CPP_VERSION 20
-#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)
+#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)
 #define ENUMBRA_CPP_VERSION 17
-#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)
+#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)
 #define ENUMBRA_CPP_VERSION 14
-#elif ((defined(_MSVC_LANG) &&_MSVC_LANG >= 201103L)) || (__cplusplus >= 201103L)
+#elif ((defined(_MSC_VER) && _MSC_VER >= 1700 /*VS2012*/)) || (__cplusplus >= 201103L)
 #define ENUMBRA_CPP_VERSION 11
 #else
 #error enumbra generated headers require a C++11 or higher compiler.
