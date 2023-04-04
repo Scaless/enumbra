@@ -127,9 +127,9 @@ struct Unsigned64Test {
     constexpr static Value V_UINT16_MAX = Value::V_UINT16_MAX;
     constexpr static Value V_UINT32_MAX = Value::V_UINT32_MAX;
 
-    constexpr static std::array<Value, 4> Values = {
+    constexpr static std::array<Value, 4> Values = {{
         MAX, MIN, V_UINT16_MAX, V_UINT32_MAX, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -169,12 +169,12 @@ struct Unsigned64Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(MAX, "MAX"),
         std::make_pair(MIN, "MIN"),
         std::make_pair(V_UINT16_MAX, "V_UINT16_MAX"),
         std::make_pair(V_UINT32_MAX, "V_UINT32_MAX"),
-    };
+    }};
 };
 
 // Signed64Test Definition
@@ -193,9 +193,9 @@ struct Signed64Test {
     constexpr static Value MAX = Value::MAX;
     constexpr static Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -234,11 +234,11 @@ struct Signed64Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
-    };
+    }};
 };
 
 // Signed32Test Definition
@@ -257,9 +257,9 @@ struct Signed32Test {
     constexpr static Value MAX = Value::MAX;
     constexpr static Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -298,11 +298,11 @@ struct Signed32Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
-    };
+    }};
 };
 
 // Signed16Test Definition
@@ -321,9 +321,9 @@ struct Signed16Test {
     constexpr static Value MAX = Value::MAX;
     constexpr static Value NEG_ONE = Value::NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         MIN, MAX, NEG_ONE, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -362,11 +362,11 @@ struct Signed16Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(MIN, "MIN"),
         std::make_pair(MAX, "MAX"),
         std::make_pair(NEG_ONE, "NEG_ONE"),
-    };
+    }};
 };
 
 // Signed8Test Definition
@@ -385,9 +385,9 @@ struct Signed8Test {
     constexpr static Value V_INT_MAX = Value::V_INT_MAX;
     constexpr static Value V_NEG_ONE = Value::V_NEG_ONE;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         V_INT_MIN, V_INT_MAX, V_NEG_ONE, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -426,11 +426,11 @@ struct Signed8Test {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(V_INT_MIN, "V_INT_MIN"),
         std::make_pair(V_INT_MAX, "V_INT_MAX"),
         std::make_pair(V_NEG_ONE, "V_NEG_ONE"),
-    };
+    }};
 };
 
 // test_value Definition
@@ -449,9 +449,9 @@ struct test_value {
     constexpr static Value B = Value::B;
     constexpr static Value C = Value::C;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         A, B, C, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -490,11 +490,11 @@ struct test_value {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 3> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
-    };
+    }};
 };
 
 // HexDiagonal Definition
@@ -519,9 +519,9 @@ struct HexDiagonal {
     constexpr static Value SOUTH_WEST = Value::SOUTH_WEST;
     constexpr static Value NORTH_WEST = Value::NORTH_WEST;
 
-    constexpr static std::array<Value, 6> Values = {
+    constexpr static std::array<Value, 6> Values = {{
         NORTH, NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -563,14 +563,14 @@ struct HexDiagonal {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 6> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 6> string_lookup_ = {{
         std::make_pair(NORTH, "NORTH"),
         std::make_pair(NORTH_EAST, "NORTH_EAST"),
         std::make_pair(SOUTH_EAST, "SOUTH_EAST"),
         std::make_pair(SOUTH, "SOUTH"),
         std::make_pair(SOUTH_WEST, "SOUTH_WEST"),
         std::make_pair(NORTH_WEST, "NORTH_WEST"),
-    };
+    }};
 };
 
 // NegativeTest1 Definition
@@ -591,9 +591,9 @@ struct NegativeTest1 {
     constexpr static Value C = Value::C;
     constexpr static Value D = Value::D;
 
-    constexpr static std::array<Value, 4> Values = {
+    constexpr static std::array<Value, 4> Values = {{
         A, B, C, D, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -633,12 +633,12 @@ struct NegativeTest1 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
         std::make_pair(D, "D"),
-    };
+    }};
 };
 
 // NegativeTest2 Definition
@@ -659,9 +659,9 @@ struct NegativeTest2 {
     constexpr static Value C = Value::C;
     constexpr static Value D = Value::D;
 
-    constexpr static std::array<Value, 4> Values = {
+    constexpr static std::array<Value, 4> Values = {{
         A, B, C, D, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -701,12 +701,12 @@ struct NegativeTest2 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 4> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
         std::make_pair(C, "C"),
         std::make_pair(D, "D"),
-    };
+    }};
 };
 
 // NegativeTest3 Definition
@@ -723,9 +723,9 @@ struct NegativeTest3 {
     constexpr static Value A = Value::A;
     constexpr static Value B = Value::B;
 
-    constexpr static std::array<Value, 2> Values = {
+    constexpr static std::array<Value, 2> Values = {{
         A, B, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -763,10 +763,10 @@ struct NegativeTest3 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
-    };
+    }};
 };
 
 // NegativeTest4 Definition
@@ -783,9 +783,9 @@ struct NegativeTest4 {
     constexpr static Value A = Value::A;
     constexpr static Value B = Value::B;
 
-    constexpr static std::array<Value, 2> Values = {
+    constexpr static std::array<Value, 2> Values = {{
         A, B, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -823,10 +823,10 @@ struct NegativeTest4 {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 2> string_lookup_ = {{
         std::make_pair(A, "A"),
         std::make_pair(B, "B"),
-    };
+    }};
 };
 
 // EmptyTest1Unsigned Definition
@@ -841,9 +841,9 @@ struct EmptyTest1Unsigned {
 
     constexpr static Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {
+    constexpr static std::array<Value, 1> Values = {{
         A, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -878,9 +878,9 @@ struct EmptyTest1Unsigned {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
-    };
+    }};
 };
 
 // EmptyTest1Signed Definition
@@ -895,9 +895,9 @@ struct EmptyTest1Signed {
 
     constexpr static Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {
+    constexpr static std::array<Value, 1> Values = {{
         A, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -932,9 +932,9 @@ struct EmptyTest1Signed {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
-    };
+    }};
 };
 
 // SingleTest1Unsigned Definition
@@ -949,9 +949,9 @@ struct SingleTest1Unsigned {
 
     constexpr static Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {
+    constexpr static std::array<Value, 1> Values = {{
         A, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -986,9 +986,9 @@ struct SingleTest1Unsigned {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
-    };
+    }};
 };
 
 // SingleTest1Signed Definition
@@ -1003,9 +1003,9 @@ struct SingleTest1Signed {
 
     constexpr static Value A = Value::A;
 
-    constexpr static std::array<Value, 1> Values = {
+    constexpr static std::array<Value, 1> Values = {{
         A, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr operator Value() const { return value_; }
@@ -1040,9 +1040,9 @@ struct SingleTest1Signed {
 
 private:
     Value value_;
-    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {
+    constexpr static std::array<std::pair<Value,const char*>, 1> string_lookup_ = {{
         std::make_pair(A, "A"),
-    };
+    }};
 };
 
 // test_flags Definition
@@ -1059,9 +1059,9 @@ struct test_flags {
     constexpr static Value B = Value::B;
     constexpr static Value C = Value::C;
 
-    constexpr static std::array<Value, 2> Values = {
+    constexpr static std::array<Value, 2> Values = {{
         B, C, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr explicit operator bool() const = delete;
@@ -1121,9 +1121,9 @@ struct test_nodefault {
     constexpr static Value B = Value::B;
     constexpr static Value C = Value::C;
 
-    constexpr static std::array<Value, 2> Values = {
+    constexpr static std::array<Value, 2> Values = {{
         B, C, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr explicit operator bool() const = delete;
@@ -1185,9 +1185,9 @@ struct TestSparseFlags {
     constexpr static Value C = Value::C;
     constexpr static Value D = Value::D;
 
-    constexpr static std::array<Value, 3> Values = {
+    constexpr static std::array<Value, 3> Values = {{
         B, C, D, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr explicit operator bool() const = delete;
@@ -1245,9 +1245,9 @@ struct TestSingleFlag {
 
     constexpr static Value C = Value::C;
 
-    constexpr static std::array<Value, 1> Values = {
+    constexpr static std::array<Value, 1> Values = {{
         C, 
-    };
+    }};
 
     constexpr Value value() const { return value_; }
     constexpr explicit operator bool() const = delete;

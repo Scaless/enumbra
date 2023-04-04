@@ -540,7 +540,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Values Array
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{{{", entry_count);
 			const int MaxValuesWidth = 120;
 			size_t CurrentValuesWidth = 8;
 			write_tab(2);
@@ -555,7 +555,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 				}
 			}
 			write_linefeed();
-			write_line_tabbed(1, "}};");
+			write_line_tabbed(1, "}}}};");
 			write_linefeed();
 
 			// Operators
@@ -638,11 +638,11 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "Value value_;");
 
 			// Value String Table
-			write_line_tabbed(1, "constexpr static std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{", char_type, entry_count);
+			write_line_tabbed(1, "constexpr static std::array<std::pair<Value,{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "std::make_pair({1}, {0}\"{1}\"),", string_literal_prefix, v.name, size_type);
 			}
-			write_line_tabbed(1, "}};");
+			write_line_tabbed(1, "}}}};");
 
 		}
 		write_line("}};");
@@ -744,7 +744,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Values Array
-			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{", entry_count);
+			write_line_tabbed(1, "constexpr static std::array<Value, {}> Values = {{{{", entry_count);
 			const int MaxValuesWidth = 120;
 			size_t CurrentValuesWidth = 8;
 			write_tab(2);
@@ -759,7 +759,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 				}
 			}
 			write_linefeed();
-			write_line_tabbed(1, "}};");
+			write_line_tabbed(1, "}}}};");
 			write_linefeed();
 
 			// Operators
