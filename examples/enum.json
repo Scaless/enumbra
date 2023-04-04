@@ -65,12 +65,96 @@
     ],
     "value_enums": [
       {
-        "name": "HugeUnsignedTest",
+        "name": "Unsigned64Test",
         "size_type": "unsigned64",
         "entries": [
           {
-            "name": "A",
+            "name": "MAX",
             "value": 18446744073709551615
+          },
+          {
+            "name": "MIN",
+            "value": 0
+          },
+          {
+            "name": "V_UINT16_MAX",
+            "value": 65535
+          },
+          {
+            "name": "V_UINT32_MAX",
+            "value": 4294967295
+          }
+        ]
+      },
+      {
+        "name": "Signed64Test",
+        "size_type": "signed64",
+        "entries": [
+          {
+            "name": "MIN",
+            "value": -9223372036854775808
+          },
+          {
+            "name": "MAX",
+            "value": 9223372036854775807
+          },
+          {
+            "name": "NEG_ONE",
+            "value": -1
+          }
+        ]
+      },
+      {
+        "name": "Signed32Test",
+        "size_type": "signed32",
+        "entries": [
+          {
+            "name": "MIN",
+            "value": -2147483648
+          },
+          {
+            "name": "MAX",
+            "value": 2147483647
+          },
+          {
+            "name": "NEG_ONE",
+            "value": -1
+          }
+        ]
+      },
+      {
+        "name": "Signed16Test",
+        "size_type": "signed16",
+        "entries": [
+          {
+            "name": "MIN",
+            "value": -32768
+          },
+          {
+            "name": "MAX",
+            "value": 32767
+          },
+          {
+            "name": "NEG_ONE",
+            "value": -1
+          }
+        ]
+      },
+      {
+        "name": "Signed8Test",
+        "size_type": "signed8",
+        "entries": [
+          {
+            "name": "V_INT_MIN",
+            "value": -128
+          },
+          {
+            "name": "V_INT_MAX",
+            "value": 127
+          },
+          {
+            "name": "V_NEG_ONE",
+            "value": -1
           }
         ]
       },

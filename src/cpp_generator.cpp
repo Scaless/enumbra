@@ -1,11 +1,6 @@
 #include "cpp_generator.h"
-#include <sstream>
 #include <vector>
-#include <algorithm>
-#include <chrono>
 #include <set>
-#include <fmt/format.h>
-#include <locale>
 
 using namespace enumbra;
 using namespace enumbra::cpp;
@@ -19,7 +14,59 @@ std::string to_upper(const std::string& str)
 	return strcopy;
 }
 
-const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, const enum_definition& definition)
+struct Int128FormatValue
+{
+	int128 value;
+	int64_t bits;
+	bool bIsSigned;
+};
+
+// https://wgml.pl/blog/formatting-user-defined-types-fmt.html
+template <>
+struct fmt::formatter<Int128FormatValue> {
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	auto format(Int128FormatValue c, format_context& ctx) {
+		if (c.bIsSigned)
+		{
+			// If a value is the exact minimum of its storage type, we need to output it as an expression
+			// because negative literals are actually a positive literal with a unary minus applied to them.
+			// I'm not making this up. Fantastic language design.
+			// https://stackoverflow.com/a/11270104
+			const bool bIsMinValueForType =
+				(c.bits == 8 && c.value == INT8_MIN) ||
+				(c.bits == 16 && c.value == INT16_MIN) ||
+				(c.bits == 32 && c.value == INT32_MIN) ||
+				(c.bits == 64 && c.value == INT64_MIN);
+			if (bIsMinValueForType)
+			{
+				return fmt::format_to(ctx.out(), "({0} - 1)", static_cast<int64_t>(c.value + 1));
+			}
+
+			return fmt::format_to(ctx.out(), "{0}", static_cast<int64_t>(c.value));
+		}
+		else
+		{
+			const uint64_t value = static_cast<uint64_t>(c.value);
+			if (value > 0xFF)
+			{
+				// Note: I find it disappointing that 0XFF {:#X} and 0xff {:#x} are fmt options,
+				// but not 0xFF which I think is the most readable format :)
+				return fmt::format_to(ctx.out(), "0x{0:X}", value);
+			}
+			else
+			{
+				return fmt::format_to(ctx.out(), "{0}", value);
+			}
+		}
+	}
+};
+
+const uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, const enum_definition& definition)
 {
 	switch (style)
 	{
@@ -27,10 +74,10 @@ const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, cons
 	case FlagsEnumDefaultValueStyle::Min:
 	{
 		auto m = std::min_element(definition.values.begin(), definition.values.end(),
-			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.p_value < rhs.p_value; });
 		if (m != definition.values.end())
 		{
-			return m->value;
+			return static_cast<uint64_t>(m->p_value);
 		}
 		else
 		{
@@ -41,10 +88,10 @@ const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, cons
 	case FlagsEnumDefaultValueStyle::Max:
 	{
 		auto m = std::max_element(definition.values.begin(), definition.values.end(),
-			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.p_value < rhs.p_value; });
 		if (m != definition.values.end())
 		{
-			return m->value;
+			return static_cast<uint64_t>(m->p_value);
 		}
 		else
 		{
@@ -57,20 +104,17 @@ const int64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, cons
 		uint64_t bits = 0;
 		for (auto& v : definition.values)
 		{
-			bits |= v.value;
+			bits |= static_cast<uint64_t>(v.p_value);
 		}
-		return int64_t(bits);
-		break;
+		return bits;
 	}
 	case FlagsEnumDefaultValueStyle::First:
 	{
-		return definition.values.front().value;
-		break;
+		return static_cast<uint64_t>(definition.values.front().p_value);
 	}
 	case FlagsEnumDefaultValueStyle::Last:
 	{
-		return definition.values.back().value;
-		break;
+		return static_cast<uint64_t>(definition.values.back().p_value);
 	}
 	default:
 		throw std::logic_error("get_flags_enum_value: Invalid FlagsEnumDefaultValueStyle");
@@ -84,7 +128,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 	case ValueEnumDefaultValueStyle::Min:
 	{
 		auto m = std::min_element(definition.values.begin(), definition.values.end(),
-			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.p_value < rhs.p_value; });
 		if (m != definition.values.end())
 		{
 			return *m;
@@ -98,7 +142,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 	case ValueEnumDefaultValueStyle::Max:
 	{
 		auto m = std::max_element(definition.values.begin(), definition.values.end(),
-			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.value < rhs.value; });
+			[](const enum_entry& lhs, const enum_entry& rhs) { return lhs.p_value < rhs.p_value; });
 		if (m != definition.values.end())
 		{
 			return *m;
@@ -119,7 +163,7 @@ const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, 
 }
 
 // Log2 of unsigned int
-constexpr uint64_t log_2_unsigned(uint64_t x)
+constexpr uint64_t log_2_unsigned(uint128 x)
 {
 	if (x == 0)
 	{
@@ -132,7 +176,8 @@ constexpr uint64_t log_2_unsigned(uint64_t x)
 	return targetlevel;
 }
 
-constexpr uint64_t unsigned_bits_required(uint64_t x)
+// Number of bits required to store an unsigned value
+constexpr uint64_t unsigned_bits_required(uint128 x)
 {
 	return log_2_unsigned(x) + 1;
 }
@@ -162,9 +207,9 @@ bool enum_meta_has_unique_enum_names(const enumbra::enum_meta_config& enum_meta)
 	return true;
 }
 
-bool is_value_set_contiguous(const std::set<int64_t> values)
+bool is_value_set_contiguous(const std::set<int128> values)
 {
-	int64_t value = *values.begin();
+	int128 value = *values.begin();
 	bool skip_first = true;
 	for (auto& u : values)
 	{
@@ -181,7 +226,7 @@ bool is_value_set_contiguous(const std::set<int64_t> values)
 	return true;
 }
 
-bool is_flags_set_contiguous(const std::set<int64_t> flags)
+bool is_flags_set_contiguous(const std::set<int128> flags)
 {
 	int64_t check_bit = unsigned_bits_required(*flags.begin());
 	bool skip_first = true;
@@ -433,13 +478,16 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const size_t entry_count = e.values.size();
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
+		const int64_t type_bits = cpp.get_size_type_from_index(e.size_type_index).bits;
 		const std::string char_type = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
 		const std::string string_literal_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
 		const std::string string_function_prefix = cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "w";
 
-		const int64_t max_abs_representable = std::max(std::abs(min_entry.value - 1), max_entry.value);
+		const int64_t max_abs_representable_signed = std::max(std::abs(static_cast<int64_t>(min_entry.p_value) - 1), static_cast<int64_t>(max_entry.p_value));
+		const uint64_t max_abs_representable = is_size_type_signed ? max_abs_representable_signed : static_cast<uint64_t>(max_entry.p_value);
+			
 		size_t bits_required_storage = unsigned_bits_required(max_abs_representable);
-		const size_t bits_required_transmission = unsigned_bits_required(max_entry.value - min_entry.value);
+		const size_t bits_required_transmission = unsigned_bits_required(max_entry.p_value - min_entry.p_value);
 
 		// Because of the way signed integers map to bit fields, a bit field may require an additional
 		// bit of storage to accomodate the sign bit even if it is unused. For example, given the following enum:
@@ -450,20 +498,20 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		//   int8_t Value : 3; // maps to the range -4 - 3, big enough but we're wasting space
 		// For this reason, when utilizing packed enums it is recommended to always prefer an unsigned underlying
 		// type unless your enum actually contains negative values.
-		if (is_size_type_signed && max_entry.value > 0) {
+		if (is_size_type_signed && (max_entry.p_value > 0)) {
 			uint64_t signed_range_max = 0;
 			for (int i = 0; i < bits_required_storage - 1; i++) {
 				signed_range_max |= 1ULL << i;
 			}
-			if (uint64_t(max_entry.value) > signed_range_max) {
+			if (static_cast<uint64_t>(max_entry.p_value) > signed_range_max) {
 				bits_required_storage += 1;
 			}
 		}
 
 		// Determine if all values are unique, or if some enum value names overlap.
 		// TODO: Enforce if flag is set
-		std::set<int64_t> unique_values;
-		for (auto& v : e.values) { unique_values.insert(v.value); }
+		std::set<int128> unique_values;
+		for (auto& v : e.values) { unique_values.insert(v.p_value); }
 		const size_t unique_entry_count = unique_values.size();
 
 		// Determine if range is contiguous
@@ -478,12 +526,12 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "using UnderlyingType = {};", size_type);
 			write_line_tabbed(1, "enum class Value : {} {{", size_type);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{} = {},", v.name, v.value);
+				write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{ v.p_value, type_bits, is_size_type_signed });
 			}
 			write_line_tabbed(1, "}};");
 			write_linefeed();
 
-			write_line_tabbed(1, "constexpr {}() : value_(Value({})) {{ }}", e.name, default_entry.value);
+			write_line_tabbed(1, "constexpr {}() : value_(Value({})) {{ }}", e.name, Int128FormatValue{ default_entry.p_value, type_bits, is_size_type_signed });
 			write_line_tabbed(1, "constexpr {}(Value v) : value_(v) {{ }}", e.name);
 			write_linefeed();
 
@@ -523,9 +571,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_linefeed();
 
 			// Introspection
-			write_line_tabbed(1, "static constexpr {0}::Value default_value() {{ return Value({1}); }}", e.name, default_entry.value);
-			write_line_tabbed(1, "static constexpr {1} min() {{ return {2}; }}", e.name, size_type, min_entry.value);
-			write_line_tabbed(1, "static constexpr {1} max() {{ return {2}; }}", e.name, size_type, max_entry.value);
+			write_line_tabbed(1, "static constexpr {0}::Value default_value() {{ return Value({1}); }}", e.name, Int128FormatValue{ default_entry.p_value, type_bits, is_size_type_signed });
+			write_line_tabbed(1, "static constexpr {1} min() {{ return {2}; }}", e.name, size_type, Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed });
+			write_line_tabbed(1, "static constexpr {1} max() {{ return {2}; }}", e.name, size_type, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
 			write_line_tabbed(1, "static constexpr int count() {{ return {1}; }}", e.name, unique_entry_count);
 			write_line_tabbed(1, "static constexpr bool is_contiguous() {{ return {1}; }}", e.name, (is_contiguous ? "true" : "false"));
 			write_line_tabbed(1, "static constexpr {0} from_underlying_unsafe({1} v) {{ return {0}(static_cast<Value>(v)); }}", e.name, size_type);
@@ -535,15 +583,15 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			// is_valid variations
 			if (is_contiguous)
 			{
-				if (min_entry.value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
+				if ((min_entry.p_value == 0) && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
 				{
-					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_entry.value);
-					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_entry.value);
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
 				}
 				else
 				{
-					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
-					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_entry.value, max_entry.value);
+					write_line_tabbed(1, "static constexpr bool is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed }, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
+					write_line_tabbed(1, "static constexpr bool is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed }, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
 				}
 			}
 			else
@@ -640,8 +688,8 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 		// Determine if all values are unique, or if some enum value names overlap.
 		// TODO: Enforce if flag is set
-		std::set<int64_t> unique_values;
-		for (auto& v : e.values) { unique_values.insert(v.value); }
+		std::set<int128> unique_values;
+		for (auto& v : e.values) { unique_values.insert(v.p_value); }
 		const size_t unique_entry_count = unique_values.size();
 		if (e.values.size() != unique_values.size())
 		{
@@ -652,19 +700,20 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		const uint64_t min_value = 0; // The minimum for a flags entry is always 0 - no bits set
 		uint64_t max_value = 0;
 		for (auto& v : e.values) {
-			if (v.value < 0) {
+			if (v.p_value < 0) {
 				throw std::logic_error("ENUM DEFINITIONS Check 4: Flags-Enum value is less than 0. Flags-Enum values are required to be unsigned. (enum name = " + e.name + ")");
 			}
-			max_value |= uint64_t(v.value);
+			max_value |= static_cast<uint64_t>(v.p_value);
 		}
 
-		const int64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
+		const uint64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
 
 		const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = unsigned_bits_required(max_value);
 		const size_t bits_required_transmission = bits_required_storage;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
 		const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
+		const int64_t type_bits = cpp.get_size_type_from_index(e.size_type_index).bits;
 		if (is_size_type_signed) {
 			throw std::logic_error("Size type for flags enum is signed. Not a supported configuration.");
 		}
@@ -681,7 +730,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			write_line_tabbed(1, "using UnderlyingType = {};", size_type);
 			write_line_tabbed(1, "enum class Value : {} {{", size_type);
 			for (const auto& v : e.values) {
-				write_line_tabbed(2, "{} = {},", v.name, v.value);
+				write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{ v.p_value, type_bits, is_size_type_signed });
 			}
 			write_line_tabbed(1, "}};");
 			write_linefeed();
@@ -879,9 +928,4 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	}
 
 	return Output;
-}
-
-std::vector<cpp_enum_generated> cpp_generator::generate_enums(const cpp_enum_config_final& /*cfg*/)
-{
-	throw std::logic_error("Unimplemented");
 }

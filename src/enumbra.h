@@ -3,10 +3,12 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <variant>
 #include <nlohmann/json.hpp>
+#include <absl/numeric/int128.h>
 
 using json = nlohmann::json;
+using int128 = absl::int128;
+using uint128 = absl::uint128;
 
 namespace enumbra {
 	constexpr char* kEnumbraVersion = "0.0.8";
@@ -142,7 +144,7 @@ namespace enumbra {
 	{
 		std::string name;
 		std::string description;
-		int64_t value;
+		int128 p_value;
 	};
 
 	struct enum_definition

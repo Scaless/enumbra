@@ -234,7 +234,7 @@ void parse_enumbra_csharp(enumbra::enumbra_config& /*enumbra_config*/, json& /*c
 	throw std::logic_error("parse_enumbra_csharp not implemented.");
 }
 
-bool is_pow_2(int64_t x)
+bool is_pow_2(int128 x)
 {
 	return x && !(x & (x - 1));
 }
@@ -266,37 +266,37 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 
 		def.default_value_name = value_enum.value("default_value", "");
 
-		int64_t current_value = 0;
+		int128 current_value = 0;
 		for (auto& entry : value_enum["entries"])
 		{
 			enum_entry ee;
 			ee.name = entry["name"].get<std::string>();
 			ee.description = entry.value("description", "");
 
-			// TODO: Support either int64 or uint64
 			auto entry_value = entry["value"];
 			if (entry_value.is_null())
 			{
-				ee.value = current_value;
+				ee.p_value = current_value;
 			}
 			else if (entry_value.is_string())
 			{
-				// Parse as string
+				// TODO: Parse as string
+				throw std::logic_error("string values are not yet supported");
 			}
 			else if (entry_value.is_number_unsigned())
 			{
-				ee.value = entry_value.get<uint64_t>();
+				ee.p_value = entry_value.get<uint64_t>();
 			}
 			else if (entry_value.is_number_integer())
 			{
-				ee.value = entry_value.get<int64_t>();
+				ee.p_value = entry_value.get<int64_t>();
 			}
 			else
 			{
 				throw std::logic_error("entry_value type is not valid");
 			}
 
-			current_value = ee.value + 1;
+			current_value = ee.p_value + 1;
 			def.values.push_back(ee);
 		}
 
@@ -329,34 +329,34 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 			ee.name = entry["name"].get<std::string>();
 			ee.description = entry.value("description", "");
 
-			// TODO: Support either int64 or uint64
 			auto entry_value = entry["value"];
 			if (entry_value.is_null())
 			{
-				ee.value = 1LL << current_shift;
+				ee.p_value = 1LL << current_shift;
 			}
 			else if (entry_value.is_string())
 			{
-				// Parse as string
+				// TODO: Parse as string
+				throw std::logic_error("string values are not yet supported");
 			}
 			else if (entry_value.is_number_unsigned())
 			{
-				ee.value = entry_value.get<uint64_t>();
+				ee.p_value = entry_value.get<uint64_t>();
 			}
 			else if (entry_value.is_number_integer())
 			{
-				ee.value = entry_value.get<int64_t>();
+				ee.p_value = entry_value.get<int64_t>();
 			}
 			else
 			{
 				throw std::logic_error("entry_value type is not valid");
 			}
 
-			if (!is_pow_2(ee.value)) {
+			if (!is_pow_2(ee.p_value)) {
 				throw std::logic_error("flags_enum value is not a power of 2 (1 bit set). Non-pow2 values are not currently supported.");
 			}
 			current_shift++;
-			while ((1LL << current_shift) < ee.value) {
+			while ((1LL << current_shift) < ee.p_value) {
 				current_shift++;
 			}
 			def.values.push_back(ee);

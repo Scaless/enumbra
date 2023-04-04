@@ -4,31 +4,10 @@
 #include <array>
 #include <string>
 #include <string_view>
-
-//#include <string_view>
-//using namespace std::string_view_literals;
-//constexpr std::wstring_view x = L""sv;
+#include <fmt/format.h>
 
 using namespace std::string_view_literals;
 using namespace std::string_literals;
-
-struct cpp_enum_intermediate
-{
-	std::string name;
-	std::string description;
-	int64_t value;
-};
-
-struct cpp_enum_generated
-{
-	std::string name;
-	std::vector<cpp_enum_intermediate> values;
-};
-
-struct cpp_enum_config_final
-{
-
-};
 
 class cpp_generator {
 public:
@@ -37,22 +16,18 @@ public:
 private:
 	std::string LF; // Line Feed as configured in enumbra_config
 	std::string TAB; // Tabs as configured in enumbra_config
-	std::string Output;
-
-	std::vector<cpp_enum_generated> generate_enums(const cpp_enum_config_final& cfg);
+	std::string Output; // Final output
 
 	template <typename... Args>
 	void write(std::string_view fmt, Args&&... args) {
 		fmt::format_to(std::back_inserter(Output), fmt, std::forward<Args>(args)...);
 	}
 
-	template <typename... Args>
 	void write_linefeed(int count = 1) {
 		for (int i = 0; i < count; i++)
 			write("{}", LF);
 	}
 
-	template <typename... Args>
 	void write_tab(int count = 1) {
 		for (int i = 0; i < count; i++)
 			write("{}", TAB);
