@@ -11,7 +11,7 @@ using int128 = absl::int128;
 using uint128 = absl::uint128;
 
 namespace enumbra {
-	constexpr char* kEnumbraVersion = "0.0.8";
+	constexpr char* kEnumbraVersion = "0.1.0";
 
 	namespace csharp {
 		// ...
@@ -64,9 +64,11 @@ namespace enumbra {
 
 		struct enum_size_type {
 			std::string name;
-			int64_t bits{ 0 };
+			uint64_t bits{ 0 };
 			bool is_signed{ true };
 			std::string type_name;
+			int128 min_possible_value{ absl::Int128Max() };
+			int128 max_possible_value{ absl::Int128Max() };
 		};
 
 		struct cpp_config

@@ -65,6 +65,32 @@
     ],
     "value_enums": [
       {
+        "name": "test_string_parse",
+        "size_type": "signed64",
+        "entries": [
+          {
+            "name": "B",
+            "value": "1"
+          },
+          {
+            "name": "C",
+            "value": "-1"
+          },
+          {
+            "name": "D",
+            "value": "0x1FF"
+          },
+          {
+            "name": "E",
+            "value": "0x7FFFFFFFFFFFFFFF"
+          },
+          {
+            "name": "F",
+            "value": "0b0101010101"
+          }
+        ]
+      },
+      {
         "name": "Unsigned64Test",
         "size_type": "unsigned64",
         "entries": [

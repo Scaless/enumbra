@@ -52,6 +52,7 @@ struct fmt::formatter<Int128FormatValue> {
 		else
 		{
 			const uint64_t value = static_cast<uint64_t>(c.value);
+			// TODO: Decide on a consistent behavior to format here, or make it customizable?
 			if (value > 0xFF)
 			{
 				// Note: I find it disappointing that 0XFF {:#X} and 0xff {:#x} are fmt options,

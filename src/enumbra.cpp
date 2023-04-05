@@ -4,6 +4,7 @@
 #include "enumbra.h"
 #include <iostream>
 #include <filesystem>
+#include <charconv>
 #include <fstream>
 #include <cxxopts.hpp>
 #include "cpp_generator.h"
@@ -165,9 +166,48 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 		{
 			enum_size_type t;
 			t.name = iter["name"].get<std::string>();
-			t.bits = iter["bits"].get<int64_t>();
+			t.bits = iter["bits"].get<uint64_t>();
 			t.is_signed = iter["is_signed"].get<bool>();
 			t.type_name = iter["type_name"].get<std::string>();
+
+			if (t.name.empty())
+			{
+				throw std::logic_error("size type name cannot be empty");
+			}
+			if (t.bits > 64)
+			{
+				throw std::logic_error("size type bits cannot be greater than 64");
+			}
+			if (t.type_name.empty())
+			{
+				throw std::logic_error("size type type_name cannot be empty");
+			}
+
+			if (t.is_signed)
+			{
+				// To get the maximum, we fill all bits except the sign bit
+				t.max_possible_value = 0;
+				for (int i = 0; i < t.bits - 1; i++)
+				{
+					t.max_possible_value |= (int128(1) << i);
+				}
+			
+				// Minimum is found by inverting the max value, then subtract 1
+				t.min_possible_value = -t.max_possible_value - 1;
+			}
+			else
+			{
+				// To get the maximum, we fill all bits
+				t.max_possible_value = 0;
+				for (int i = 0; i < t.bits; i++)
+				{
+					t.max_possible_value |= (int128(1) << i);
+				}
+
+				// Minimum always 0
+				t.min_possible_value = 0;
+			}
+
 			c.size_types.push_back(t);
 		}
 		if (c.size_types.size() == 0) {
@@ -239,6 +279,76 @@ bool is_pow_2(int128 x)
 	return x && !(x & (x - 1));
 }
 
+int128 string_to_int128(const std::string_view s)
+{
+	const bool bIsHexString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X'));
+	const bool bIsBinaryString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'b'));
+	if (bIsHexString)
+	{
+		// Unsigned Hex
+		uint64_t unsigned_value;
+		auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 16);
+		const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+		if (bConsumedEntireString && result.ec == std::errc{}) {
+			return int128(unsigned_value);
+		}
+	}
+	else if (bIsBinaryString)
+	{
+		// Unsigned Binary
+		uint64_t unsigned_value;
+		auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 2);
+		const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+		if (bConsumedEntireString && result.ec == std::errc{}) {
+			return int128(unsigned_value);
+		}
+	}
+	else
+	{
+		// Signed Base 10
+		{
+			int64_t signed_value;
+			auto result = std::from_chars(s.data(), s.data() + s.size(), signed_value);
+			const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+			if (bConsumedEntireString && result.ec == std::errc{}) {
+				return int128(signed_value);
+			}
+		}
+
+		// Unsigned Base 10
+		{
+			uint64_t unsigned_value;
+			auto result = std::from_chars(s.data(), s.data() + s.size(), unsigned_value);
+			const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+			if (bConsumedEntireString && result.ec == std::errc{}) {
+				return int128(unsigned_value);
+			}
+		}
+	}
+
+	throw std::invalid_argument(fmt::format("\"{0}\" could not be parsed to an integer.", s));
+}
+
+// Throws if v will not be storable in the defined size_type
+void validate_value_fits_in_size_type(const enumbra::cpp::enum_size_type& size_type, const int128 v)
+{
+	if ((v < size_type.min_possible_value) || (v > size_type.max_possible_value))
+	{
+		auto to_string_128 = [](int128 v) -> std::string {
+			return (v < 0) ? fmt::format("{0}", static_cast<int64_t>(v)) : fmt::format("{0}", static_cast<uint64_t>(v));
+		};
+		auto to_string_128_hex = [](int128 v) -> std::string {
+			return (v < 0) ? fmt::format("{0:#x}", static_cast<int64_t>(v)) : fmt::format("{0:#x}", static_cast<uint64_t>(v));
+		};
+		throw std::logic_error(fmt::format("entry_value {0} ({1}) is out of the possible range {2} to {3}",
+			to_string_128(v),
+			to_string_128_hex(v),
+			to_string_128(size_type.min_possible_value),
+			to_string_128(size_type.max_possible_value)
+		));
+	}
+}
+
 void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, json& meta_config) {
 
 	enum_config.block_name = meta_config["block_name"];
@@ -280,8 +390,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 			}
 			else if (entry_value.is_string())
 			{
-				// TODO: Parse as string
-				throw std::logic_error("string values are not yet supported");
+				ee.p_value = string_to_int128(entry_value.get<std::string>());
 			}
 			else if (entry_value.is_number_unsigned())
 			{
@@ -295,6 +404,9 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 			{
 				throw std::logic_error("entry_value type is not valid");
 			}
+
+			auto& size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
+			validate_value_fits_in_size_type(size_type, ee.p_value);
 
 			current_value = ee.p_value + 1;
 			def.values.push_back(ee);
@@ -336,8 +448,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 			}
 			else if (entry_value.is_string())
 			{
-				// TODO: Parse as string
-				throw std::logic_error("string values are not yet supported");
+				ee.p_value = string_to_int128(entry_value.get<std::string>());
 			}
 			else if (entry_value.is_number_unsigned())
 			{
@@ -351,6 +462,9 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 			{
 				throw std::logic_error("entry_value type is not valid");
 			}
+
+			auto& size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
+			validate_value_fits_in_size_type(size_type, ee.p_value);
 
 			if (!is_pow_2(ee.p_value)) {
 				throw std::logic_error("flags_enum value is not a power of 2 (1 bit set). Non-pow2 values are not currently supported.");
