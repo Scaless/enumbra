@@ -69,10 +69,10 @@ switch (dir) {
 }
 
 // Compile time programming
-auto min = Direction::min(); // 0
-auto max = Direction::max(); // 3 
-auto count = Direction::count(); // 4
-bool contiguous = Direction::is_contiguous(); // true
+constexpr auto min = Direction::min(); // 0
+constexpr auto max = Direction::max(); // 3 
+constexpr auto count = Direction::count(); // 4
+constexpr bool contiguous = Direction::is_contiguous(); // true
 if constexpr (Direction::is_contiguous()){
     // Information is known at compile time to produce good code-gen. 
     // Templates are available to make this easier - see wiki for details
@@ -110,10 +110,10 @@ if(perms.test(FilePermissions::DELETE)){
 perms.unset(FilePermissions::READ);
 
 // Compile time programming
-auto min = FilePermissions::min(); // 0 = 0b0000
-auto max = FilePermissions::max(); // 15 = 0b1111
-auto count = FilePermissions::count(); // 4
-bool contiguous = FilePermissions::is_contiguous(); // true
+constexpr auto min = FilePermissions::min(); // 0 = 0b0000
+constexpr auto max = FilePermissions::max(); // 15 = 0b1111
+constexpr auto count = FilePermissions::count(); // 4
+constexpr bool contiguous = FilePermissions::is_contiguous(); // true
 if constexpr (FilePermissions::is_contiguous()){
     // Information is known at compile time to produce good code-gen. 
     // Templates are available to make this easier - see wiki for details
