@@ -16,7 +16,7 @@ struct Errata {
 	void enum_class_initializer_list() {
 		// BAD but I don't think it's possible for us to stop this without disallowing bitfields.
 		// enum class is allowed to be initialized from initializer list with no way to override.
-		test_nodefault::Value qq{ 4 };
+		test_nodefault::_Value qq{ 4 };
 	}
 #endif
 };
@@ -31,8 +31,8 @@ struct V
 	V() :
 		ENUMBRA_INIT_DEFAULT(W),
 		ENUMBRA_INIT(X, test_nodefault::B),
-		Y(test_nodefault::default_value()),
-		Z(test_nodefault::default_value())
+		Y(test_nodefault()._value()),
+		Z(test_nodefault()._value())
 	{ }
 };
 STATIC_ASSERT(sizeof(V) == 2);
@@ -60,20 +60,20 @@ void test_is_enumbra_type(const T& value)
 {
 	if constexpr (is_enumbra_struct<T>()) {
 		// T is an enumbra class type.
-		constexpr auto min = T::min();
+		constexpr auto min = T::_min();
 
 		T x = value;
-		x.reset_zero();
+		x._zero();
 	}
 	else if constexpr (is_enumbra_scoped_enum<T>())
 	{
 		// T is an 'enum class' contained within an enumbra struct type.
 		// T is convertible from its enum class type to its parent struct type with enumbra_base_t
 		using base_type = enumbra_base_t<T>;
-		constexpr auto min = base_type::min();
+		constexpr auto min = base_type::_min();
 
 		base_type x = value;
-		x.reset_zero();
+		x._zero();
 	}
 	else if constexpr (std::is_enum_v<T>)
 	{
@@ -99,7 +99,7 @@ struct Struct20
 {
 	// Correct usage
 	ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C);
-	ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault().value());
+	ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault()._value());
 	ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C);
 
 	// Not allowed
@@ -134,7 +134,7 @@ int main()
 	d = test_nodefault::B & d;
 	d = test_nodefault::B ^ d;
 
-	switch (d.value()) {
+	switch (d._value()) {
 		// Possible but error prone
 		// Better to use if/elseif with explicit checks
 	}
@@ -165,8 +165,8 @@ int main()
 	V v;
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
-	v.Z = d.value();
-	v.X = v.X | d.value();
+	v.Z = d._value();
+	v.X = v.X | d._value();
 
 	struct D {
 		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);
@@ -189,7 +189,7 @@ int main()
 
 	d = v.X; // uses implicit constructor
 
-	test_nodefault::Value vv{};
+	test_nodefault::_Value vv{};
 	vv = ~vv;
 
 	TestSingleFlag z;
@@ -199,7 +199,7 @@ int main()
 
 #if ENUMBRA_CPP_VERSION >= 17
 	test_is_enumbra_type(d);
-	test_is_enumbra_type(d.value());
+	test_is_enumbra_type(d._value());
 	test_is_enumbra_type(v.X);
 	test_is_enumbra_type(vv);
 	test_is_enumbra_type(NonEnumbraEnum::A);
@@ -208,9 +208,9 @@ int main()
 	// Large integers
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-		STATIC_ASSERT(Max.to_underlying() == UINT64_MAX);
+		STATIC_ASSERT(Max._to_underlying() == UINT64_MAX);
 
-		constexpr auto MaxFromStringResultFail = Unsigned64Test::from_string("NAN");
+		constexpr auto MaxFromStringResultFail = Unsigned64Test::_from_string("NAN");
 		STATIC_ASSERT(MaxFromStringResultFail.first == false);
 	}
 	
