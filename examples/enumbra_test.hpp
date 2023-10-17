@@ -46,32 +46,33 @@
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
-#define ENUMBRA_OPTIONAL_MACROS_VERSION 3
+#define ENUMBRA_OPTIONAL_MACROS_VERSION 4
 
 // Bit field storage helper
-#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum::_Value Name : Enum::_bits_required_storage();
+#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>();
 #define ENUMBRA_INIT(Name, InitValue) Name(enumbra::enumbra_base_t<decltype(Name)>(InitValue)._value())
 #define ENUMBRA_INIT_DEFAULT(Name) Name(enumbra::enumbra_base_t<decltype(Name)>()._value())
 
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization
-#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum::_Value Name : Enum::_bits_required_storage() { enumbra::enumbra_base_t<Enum>(InitValue)._value() };
+#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>() { enumbra::enumbra_base_t<Enum>(InitValue)._value() };
 // Bit field storage helper with default value initialization
-#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::_Value Name : Enum::_bits_required_storage() { Enum()._value() };
+#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>() { Enum()._value() };
 #endif
 
 #else // check existing version supported
 #if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0
 #error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 3
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 4
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 3
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 4
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
+
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 4
+#define ENUMBRA_BASE_TEMPLATES_VERSION 5
 namespace enumbra {
     namespace detail {
         // Type info
@@ -82,11 +83,39 @@ namespace enumbra {
             static constexpr bool enumbra_value_enum = is_value_enum;
             static constexpr bool enumbra_flags_enum = is_flags_enum;
         };
+
+        // Value enum info
+        template<typename underlying_type, underlying_type min_v, underlying_type max_v, typename count_type, count_type count_v,
+            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
+        struct value_enum_info {
+            static constexpr underlying_type min = min_v;
+            static constexpr underlying_type max = max_v;
+            static constexpr count_type count = count_v;
+            static constexpr bool is_contiguous = is_contiguous_v;
+            static constexpr int bits_required_storage = bits_required_storage_v;
+            static constexpr int bits_required_transmission = bits_required_transmission_v;
+        };
+
+        // Flags enum info
+        template<typename underlying_type, underlying_type min_v, underlying_type max_v, typename count_type, count_type count_v,
+            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
+        struct flags_enum_info {
+            static constexpr underlying_type min = min_v;
+            static constexpr underlying_type max = max_v;
+            static constexpr count_type count = count_v;
+            static constexpr bool is_contiguous = is_contiguous_v;
+            static constexpr int bits_required_storage = bits_required_storage_v;
+            static constexpr int bits_required_transmission = bits_required_transmission_v;
+        };
         
         // Default template for non-enumbra types
         template<class T>
         struct base_helper : type_info<false, false, false, false> { using base_type = T; };
-        
+        template<class T>
+        struct value_enum_helper;
+        template<class T>
+        struct flags_enum_helper;
+
         // Constexpr string compare
         template<class T> constexpr bool streq(T* a, T* b) { return *a == *b && (*a == '\0' || streq(a + 1, b + 1)); }
     } // end namespace enumbra::detail
@@ -101,6 +130,59 @@ namespace enumbra {
     template<class T> constexpr bool is_enumbra_value_enum(T) { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }
     template<class T> constexpr bool is_enumbra_flags_enum() { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }
     template<class T> constexpr bool is_enumbra_flags_enum(T) { return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }
+    
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto min() { return detail::value_enum_helper<T>::min; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto min() { return detail::flags_enum_helper<T>::min; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto min() = delete;
+
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto max() { return detail::value_enum_helper<T>::max; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto max() { return detail::flags_enum_helper<T>::max; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto max() = delete;
+
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto count() { return detail::value_enum_helper<T>::count; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto count() { return detail::flags_enum_helper<T>::count; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto count() = delete;
+
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto is_contiguous() { return detail::value_enum_helper<T>::is_contiguous; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto is_contiguous() { return detail::flags_enum_helper<T>::is_contiguous; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto is_contiguous() = delete;
+
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto bits_required_storage() { return detail::value_enum_helper<T>::bits_required_storage; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto bits_required_storage() { return detail::flags_enum_helper<T>::bits_required_storage; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto bits_required_storage() = delete;
+
+    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
+    constexpr auto bits_required_transmission() { return detail::value_enum_helper<T>::bits_required_transmission; }
+    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
+    constexpr auto bits_required_transmission() { return detail::flags_enum_helper<T>::bits_required_transmission; }
+    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr auto bits_required_transmission() = delete;
+
+    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<is_enumbra_type<T>(), T>* = nullptr>
+    constexpr T from_underlying_unsafe(underlying_type e) { return T(static_cast<detail::base_helper<T>::base_type::_enum>(e)); }
+    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr T from_underlying_unsafe(underlying_type e) = delete;
+
+    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<is_enumbra_type<T>(), T>* = nullptr>
+    constexpr underlying_type to_underlying(T e) { return static_cast<underlying_type>(e._value()); }
+    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    constexpr underlying_type to_underlying(T e) = delete;
+
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
@@ -114,10 +196,15 @@ namespace enumbra {
 
 namespace enums {
 
+    // Begin Default Templates
+    template<class T>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, typename T::_enum> from_string(const char* str) = delete;
+    // End Default Templates
+
 // test_string_parse Definition
 struct test_string_parse {
-    using _UnderlyingType = int64_t;
-    enum class _Value : int64_t {
+    using _underlying_type = int64_t;
+    enum class _enum : int64_t {
         B = 1,
         C = -1,
         D = 511,
@@ -125,452 +212,403 @@ struct test_string_parse {
         F = 341,
     };
 
-    constexpr test_string_parse() : value_(_Value(-1)) { }
-    constexpr test_string_parse(_Value v) : value_(v) { }
+    constexpr test_string_parse() : value_(_enum(-1)) { }
+    constexpr test_string_parse(_enum v) : value_(v) { }
 
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
-    static constexpr _Value D = _Value::D;
-    static constexpr _Value E = _Value::E;
-    static constexpr _Value F = _Value::F;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
+    static constexpr _enum D = _enum::D;
+    static constexpr _enum E = _enum::E;
+    static constexpr _enum F = _enum::F;
 
-    static constexpr std::array<_Value, 5> _Values = {{
+    static constexpr std::array<_enum, 5> _values = {{
         B, C, D, E, F, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int64_t _to_underlying() const { return static_cast<int64_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = test_string_parse(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(test_string_parse v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int64_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int64_t _min() { return -1; }
-    static constexpr int64_t _max() { return 9223372036854775807; }
-    static constexpr int _count() { return 5; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr test_string_parse _from_underlying_unsafe(int64_t v) { return test_string_parse(static_cast<_Value>(v)); }
-    static constexpr int64_t _bits_required_storage() { return 64; }
-    static constexpr int64_t _bits_required_transmission() { return 64; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(test_string_parse v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int64_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const test_string_parse::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const test_string_parse::_enum v) {
         switch (v) {
-            case B: return "B";
-            case C: return "C";
-            case D: return "D";
-            case E: return "E";
-            case F: return "F";
+            case test_string_parse::B: return "B";
+            case test_string_parse::C: return "C";
+            case test_string_parse::D: return "D";
+            case test_string_parse::E: return "E";
+            case test_string_parse::F: return "F";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, test_string_parse::_enum> from_string<test_string_parse>(const char* str) {
+        constexpr std::array<std::pair<test_string_parse::_enum,const char*>, 5> string_lookup_ = {{
+            std::make_pair(test_string_parse::B, "B"),
+            std::make_pair(test_string_parse::C, "C"),
+            std::make_pair(test_string_parse::D, "D"),
+            std::make_pair(test_string_parse::E, "E"),
+            std::make_pair(test_string_parse::F, "F"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, test_string_parse::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 5> string_lookup_ = {{
-        std::make_pair(B, "B"),
-        std::make_pair(C, "C"),
-        std::make_pair(D, "D"),
-        std::make_pair(E, "E"),
-        std::make_pair(F, "F"),
-    }};
-};
 
 // Unsigned64Test Definition
 struct Unsigned64Test {
-    using _UnderlyingType = uint64_t;
-    enum class _Value : uint64_t {
+    using _underlying_type = uint64_t;
+    enum class _enum : uint64_t {
         MAX = 0xFFFFFFFFFFFFFFFF,
         MIN = 0,
         V_UINT16_MAX = 0xFFFF,
         V_UINT32_MAX = 0xFFFFFFFF,
     };
 
-    constexpr Unsigned64Test() : value_(_Value(0)) { }
-    constexpr Unsigned64Test(_Value v) : value_(v) { }
+    constexpr Unsigned64Test() : value_(_enum(0)) { }
+    constexpr Unsigned64Test(_enum v) : value_(v) { }
 
-    static constexpr _Value MAX = _Value::MAX;
-    static constexpr _Value MIN = _Value::MIN;
-    static constexpr _Value V_UINT16_MAX = _Value::V_UINT16_MAX;
-    static constexpr _Value V_UINT32_MAX = _Value::V_UINT32_MAX;
+    static constexpr _enum MAX = _enum::MAX;
+    static constexpr _enum MIN = _enum::MIN;
+    static constexpr _enum V_UINT16_MAX = _enum::V_UINT16_MAX;
+    static constexpr _enum V_UINT32_MAX = _enum::V_UINT32_MAX;
 
-    static constexpr std::array<_Value, 4> _Values = {{
+    static constexpr std::array<_enum, 4> _values = {{
         MAX, MIN, V_UINT16_MAX, V_UINT32_MAX, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr uint64_t _to_underlying() const { return static_cast<uint64_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = Unsigned64Test(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Unsigned64Test v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(uint64_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr uint64_t _min() { return 0; }
-    static constexpr uint64_t _max() { return 0xFFFFFFFFFFFFFFFF; }
-    static constexpr int _count() { return 4; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr Unsigned64Test _from_underlying_unsafe(uint64_t v) { return Unsigned64Test(static_cast<_Value>(v)); }
-    static constexpr uint64_t _bits_required_storage() { return 64; }
-    static constexpr uint64_t _bits_required_transmission() { return 64; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Unsigned64Test v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(uint64_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const Unsigned64Test::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Unsigned64Test::_enum v) {
         switch (v) {
-            case MAX: return "MAX";
-            case MIN: return "MIN";
-            case V_UINT16_MAX: return "V_UINT16_MAX";
-            case V_UINT32_MAX: return "V_UINT32_MAX";
+            case Unsigned64Test::MAX: return "MAX";
+            case Unsigned64Test::MIN: return "MIN";
+            case Unsigned64Test::V_UINT16_MAX: return "V_UINT16_MAX";
+            case Unsigned64Test::V_UINT32_MAX: return "V_UINT32_MAX";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Unsigned64Test::_enum> from_string<Unsigned64Test>(const char* str) {
+        constexpr std::array<std::pair<Unsigned64Test::_enum,const char*>, 4> string_lookup_ = {{
+            std::make_pair(Unsigned64Test::MAX, "MAX"),
+            std::make_pair(Unsigned64Test::MIN, "MIN"),
+            std::make_pair(Unsigned64Test::V_UINT16_MAX, "V_UINT16_MAX"),
+            std::make_pair(Unsigned64Test::V_UINT32_MAX, "V_UINT32_MAX"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, Unsigned64Test::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 4> string_lookup_ = {{
-        std::make_pair(MAX, "MAX"),
-        std::make_pair(MIN, "MIN"),
-        std::make_pair(V_UINT16_MAX, "V_UINT16_MAX"),
-        std::make_pair(V_UINT32_MAX, "V_UINT32_MAX"),
-    }};
-};
 
 // Signed64Test Definition
 struct Signed64Test {
-    using _UnderlyingType = int64_t;
-    enum class _Value : int64_t {
+    using _underlying_type = int64_t;
+    enum class _enum : int64_t {
         MIN = (-9223372036854775807 - 1),
         MAX = 9223372036854775807,
         NEG_ONE = -1,
     };
 
-    constexpr Signed64Test() : value_(_Value((-9223372036854775807 - 1))) { }
-    constexpr Signed64Test(_Value v) : value_(v) { }
+    constexpr Signed64Test() : value_(_enum((-9223372036854775807 - 1))) { }
+    constexpr Signed64Test(_enum v) : value_(v) { }
 
-    static constexpr _Value MIN = _Value::MIN;
-    static constexpr _Value MAX = _Value::MAX;
-    static constexpr _Value NEG_ONE = _Value::NEG_ONE;
+    static constexpr _enum MIN = _enum::MIN;
+    static constexpr _enum MAX = _enum::MAX;
+    static constexpr _enum NEG_ONE = _enum::NEG_ONE;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int64_t _to_underlying() const { return static_cast<int64_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = Signed64Test(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed64Test v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int64_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int64_t _min() { return (-9223372036854775807 - 1); }
-    static constexpr int64_t _max() { return 9223372036854775807; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr Signed64Test _from_underlying_unsafe(int64_t v) { return Signed64Test(static_cast<_Value>(v)); }
-    static constexpr int64_t _bits_required_storage() { return 64; }
-    static constexpr int64_t _bits_required_transmission() { return 64; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed64Test v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int64_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const Signed64Test::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed64Test::_enum v) {
         switch (v) {
-            case MIN: return "MIN";
-            case MAX: return "MAX";
-            case NEG_ONE: return "NEG_ONE";
+            case Signed64Test::MIN: return "MIN";
+            case Signed64Test::MAX: return "MAX";
+            case Signed64Test::NEG_ONE: return "NEG_ONE";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed64Test::_enum> from_string<Signed64Test>(const char* str) {
+        constexpr std::array<std::pair<Signed64Test::_enum,const char*>, 3> string_lookup_ = {{
+            std::make_pair(Signed64Test::MIN, "MIN"),
+            std::make_pair(Signed64Test::MAX, "MAX"),
+            std::make_pair(Signed64Test::NEG_ONE, "NEG_ONE"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, Signed64Test::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 3> string_lookup_ = {{
-        std::make_pair(MIN, "MIN"),
-        std::make_pair(MAX, "MAX"),
-        std::make_pair(NEG_ONE, "NEG_ONE"),
-    }};
-};
 
 // Signed32Test Definition
 struct Signed32Test {
-    using _UnderlyingType = int32_t;
-    enum class _Value : int32_t {
+    using _underlying_type = int32_t;
+    enum class _enum : int32_t {
         MIN = (-2147483647 - 1),
         MAX = 2147483647,
         NEG_ONE = -1,
     };
 
-    constexpr Signed32Test() : value_(_Value((-2147483647 - 1))) { }
-    constexpr Signed32Test(_Value v) : value_(v) { }
+    constexpr Signed32Test() : value_(_enum((-2147483647 - 1))) { }
+    constexpr Signed32Test(_enum v) : value_(v) { }
 
-    static constexpr _Value MIN = _Value::MIN;
-    static constexpr _Value MAX = _Value::MAX;
-    static constexpr _Value NEG_ONE = _Value::NEG_ONE;
+    static constexpr _enum MIN = _enum::MIN;
+    static constexpr _enum MAX = _enum::MAX;
+    static constexpr _enum NEG_ONE = _enum::NEG_ONE;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int32_t _to_underlying() const { return static_cast<int32_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = Signed32Test(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed32Test v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int32_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int32_t _min() { return (-2147483647 - 1); }
-    static constexpr int32_t _max() { return 2147483647; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr Signed32Test _from_underlying_unsafe(int32_t v) { return Signed32Test(static_cast<_Value>(v)); }
-    static constexpr int32_t _bits_required_storage() { return 32; }
-    static constexpr int32_t _bits_required_transmission() { return 32; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed32Test v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int32_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const Signed32Test::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed32Test::_enum v) {
         switch (v) {
-            case MIN: return "MIN";
-            case MAX: return "MAX";
-            case NEG_ONE: return "NEG_ONE";
+            case Signed32Test::MIN: return "MIN";
+            case Signed32Test::MAX: return "MAX";
+            case Signed32Test::NEG_ONE: return "NEG_ONE";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed32Test::_enum> from_string<Signed32Test>(const char* str) {
+        constexpr std::array<std::pair<Signed32Test::_enum,const char*>, 3> string_lookup_ = {{
+            std::make_pair(Signed32Test::MIN, "MIN"),
+            std::make_pair(Signed32Test::MAX, "MAX"),
+            std::make_pair(Signed32Test::NEG_ONE, "NEG_ONE"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, Signed32Test::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 3> string_lookup_ = {{
-        std::make_pair(MIN, "MIN"),
-        std::make_pair(MAX, "MAX"),
-        std::make_pair(NEG_ONE, "NEG_ONE"),
-    }};
-};
 
 // Signed16Test Definition
 struct Signed16Test {
-    using _UnderlyingType = int16_t;
-    enum class _Value : int16_t {
+    using _underlying_type = int16_t;
+    enum class _enum : int16_t {
         MIN = (-32767 - 1),
         MAX = 32767,
         NEG_ONE = -1,
     };
 
-    constexpr Signed16Test() : value_(_Value((-32767 - 1))) { }
-    constexpr Signed16Test(_Value v) : value_(v) { }
+    constexpr Signed16Test() : value_(_enum((-32767 - 1))) { }
+    constexpr Signed16Test(_enum v) : value_(v) { }
 
-    static constexpr _Value MIN = _Value::MIN;
-    static constexpr _Value MAX = _Value::MAX;
-    static constexpr _Value NEG_ONE = _Value::NEG_ONE;
+    static constexpr _enum MIN = _enum::MIN;
+    static constexpr _enum MAX = _enum::MAX;
+    static constexpr _enum NEG_ONE = _enum::NEG_ONE;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         MIN, MAX, NEG_ONE, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int16_t _to_underlying() const { return static_cast<int16_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = Signed16Test(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed16Test v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int16_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int16_t _min() { return (-32767 - 1); }
-    static constexpr int16_t _max() { return 32767; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr Signed16Test _from_underlying_unsafe(int16_t v) { return Signed16Test(static_cast<_Value>(v)); }
-    static constexpr int16_t _bits_required_storage() { return 16; }
-    static constexpr int16_t _bits_required_transmission() { return 16; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed16Test v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int16_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const Signed16Test::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed16Test::_enum v) {
         switch (v) {
-            case MIN: return "MIN";
-            case MAX: return "MAX";
-            case NEG_ONE: return "NEG_ONE";
+            case Signed16Test::MIN: return "MIN";
+            case Signed16Test::MAX: return "MAX";
+            case Signed16Test::NEG_ONE: return "NEG_ONE";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed16Test::_enum> from_string<Signed16Test>(const char* str) {
+        constexpr std::array<std::pair<Signed16Test::_enum,const char*>, 3> string_lookup_ = {{
+            std::make_pair(Signed16Test::MIN, "MIN"),
+            std::make_pair(Signed16Test::MAX, "MAX"),
+            std::make_pair(Signed16Test::NEG_ONE, "NEG_ONE"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, Signed16Test::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 3> string_lookup_ = {{
-        std::make_pair(MIN, "MIN"),
-        std::make_pair(MAX, "MAX"),
-        std::make_pair(NEG_ONE, "NEG_ONE"),
-    }};
-};
 
 // Signed8Test Definition
 struct Signed8Test {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         V_INT_MIN = (-127 - 1),
         V_INT_MAX = 127,
         V_NEG_ONE = -1,
     };
 
-    constexpr Signed8Test() : value_(_Value((-127 - 1))) { }
-    constexpr Signed8Test(_Value v) : value_(v) { }
+    constexpr Signed8Test() : value_(_enum((-127 - 1))) { }
+    constexpr Signed8Test(_enum v) : value_(v) { }
 
-    static constexpr _Value V_INT_MIN = _Value::V_INT_MIN;
-    static constexpr _Value V_INT_MAX = _Value::V_INT_MAX;
-    static constexpr _Value V_NEG_ONE = _Value::V_NEG_ONE;
+    static constexpr _enum V_INT_MIN = _enum::V_INT_MIN;
+    static constexpr _enum V_INT_MAX = _enum::V_INT_MAX;
+    static constexpr _enum V_NEG_ONE = _enum::V_NEG_ONE;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         V_INT_MIN, V_INT_MAX, V_NEG_ONE, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = Signed8Test(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed8Test v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int8_t _min() { return (-127 - 1); }
-    static constexpr int8_t _max() { return 127; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr Signed8Test _from_underlying_unsafe(int8_t v) { return Signed8Test(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 8; }
-    static constexpr int8_t _bits_required_transmission() { return 8; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(Signed8Test v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const Signed8Test::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed8Test::_enum v) {
         switch (v) {
-            case V_INT_MIN: return "V_INT_MIN";
-            case V_INT_MAX: return "V_INT_MAX";
-            case V_NEG_ONE: return "V_NEG_ONE";
+            case Signed8Test::V_INT_MIN: return "V_INT_MIN";
+            case Signed8Test::V_INT_MAX: return "V_INT_MAX";
+            case Signed8Test::V_NEG_ONE: return "V_NEG_ONE";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed8Test::_enum> from_string<Signed8Test>(const char* str) {
+        constexpr std::array<std::pair<Signed8Test::_enum,const char*>, 3> string_lookup_ = {{
+            std::make_pair(Signed8Test::V_INT_MIN, "V_INT_MIN"),
+            std::make_pair(Signed8Test::V_INT_MAX, "V_INT_MAX"),
+            std::make_pair(Signed8Test::V_NEG_ONE, "V_NEG_ONE"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, Signed8Test::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 3> string_lookup_ = {{
-        std::make_pair(V_INT_MIN, "V_INT_MIN"),
-        std::make_pair(V_INT_MAX, "V_INT_MAX"),
-        std::make_pair(V_NEG_ONE, "V_NEG_ONE"),
-    }};
-};
 
 // test_value Definition
 struct test_value {
-    using _UnderlyingType = int32_t;
-    enum class _Value : int32_t {
+    using _underlying_type = int32_t;
+    enum class _enum : int32_t {
         A = 0,
         B = 1,
         C = 2,
     };
 
-    constexpr test_value() : value_(_Value(0)) { }
-    constexpr test_value(_Value v) : value_(v) { }
+    constexpr test_value() : value_(_enum(0)) { }
+    constexpr test_value(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
+    static constexpr _enum A = _enum::A;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         A, B, C, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int32_t _to_underlying() const { return static_cast<int32_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = test_value(); }
-
-    static constexpr int32_t _min() { return 0; }
-    static constexpr int32_t _max() { return 2; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr test_value _from_underlying_unsafe(int32_t v) { return test_value(static_cast<_Value>(v)); }
-    static constexpr int32_t _bits_required_storage() { return 3; }
-    static constexpr int32_t _bits_required_transmission() { return 2; }
     static constexpr bool _is_valid(test_value v) { return (0 <= static_cast<int32_t>(v.value_)) && (static_cast<int32_t>(v.value_) <= 2); }
     static constexpr bool _is_valid(int32_t v) { return (0 <= v) && (v <= 2); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const test_value::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const test_value::_enum v) {
         switch (v) {
-            case A: return "A";
-            case B: return "B";
-            case C: return "C";
+            case test_value::A: return "A";
+            case test_value::B: return "B";
+            case test_value::C: return "C";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, test_value::_enum> from_string<test_value>(const char* str) {
+        constexpr std::array<std::pair<test_value::_enum,const char*>, 3> string_lookup_ = {{
+            std::make_pair(test_value::A, "A"),
+            std::make_pair(test_value::B, "B"),
+            std::make_pair(test_value::C, "C"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, test_value::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 3> string_lookup_ = {{
-        std::make_pair(A, "A"),
-        std::make_pair(B, "B"),
-        std::make_pair(C, "C"),
-    }};
-};
 
 // HexDiagonal Definition
 struct HexDiagonal {
-    using _UnderlyingType = uint8_t;
-    enum class _Value : uint8_t {
+    using _underlying_type = uint8_t;
+    enum class _enum : uint8_t {
         NORTH = 0,
         NORTH_EAST = 1,
         SOUTH_EAST = 2,
@@ -579,586 +617,515 @@ struct HexDiagonal {
         NORTH_WEST = 5,
     };
 
-    constexpr HexDiagonal() : value_(_Value(0)) { }
-    constexpr HexDiagonal(_Value v) : value_(v) { }
+    constexpr HexDiagonal() : value_(_enum(0)) { }
+    constexpr HexDiagonal(_enum v) : value_(v) { }
 
-    static constexpr _Value NORTH = _Value::NORTH;
-    static constexpr _Value NORTH_EAST = _Value::NORTH_EAST;
-    static constexpr _Value SOUTH_EAST = _Value::SOUTH_EAST;
-    static constexpr _Value SOUTH = _Value::SOUTH;
-    static constexpr _Value SOUTH_WEST = _Value::SOUTH_WEST;
-    static constexpr _Value NORTH_WEST = _Value::NORTH_WEST;
+    static constexpr _enum NORTH = _enum::NORTH;
+    static constexpr _enum NORTH_EAST = _enum::NORTH_EAST;
+    static constexpr _enum SOUTH_EAST = _enum::SOUTH_EAST;
+    static constexpr _enum SOUTH = _enum::SOUTH;
+    static constexpr _enum SOUTH_WEST = _enum::SOUTH_WEST;
+    static constexpr _enum NORTH_WEST = _enum::NORTH_WEST;
 
-    static constexpr std::array<_Value, 6> _Values = {{
+    static constexpr std::array<_enum, 6> _values = {{
         NORTH, NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr uint8_t _to_underlying() const { return static_cast<uint8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = HexDiagonal(); }
-
-    static constexpr uint8_t _min() { return 0; }
-    static constexpr uint8_t _max() { return 5; }
-    static constexpr int _count() { return 6; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr HexDiagonal _from_underlying_unsafe(uint8_t v) { return HexDiagonal(static_cast<_Value>(v)); }
-    static constexpr uint8_t _bits_required_storage() { return 3; }
-    static constexpr uint8_t _bits_required_transmission() { return 3; }
     static constexpr bool _is_valid(HexDiagonal v) { return static_cast<uint8_t>(v.value_) <= 5; }
     static constexpr bool _is_valid(uint8_t v) { return v <= 5; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const HexDiagonal::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const HexDiagonal::_enum v) {
         switch (v) {
-            case NORTH: return "NORTH";
-            case NORTH_EAST: return "NORTH_EAST";
-            case SOUTH_EAST: return "SOUTH_EAST";
-            case SOUTH: return "SOUTH";
-            case SOUTH_WEST: return "SOUTH_WEST";
-            case NORTH_WEST: return "NORTH_WEST";
+            case HexDiagonal::NORTH: return "NORTH";
+            case HexDiagonal::NORTH_EAST: return "NORTH_EAST";
+            case HexDiagonal::SOUTH_EAST: return "SOUTH_EAST";
+            case HexDiagonal::SOUTH: return "SOUTH";
+            case HexDiagonal::SOUTH_WEST: return "SOUTH_WEST";
+            case HexDiagonal::NORTH_WEST: return "NORTH_WEST";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, HexDiagonal::_enum> from_string<HexDiagonal>(const char* str) {
+        constexpr std::array<std::pair<HexDiagonal::_enum,const char*>, 6> string_lookup_ = {{
+            std::make_pair(HexDiagonal::NORTH, "NORTH"),
+            std::make_pair(HexDiagonal::NORTH_EAST, "NORTH_EAST"),
+            std::make_pair(HexDiagonal::SOUTH_EAST, "SOUTH_EAST"),
+            std::make_pair(HexDiagonal::SOUTH, "SOUTH"),
+            std::make_pair(HexDiagonal::SOUTH_WEST, "SOUTH_WEST"),
+            std::make_pair(HexDiagonal::NORTH_WEST, "NORTH_WEST"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, HexDiagonal::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 6> string_lookup_ = {{
-        std::make_pair(NORTH, "NORTH"),
-        std::make_pair(NORTH_EAST, "NORTH_EAST"),
-        std::make_pair(SOUTH_EAST, "SOUTH_EAST"),
-        std::make_pair(SOUTH, "SOUTH"),
-        std::make_pair(SOUTH_WEST, "SOUTH_WEST"),
-        std::make_pair(NORTH_WEST, "NORTH_WEST"),
-    }};
-};
 
 // NegativeTest1 Definition
 struct NegativeTest1 {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = -2,
         B = -1,
         C = 0,
         D = 1,
     };
 
-    constexpr NegativeTest1() : value_(_Value(-2)) { }
-    constexpr NegativeTest1(_Value v) : value_(v) { }
+    constexpr NegativeTest1() : value_(_enum(-2)) { }
+    constexpr NegativeTest1(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
-    static constexpr _Value D = _Value::D;
+    static constexpr _enum A = _enum::A;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
+    static constexpr _enum D = _enum::D;
 
-    static constexpr std::array<_Value, 4> _Values = {{
+    static constexpr std::array<_enum, 4> _values = {{
         A, B, C, D, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = NegativeTest1(); }
-
-    static constexpr int8_t _min() { return -2; }
-    static constexpr int8_t _max() { return 1; }
-    static constexpr int _count() { return 4; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr NegativeTest1 _from_underlying_unsafe(int8_t v) { return NegativeTest1(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 2; }
-    static constexpr int8_t _bits_required_transmission() { return 2; }
     static constexpr bool _is_valid(NegativeTest1 v) { return (-2 <= static_cast<int8_t>(v.value_)) && (static_cast<int8_t>(v.value_) <= 1); }
     static constexpr bool _is_valid(int8_t v) { return (-2 <= v) && (v <= 1); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const NegativeTest1::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest1::_enum v) {
         switch (v) {
-            case A: return "A";
-            case B: return "B";
-            case C: return "C";
-            case D: return "D";
+            case NegativeTest1::A: return "A";
+            case NegativeTest1::B: return "B";
+            case NegativeTest1::C: return "C";
+            case NegativeTest1::D: return "D";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest1::_enum> from_string<NegativeTest1>(const char* str) {
+        constexpr std::array<std::pair<NegativeTest1::_enum,const char*>, 4> string_lookup_ = {{
+            std::make_pair(NegativeTest1::A, "A"),
+            std::make_pair(NegativeTest1::B, "B"),
+            std::make_pair(NegativeTest1::C, "C"),
+            std::make_pair(NegativeTest1::D, "D"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, NegativeTest1::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 4> string_lookup_ = {{
-        std::make_pair(A, "A"),
-        std::make_pair(B, "B"),
-        std::make_pair(C, "C"),
-        std::make_pair(D, "D"),
-    }};
-};
 
 // NegativeTest2 Definition
 struct NegativeTest2 {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = -3,
         B = -2,
         C = -1,
         D = 0,
     };
 
-    constexpr NegativeTest2() : value_(_Value(-3)) { }
-    constexpr NegativeTest2(_Value v) : value_(v) { }
+    constexpr NegativeTest2() : value_(_enum(-3)) { }
+    constexpr NegativeTest2(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
-    static constexpr _Value D = _Value::D;
+    static constexpr _enum A = _enum::A;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
+    static constexpr _enum D = _enum::D;
 
-    static constexpr std::array<_Value, 4> _Values = {{
+    static constexpr std::array<_enum, 4> _values = {{
         A, B, C, D, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = NegativeTest2(); }
-
-    static constexpr int8_t _min() { return -3; }
-    static constexpr int8_t _max() { return 0; }
-    static constexpr int _count() { return 4; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr NegativeTest2 _from_underlying_unsafe(int8_t v) { return NegativeTest2(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 3; }
-    static constexpr int8_t _bits_required_transmission() { return 2; }
     static constexpr bool _is_valid(NegativeTest2 v) { return (-3 <= static_cast<int8_t>(v.value_)) && (static_cast<int8_t>(v.value_) <= 0); }
     static constexpr bool _is_valid(int8_t v) { return (-3 <= v) && (v <= 0); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const NegativeTest2::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest2::_enum v) {
         switch (v) {
-            case A: return "A";
-            case B: return "B";
-            case C: return "C";
-            case D: return "D";
+            case NegativeTest2::A: return "A";
+            case NegativeTest2::B: return "B";
+            case NegativeTest2::C: return "C";
+            case NegativeTest2::D: return "D";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest2::_enum> from_string<NegativeTest2>(const char* str) {
+        constexpr std::array<std::pair<NegativeTest2::_enum,const char*>, 4> string_lookup_ = {{
+            std::make_pair(NegativeTest2::A, "A"),
+            std::make_pair(NegativeTest2::B, "B"),
+            std::make_pair(NegativeTest2::C, "C"),
+            std::make_pair(NegativeTest2::D, "D"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, NegativeTest2::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 4> string_lookup_ = {{
-        std::make_pair(A, "A"),
-        std::make_pair(B, "B"),
-        std::make_pair(C, "C"),
-        std::make_pair(D, "D"),
-    }};
-};
 
 // NegativeTest3 Definition
 struct NegativeTest3 {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = -3,
         B = 4,
     };
 
-    constexpr NegativeTest3() : value_(_Value(-3)) { }
-    constexpr NegativeTest3(_Value v) : value_(v) { }
+    constexpr NegativeTest3() : value_(_enum(-3)) { }
+    constexpr NegativeTest3(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
-    static constexpr _Value B = _Value::B;
+    static constexpr _enum A = _enum::A;
+    static constexpr _enum B = _enum::B;
 
-    static constexpr std::array<_Value, 2> _Values = {{
+    static constexpr std::array<_enum, 2> _values = {{
         A, B, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = NegativeTest3(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(NegativeTest3 v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int8_t _min() { return -3; }
-    static constexpr int8_t _max() { return 4; }
-    static constexpr int _count() { return 2; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr NegativeTest3 _from_underlying_unsafe(int8_t v) { return NegativeTest3(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 4; }
-    static constexpr int8_t _bits_required_transmission() { return 3; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(NegativeTest3 v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const NegativeTest3::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest3::_enum v) {
         switch (v) {
-            case A: return "A";
-            case B: return "B";
+            case NegativeTest3::A: return "A";
+            case NegativeTest3::B: return "B";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest3::_enum> from_string<NegativeTest3>(const char* str) {
+        constexpr std::array<std::pair<NegativeTest3::_enum,const char*>, 2> string_lookup_ = {{
+            std::make_pair(NegativeTest3::A, "A"),
+            std::make_pair(NegativeTest3::B, "B"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, NegativeTest3::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 2> string_lookup_ = {{
-        std::make_pair(A, "A"),
-        std::make_pair(B, "B"),
-    }};
-};
 
 // NegativeTest4 Definition
 struct NegativeTest4 {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = -4,
         B = 3,
     };
 
-    constexpr NegativeTest4() : value_(_Value(-4)) { }
-    constexpr NegativeTest4(_Value v) : value_(v) { }
+    constexpr NegativeTest4() : value_(_enum(-4)) { }
+    constexpr NegativeTest4(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
-    static constexpr _Value B = _Value::B;
+    static constexpr _enum A = _enum::A;
+    static constexpr _enum B = _enum::B;
 
-    static constexpr std::array<_Value, 2> _Values = {{
+    static constexpr std::array<_enum, 2> _values = {{
         A, B, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = NegativeTest4(); }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(NegativeTest4 v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
-    static constexpr int8_t _min() { return -4; }
-    static constexpr int8_t _max() { return 3; }
-    static constexpr int _count() { return 2; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr NegativeTest4 _from_underlying_unsafe(int8_t v) { return NegativeTest4(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 3; }
-    static constexpr int8_t _bits_required_transmission() { return 3; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(NegativeTest4 v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(int8_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const NegativeTest4::_Value v) {
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest4::_enum v) {
         switch (v) {
-            case A: return "A";
-            case B: return "B";
+            case NegativeTest4::A: return "A";
+            case NegativeTest4::B: return "B";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest4::_enum> from_string<NegativeTest4>(const char* str) {
+        constexpr std::array<std::pair<NegativeTest4::_enum,const char*>, 2> string_lookup_ = {{
+            std::make_pair(NegativeTest4::A, "A"),
+            std::make_pair(NegativeTest4::B, "B"),
+        }};
         for (std::size_t i = 0; i < string_lookup_.size(); i++) {
             if (enumbra::detail::streq(string_lookup_[i].second, str)) {
                 return std::make_pair(true, string_lookup_[i].first);
             }
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, NegativeTest4::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 2> string_lookup_ = {{
-        std::make_pair(A, "A"),
-        std::make_pair(B, "B"),
-    }};
-};
 
 // EmptyTest1Unsigned Definition
 struct EmptyTest1Unsigned {
-    using _UnderlyingType = uint8_t;
-    enum class _Value : uint8_t {
+    using _underlying_type = uint8_t;
+    enum class _enum : uint8_t {
         A = 0,
     };
 
-    constexpr EmptyTest1Unsigned() : value_(_Value(0)) { }
-    constexpr EmptyTest1Unsigned(_Value v) : value_(v) { }
+    constexpr EmptyTest1Unsigned() : value_(_enum(0)) { }
+    constexpr EmptyTest1Unsigned(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
+    static constexpr _enum A = _enum::A;
 
-    static constexpr std::array<_Value, 1> _Values = {{
+    static constexpr std::array<_enum, 1> _values = {{
         A, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr uint8_t _to_underlying() const { return static_cast<uint8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = EmptyTest1Unsigned(); }
-
-    static constexpr uint8_t _min() { return 0; }
-    static constexpr uint8_t _max() { return 0; }
-    static constexpr int _count() { return 1; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr EmptyTest1Unsigned _from_underlying_unsafe(uint8_t v) { return EmptyTest1Unsigned(static_cast<_Value>(v)); }
-    static constexpr uint8_t _bits_required_storage() { return 1; }
-    static constexpr uint8_t _bits_required_transmission() { return 1; }
     static constexpr bool _is_valid(EmptyTest1Unsigned v) { return static_cast<uint8_t>(v.value_) <= 0; }
     static constexpr bool _is_valid(uint8_t v) { return v <= 0; }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const EmptyTest1Unsigned::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Unsigned::_enum v) {
         switch (v) {
-            case A: return "A";
+            case EmptyTest1Unsigned::A: return "A";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, EmptyTest1Unsigned::_enum> from_string<EmptyTest1Unsigned>(const char* str) {
+        constexpr std::array<std::pair<EmptyTest1Unsigned::_enum,const char*>, 1> string_lookup_ = {{
+            std::make_pair(EmptyTest1Unsigned::A, "A"),
+        }};
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
             return std::make_pair(true, string_lookup_[0].first);
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, EmptyTest1Unsigned::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 1> string_lookup_ = {{
-        std::make_pair(A, "A"),
-    }};
-};
 
 // EmptyTest1Signed Definition
 struct EmptyTest1Signed {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = 0,
     };
 
-    constexpr EmptyTest1Signed() : value_(_Value(0)) { }
-    constexpr EmptyTest1Signed(_Value v) : value_(v) { }
+    constexpr EmptyTest1Signed() : value_(_enum(0)) { }
+    constexpr EmptyTest1Signed(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
+    static constexpr _enum A = _enum::A;
 
-    static constexpr std::array<_Value, 1> _Values = {{
+    static constexpr std::array<_enum, 1> _values = {{
         A, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = EmptyTest1Signed(); }
-
-    static constexpr int8_t _min() { return 0; }
-    static constexpr int8_t _max() { return 0; }
-    static constexpr int _count() { return 1; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr EmptyTest1Signed _from_underlying_unsafe(int8_t v) { return EmptyTest1Signed(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 1; }
-    static constexpr int8_t _bits_required_transmission() { return 1; }
     static constexpr bool _is_valid(EmptyTest1Signed v) { return (0 <= static_cast<int8_t>(v.value_)) && (static_cast<int8_t>(v.value_) <= 0); }
     static constexpr bool _is_valid(int8_t v) { return (0 <= v) && (v <= 0); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const EmptyTest1Signed::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Signed::_enum v) {
         switch (v) {
-            case A: return "A";
+            case EmptyTest1Signed::A: return "A";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, EmptyTest1Signed::_enum> from_string<EmptyTest1Signed>(const char* str) {
+        constexpr std::array<std::pair<EmptyTest1Signed::_enum,const char*>, 1> string_lookup_ = {{
+            std::make_pair(EmptyTest1Signed::A, "A"),
+        }};
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
             return std::make_pair(true, string_lookup_[0].first);
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, EmptyTest1Signed::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 1> string_lookup_ = {{
-        std::make_pair(A, "A"),
-    }};
-};
 
 // SingleTest1Unsigned Definition
 struct SingleTest1Unsigned {
-    using _UnderlyingType = uint8_t;
-    enum class _Value : uint8_t {
+    using _underlying_type = uint8_t;
+    enum class _enum : uint8_t {
         A = 4,
     };
 
-    constexpr SingleTest1Unsigned() : value_(_Value(4)) { }
-    constexpr SingleTest1Unsigned(_Value v) : value_(v) { }
+    constexpr SingleTest1Unsigned() : value_(_enum(4)) { }
+    constexpr SingleTest1Unsigned(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
+    static constexpr _enum A = _enum::A;
 
-    static constexpr std::array<_Value, 1> _Values = {{
+    static constexpr std::array<_enum, 1> _values = {{
         A, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr uint8_t _to_underlying() const { return static_cast<uint8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = SingleTest1Unsigned(); }
-
-    static constexpr uint8_t _min() { return 4; }
-    static constexpr uint8_t _max() { return 4; }
-    static constexpr int _count() { return 1; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr SingleTest1Unsigned _from_underlying_unsafe(uint8_t v) { return SingleTest1Unsigned(static_cast<_Value>(v)); }
-    static constexpr uint8_t _bits_required_storage() { return 3; }
-    static constexpr uint8_t _bits_required_transmission() { return 1; }
     static constexpr bool _is_valid(SingleTest1Unsigned v) { return (4 <= static_cast<uint8_t>(v.value_)) && (static_cast<uint8_t>(v.value_) <= 4); }
     static constexpr bool _is_valid(uint8_t v) { return (4 <= v) && (v <= 4); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const SingleTest1Unsigned::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Unsigned::_enum v) {
         switch (v) {
-            case A: return "A";
+            case SingleTest1Unsigned::A: return "A";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, SingleTest1Unsigned::_enum> from_string<SingleTest1Unsigned>(const char* str) {
+        constexpr std::array<std::pair<SingleTest1Unsigned::_enum,const char*>, 1> string_lookup_ = {{
+            std::make_pair(SingleTest1Unsigned::A, "A"),
+        }};
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
             return std::make_pair(true, string_lookup_[0].first);
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, SingleTest1Unsigned::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 1> string_lookup_ = {{
-        std::make_pair(A, "A"),
-    }};
-};
 
 // SingleTest1Signed Definition
 struct SingleTest1Signed {
-    using _UnderlyingType = int8_t;
-    enum class _Value : int8_t {
+    using _underlying_type = int8_t;
+    enum class _enum : int8_t {
         A = 4,
     };
 
-    constexpr SingleTest1Signed() : value_(_Value(4)) { }
-    constexpr SingleTest1Signed(_Value v) : value_(v) { }
+    constexpr SingleTest1Signed() : value_(_enum(4)) { }
+    constexpr SingleTest1Signed(_enum v) : value_(v) { }
 
-    static constexpr _Value A = _Value::A;
+    static constexpr _enum A = _enum::A;
 
-    static constexpr std::array<_Value, 1> _Values = {{
+    static constexpr std::array<_enum, 1> _values = {{
         A, 
     }};
 
-    constexpr _Value _value() const { return value_; }
-    constexpr operator _Value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
+    constexpr operator _enum() const { return value_; }
     explicit operator bool() = delete;
 
-    constexpr int8_t _to_underlying() const { return static_cast<int8_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _reset_default() { *this = SingleTest1Signed(); }
-
-    static constexpr int8_t _min() { return 4; }
-    static constexpr int8_t _max() { return 4; }
-    static constexpr int _count() { return 1; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr SingleTest1Signed _from_underlying_unsafe(int8_t v) { return SingleTest1Signed(static_cast<_Value>(v)); }
-    static constexpr int8_t _bits_required_storage() { return 4; }
-    static constexpr int8_t _bits_required_transmission() { return 1; }
     static constexpr bool _is_valid(SingleTest1Signed v) { return (4 <= static_cast<int8_t>(v.value_)) && (static_cast<int8_t>(v.value_) <= 4); }
     static constexpr bool _is_valid(int8_t v) { return (4 <= v) && (v <= 4); }
 
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* _to_string(const SingleTest1Signed::_Value v) {
+
+private:
+    _enum value_;
+};
+
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Signed::_enum v) {
         switch (v) {
-            case A: return "A";
+            case SingleTest1Signed::A: return "A";
         }
         return "";
     }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, _Value> _from_string(const char* str) {
+
+    template<>
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, SingleTest1Signed::_enum> from_string<SingleTest1Signed>(const char* str) {
+        constexpr std::array<std::pair<SingleTest1Signed::_enum,const char*>, 1> string_lookup_ = {{
+            std::make_pair(SingleTest1Signed::A, "A"),
+        }};
         if (enumbra::detail::streq(string_lookup_[0].second, str)) {
             return std::make_pair(true, string_lookup_[0].first);
         }
-        return std::make_pair(false, _Value());
+        return std::make_pair(false, SingleTest1Signed::_enum());
     }
-
-private:
-    _Value value_;
-    static constexpr std::array<std::pair<_Value,const char*>, 1> string_lookup_ = {{
-        std::make_pair(A, "A"),
-    }};
-};
 
 // test_flags Definition
 struct test_flags {
-    using _UnderlyingType = uint32_t;
-    enum class _Value : uint32_t {
+    using _underlying_type = uint32_t;
+    enum class _enum : uint32_t {
         B = 1,
         C = 2,
     };
 
-    constexpr test_flags() : value_(_Value(0)) { }
-    constexpr test_flags(_Value v) : value_(v) { }
+    constexpr test_flags() : value_(_enum(0)) { }
+    constexpr test_flags(_enum v) : value_(v) { }
 
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
 
-    static constexpr std::array<_Value, 2> _Values = {{
+    static constexpr std::array<_enum, 2> _values = {{
         B, C, 
     }};
 
-    constexpr _Value _value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
     constexpr explicit operator bool() const = delete;
 
-    constexpr uint32_t _to_underlying() const { return static_cast<uint32_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_Value>(0); }
-    constexpr bool _test(_Value v) const { return (static_cast<uint32_t>(value_) & static_cast<uint32_t>(v)) == static_cast<uint32_t>(v); }
-    constexpr void _set(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) & (~static_cast<uint32_t>(v))); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) ^ static_cast<uint32_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_enum>(0); }
+    constexpr bool _test(_enum v) const { return (static_cast<uint32_t>(value_) & static_cast<uint32_t>(v)) == static_cast<uint32_t>(v); }
+    constexpr void _set(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) & (~static_cast<uint32_t>(v))); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) ^ static_cast<uint32_t>(v)); }
     constexpr bool _all() const { return static_cast<uint32_t>(value_) >= 0x3; }
     constexpr bool _any() const { return static_cast<uint32_t>(value_) > 0; }
     constexpr bool _none() const { return static_cast<uint32_t>(value_) == 0; }
     ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_single() const { uint32_t n = static_cast<uint32_t>(value_); return n && !(n & (n - 1)); }
 
-    static constexpr uint32_t _min() { return 0; }
-    static constexpr uint32_t _max() { return 0x3; }
-    static constexpr int _count() { return 2; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr test_flags _from_underlying_unsafe(uint32_t v) { return test_flags(static_cast<_Value>(v)); }
-    static constexpr uint32_t _bits_required_storage() { return 2; }
-    static constexpr uint32_t _bits_required_transmission() { return 2; }
     static constexpr bool _is_valid(test_flags v) { return static_cast<uint32_t>(v.value_) <= 3; }
     static constexpr bool _is_valid(uint32_t v) { return v <= 3; }
 
 private:
-    _Value value_;
+    _enum value_;
 };
 
 // test_flags Operator Overloads
 constexpr bool operator==(const test_flags& a, const test_flags& b) { return a._value() == b._value(); }
 constexpr bool operator!=(const test_flags& a, const test_flags& b) { return a._value() != b._value(); }
-constexpr test_flags::_Value operator~(const test_flags::_Value a) { return static_cast<test_flags::_Value>(~static_cast<uint32_t>(a)); }
-constexpr test_flags::_Value operator|(const test_flags::_Value a, const test_flags::_Value b) { return static_cast<test_flags::_Value>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
-constexpr test_flags::_Value operator&(const test_flags::_Value a, const test_flags::_Value b) { return static_cast<test_flags::_Value>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
-constexpr test_flags::_Value operator^(const test_flags::_Value a, const test_flags::_Value b) { return static_cast<test_flags::_Value>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
+constexpr test_flags::_enum operator~(const test_flags::_enum a) { return static_cast<test_flags::_enum>(~static_cast<uint32_t>(a)); }
+constexpr test_flags::_enum operator|(const test_flags::_enum a, const test_flags::_enum b) { return static_cast<test_flags::_enum>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
+constexpr test_flags::_enum operator&(const test_flags::_enum a, const test_flags::_enum b) { return static_cast<test_flags::_enum>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
+constexpr test_flags::_enum operator^(const test_flags::_enum a, const test_flags::_enum b) { return static_cast<test_flags::_enum>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
 constexpr test_flags operator~(const test_flags a) { return ~a._value(); }
 constexpr test_flags operator|(const test_flags a, const test_flags b) { return a._value() | b._value(); }
 constexpr test_flags operator&(const test_flags a, const test_flags b) { return a._value() & b._value(); }
@@ -1169,57 +1136,49 @@ ENUMBRA_CONSTEXPR_NONCONSTFUNC test_flags& operator^=(test_flags& a, const test_
 
 // test_nodefault Definition
 struct test_nodefault {
-    using _UnderlyingType = uint16_t;
-    enum class _Value : uint16_t {
+    using _underlying_type = uint16_t;
+    enum class _enum : uint16_t {
         B = 1,
         C = 2,
     };
 
-    constexpr test_nodefault() : value_(_Value(0)) { }
-    constexpr test_nodefault(_Value v) : value_(v) { }
+    constexpr test_nodefault() : value_(_enum(0)) { }
+    constexpr test_nodefault(_enum v) : value_(v) { }
 
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
 
-    static constexpr std::array<_Value, 2> _Values = {{
+    static constexpr std::array<_enum, 2> _values = {{
         B, C, 
     }};
 
-    constexpr _Value _value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
     constexpr explicit operator bool() const = delete;
 
-    constexpr uint16_t _to_underlying() const { return static_cast<uint16_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_Value>(0); }
-    constexpr bool _test(_Value v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
-    constexpr void _set(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_enum>(0); }
+    constexpr bool _test(_enum v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
+    constexpr void _set(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
     constexpr bool _all() const { return static_cast<uint16_t>(value_) >= 0x3; }
     constexpr bool _any() const { return static_cast<uint16_t>(value_) > 0; }
     constexpr bool _none() const { return static_cast<uint16_t>(value_) == 0; }
     ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_single() const { uint16_t n = static_cast<uint16_t>(value_); return n && !(n & (n - 1)); }
 
-    static constexpr uint16_t _min() { return 0; }
-    static constexpr uint16_t _max() { return 0x3; }
-    static constexpr int _count() { return 2; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr test_nodefault _from_underlying_unsafe(uint16_t v) { return test_nodefault(static_cast<_Value>(v)); }
-    static constexpr uint16_t _bits_required_storage() { return 2; }
-    static constexpr uint16_t _bits_required_transmission() { return 2; }
     static constexpr bool _is_valid(test_nodefault v) { return static_cast<uint16_t>(v.value_) <= 3; }
     static constexpr bool _is_valid(uint16_t v) { return v <= 3; }
 
 private:
-    _Value value_;
+    _enum value_;
 };
 
 // test_nodefault Operator Overloads
 constexpr bool operator==(const test_nodefault& a, const test_nodefault& b) { return a._value() == b._value(); }
 constexpr bool operator!=(const test_nodefault& a, const test_nodefault& b) { return a._value() != b._value(); }
-constexpr test_nodefault::_Value operator~(const test_nodefault::_Value a) { return static_cast<test_nodefault::_Value>(~static_cast<uint16_t>(a)); }
-constexpr test_nodefault::_Value operator|(const test_nodefault::_Value a, const test_nodefault::_Value b) { return static_cast<test_nodefault::_Value>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-constexpr test_nodefault::_Value operator&(const test_nodefault::_Value a, const test_nodefault::_Value b) { return static_cast<test_nodefault::_Value>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-constexpr test_nodefault::_Value operator^(const test_nodefault::_Value a, const test_nodefault::_Value b) { return static_cast<test_nodefault::_Value>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr test_nodefault::_enum operator~(const test_nodefault::_enum a) { return static_cast<test_nodefault::_enum>(~static_cast<uint16_t>(a)); }
+constexpr test_nodefault::_enum operator|(const test_nodefault::_enum a, const test_nodefault::_enum b) { return static_cast<test_nodefault::_enum>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr test_nodefault::_enum operator&(const test_nodefault::_enum a, const test_nodefault::_enum b) { return static_cast<test_nodefault::_enum>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr test_nodefault::_enum operator^(const test_nodefault::_enum a, const test_nodefault::_enum b) { return static_cast<test_nodefault::_enum>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
 constexpr test_nodefault operator~(const test_nodefault a) { return ~a._value(); }
 constexpr test_nodefault operator|(const test_nodefault a, const test_nodefault b) { return a._value() | b._value(); }
 constexpr test_nodefault operator&(const test_nodefault a, const test_nodefault b) { return a._value() & b._value(); }
@@ -1230,59 +1189,51 @@ ENUMBRA_CONSTEXPR_NONCONSTFUNC test_nodefault& operator^=(test_nodefault& a, con
 
 // TestSparseFlags Definition
 struct TestSparseFlags {
-    using _UnderlyingType = uint16_t;
-    enum class _Value : uint16_t {
+    using _underlying_type = uint16_t;
+    enum class _enum : uint16_t {
         B = 1,
         C = 4,
         D = 16,
     };
 
-    constexpr TestSparseFlags() : value_(_Value(0)) { }
-    constexpr TestSparseFlags(_Value v) : value_(v) { }
+    constexpr TestSparseFlags() : value_(_enum(0)) { }
+    constexpr TestSparseFlags(_enum v) : value_(v) { }
 
-    static constexpr _Value B = _Value::B;
-    static constexpr _Value C = _Value::C;
-    static constexpr _Value D = _Value::D;
+    static constexpr _enum B = _enum::B;
+    static constexpr _enum C = _enum::C;
+    static constexpr _enum D = _enum::D;
 
-    static constexpr std::array<_Value, 3> _Values = {{
+    static constexpr std::array<_enum, 3> _values = {{
         B, C, D, 
     }};
 
-    constexpr _Value _value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
     constexpr explicit operator bool() const = delete;
 
-    constexpr uint16_t _to_underlying() const { return static_cast<uint16_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_Value>(0); }
-    constexpr bool _test(_Value v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
-    constexpr void _set(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_enum>(0); }
+    constexpr bool _test(_enum v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
+    constexpr void _set(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
     constexpr bool _all() const { return static_cast<uint16_t>(value_) >= 0x15; }
     constexpr bool _any() const { return static_cast<uint16_t>(value_) > 0; }
     constexpr bool _none() const { return static_cast<uint16_t>(value_) == 0; }
     ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_single() const { uint16_t n = static_cast<uint16_t>(value_); return n && !(n & (n - 1)); }
 
-    static constexpr uint16_t _min() { return 0; }
-    static constexpr uint16_t _max() { return 0x15; }
-    static constexpr int _count() { return 3; }
-    static constexpr bool _is_contiguous() { return false; }
-    static constexpr TestSparseFlags _from_underlying_unsafe(uint16_t v) { return TestSparseFlags(static_cast<_Value>(v)); }
-    static constexpr uint16_t _bits_required_storage() { return 5; }
-    static constexpr uint16_t _bits_required_transmission() { return 5; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(TestSparseFlags v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == v._value()) return true; } return false; }
-    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(uint16_t v) { for(std::size_t i = 0; i < _Values.size(); i++) { auto& val = _Values[i]; if(val == _Value(v)) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(TestSparseFlags v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == v._value()) return true; } return false; }
+    static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid(uint16_t v) { for(std::size_t i = 0; i < _values.size(); i++) { auto& val = _values[i]; if(val == _enum(v)) return true; } return false; }
 
 private:
-    _Value value_;
+    _enum value_;
 };
 
 // TestSparseFlags Operator Overloads
 constexpr bool operator==(const TestSparseFlags& a, const TestSparseFlags& b) { return a._value() == b._value(); }
 constexpr bool operator!=(const TestSparseFlags& a, const TestSparseFlags& b) { return a._value() != b._value(); }
-constexpr TestSparseFlags::_Value operator~(const TestSparseFlags::_Value a) { return static_cast<TestSparseFlags::_Value>(~static_cast<uint16_t>(a)); }
-constexpr TestSparseFlags::_Value operator|(const TestSparseFlags::_Value a, const TestSparseFlags::_Value b) { return static_cast<TestSparseFlags::_Value>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-constexpr TestSparseFlags::_Value operator&(const TestSparseFlags::_Value a, const TestSparseFlags::_Value b) { return static_cast<TestSparseFlags::_Value>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-constexpr TestSparseFlags::_Value operator^(const TestSparseFlags::_Value a, const TestSparseFlags::_Value b) { return static_cast<TestSparseFlags::_Value>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr TestSparseFlags::_enum operator~(const TestSparseFlags::_enum a) { return static_cast<TestSparseFlags::_enum>(~static_cast<uint16_t>(a)); }
+constexpr TestSparseFlags::_enum operator|(const TestSparseFlags::_enum a, const TestSparseFlags::_enum b) { return static_cast<TestSparseFlags::_enum>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr TestSparseFlags::_enum operator&(const TestSparseFlags::_enum a, const TestSparseFlags::_enum b) { return static_cast<TestSparseFlags::_enum>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr TestSparseFlags::_enum operator^(const TestSparseFlags::_enum a, const TestSparseFlags::_enum b) { return static_cast<TestSparseFlags::_enum>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
 constexpr TestSparseFlags operator~(const TestSparseFlags a) { return ~a._value(); }
 constexpr TestSparseFlags operator|(const TestSparseFlags a, const TestSparseFlags b) { return a._value() | b._value(); }
 constexpr TestSparseFlags operator&(const TestSparseFlags a, const TestSparseFlags b) { return a._value() & b._value(); }
@@ -1293,55 +1244,47 @@ ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSparseFlags& operator^=(TestSparseFlags& a, c
 
 // TestSingleFlag Definition
 struct TestSingleFlag {
-    using _UnderlyingType = uint16_t;
-    enum class _Value : uint16_t {
+    using _underlying_type = uint16_t;
+    enum class _enum : uint16_t {
         C = 4,
     };
 
-    constexpr TestSingleFlag() : value_(_Value(0)) { }
-    constexpr TestSingleFlag(_Value v) : value_(v) { }
+    constexpr TestSingleFlag() : value_(_enum(0)) { }
+    constexpr TestSingleFlag(_enum v) : value_(v) { }
 
-    static constexpr _Value C = _Value::C;
+    static constexpr _enum C = _enum::C;
 
-    static constexpr std::array<_Value, 1> _Values = {{
+    static constexpr std::array<_enum, 1> _values = {{
         C, 
     }};
 
-    constexpr _Value _value() const { return value_; }
+    constexpr _enum _value() const { return value_; }
     constexpr explicit operator bool() const = delete;
 
-    constexpr uint16_t _to_underlying() const { return static_cast<uint16_t>(value_); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_Value>(0); }
-    constexpr bool _test(_Value v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
-    constexpr void _set(_Value v) { value_ = static_cast<_Value>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_Value v) { value_ = static_cast<_Value>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() { value_ = static_cast<_enum>(0); }
+    constexpr bool _test(_enum v) const { return (static_cast<uint16_t>(value_) & static_cast<uint16_t>(v)) == static_cast<uint16_t>(v); }
+    constexpr void _set(_enum v) { value_ = static_cast<_enum>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) & (~static_cast<uint16_t>(v))); }
+    ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_enum v) { value_ = static_cast<_enum>(static_cast<uint16_t>(value_) ^ static_cast<uint16_t>(v)); }
     constexpr bool _all() const { return static_cast<uint16_t>(value_) >= 0x4; }
     constexpr bool _any() const { return static_cast<uint16_t>(value_) > 0; }
     constexpr bool _none() const { return static_cast<uint16_t>(value_) == 0; }
     ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_single() const { uint16_t n = static_cast<uint16_t>(value_); return n && !(n & (n - 1)); }
 
-    static constexpr uint16_t _min() { return 0; }
-    static constexpr uint16_t _max() { return 0x4; }
-    static constexpr int _count() { return 1; }
-    static constexpr bool _is_contiguous() { return true; }
-    static constexpr TestSingleFlag _from_underlying_unsafe(uint16_t v) { return TestSingleFlag(static_cast<_Value>(v)); }
-    static constexpr uint16_t _bits_required_storage() { return 3; }
-    static constexpr uint16_t _bits_required_transmission() { return 3; }
     static constexpr bool _is_valid(TestSingleFlag v) { return static_cast<uint16_t>(v.value_) <= 4; }
     static constexpr bool _is_valid(uint16_t v) { return v <= 4; }
 
 private:
-    _Value value_;
+    _enum value_;
 };
 
 // TestSingleFlag Operator Overloads
 constexpr bool operator==(const TestSingleFlag& a, const TestSingleFlag& b) { return a._value() == b._value(); }
 constexpr bool operator!=(const TestSingleFlag& a, const TestSingleFlag& b) { return a._value() != b._value(); }
-constexpr TestSingleFlag::_Value operator~(const TestSingleFlag::_Value a) { return static_cast<TestSingleFlag::_Value>(~static_cast<uint16_t>(a)); }
-constexpr TestSingleFlag::_Value operator|(const TestSingleFlag::_Value a, const TestSingleFlag::_Value b) { return static_cast<TestSingleFlag::_Value>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-constexpr TestSingleFlag::_Value operator&(const TestSingleFlag::_Value a, const TestSingleFlag::_Value b) { return static_cast<TestSingleFlag::_Value>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-constexpr TestSingleFlag::_Value operator^(const TestSingleFlag::_Value a, const TestSingleFlag::_Value b) { return static_cast<TestSingleFlag::_Value>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr TestSingleFlag::_enum operator~(const TestSingleFlag::_enum a) { return static_cast<TestSingleFlag::_enum>(~static_cast<uint16_t>(a)); }
+constexpr TestSingleFlag::_enum operator|(const TestSingleFlag::_enum a, const TestSingleFlag::_enum b) { return static_cast<TestSingleFlag::_enum>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr TestSingleFlag::_enum operator&(const TestSingleFlag::_enum a, const TestSingleFlag::_enum b) { return static_cast<TestSingleFlag::_enum>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr TestSingleFlag::_enum operator^(const TestSingleFlag::_enum a, const TestSingleFlag::_enum b) { return static_cast<TestSingleFlag::_enum>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
 constexpr TestSingleFlag operator~(const TestSingleFlag a) { return ~a._value(); }
 constexpr TestSingleFlag operator|(const TestSingleFlag a, const TestSingleFlag b) { return a._value() | b._value(); }
 constexpr TestSingleFlag operator&(const TestSingleFlag a, const TestSingleFlag b) { return a._value() & b._value(); }
@@ -1353,44 +1296,84 @@ ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSingleFlag& operator^=(TestSingleFlag& a, con
 } // namespace enums
 
 // Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::test_string_parse::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::test_string_parse; };
+template<> struct enumbra::detail::base_helper<enums::test_string_parse::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::test_string_parse; };
 template<> struct enumbra::detail::base_helper<enums::test_string_parse> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::test_string_parse; };
-template<> struct enumbra::detail::base_helper<enums::Unsigned64Test::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Unsigned64Test; };
+template<> struct enumbra::detail::base_helper<enums::Unsigned64Test::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Unsigned64Test; };
 template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Unsigned64Test; };
-template<> struct enumbra::detail::base_helper<enums::Signed64Test::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed64Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed64Test::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed64Test; };
 template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed64Test; };
-template<> struct enumbra::detail::base_helper<enums::Signed32Test::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed32Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed32Test::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed32Test; };
 template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed32Test; };
-template<> struct enumbra::detail::base_helper<enums::Signed16Test::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed16Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed16Test::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed16Test; };
 template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed16Test; };
-template<> struct enumbra::detail::base_helper<enums::Signed8Test::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed8Test; };
+template<> struct enumbra::detail::base_helper<enums::Signed8Test::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::Signed8Test; };
 template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::Signed8Test; };
-template<> struct enumbra::detail::base_helper<enums::test_value::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::test_value; };
+template<> struct enumbra::detail::base_helper<enums::test_value::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::test_value; };
 template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::test_value; };
-template<> struct enumbra::detail::base_helper<enums::HexDiagonal::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::HexDiagonal; };
+template<> struct enumbra::detail::base_helper<enums::HexDiagonal::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::HexDiagonal; };
 template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::HexDiagonal; };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest1::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest1; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest1::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest1; };
 template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest1; };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest2::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest2; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest2::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest2; };
 template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest2; };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest3::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest3; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest3::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest3; };
 template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest3; };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest4::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest4; };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest4::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::NegativeTest4; };
 template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::NegativeTest4; };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Unsigned; };
 template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::EmptyTest1Unsigned; };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::EmptyTest1Signed; };
 template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::EmptyTest1Signed; };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Unsigned; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Unsigned; };
 template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::SingleTest1Unsigned; };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed::_Value> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Signed; };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed::_enum> : enumbra::detail::type_info<true, true, true, false> { using base_type = enums::SingleTest1Signed; };
 template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, false, true, false> { using base_type = enums::SingleTest1Signed; };
-template<> struct enumbra::detail::base_helper<enums::test_flags::_Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_flags; };
+template<> struct enumbra::detail::base_helper<enums::test_flags::_enum> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_flags; };
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::test_flags; };
-template<> struct enumbra::detail::base_helper<enums::test_nodefault::_Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_nodefault; };
+template<> struct enumbra::detail::base_helper<enums::test_nodefault::_enum> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::test_nodefault; };
 template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::test_nodefault; };
-template<> struct enumbra::detail::base_helper<enums::TestSparseFlags::_Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSparseFlags; };
+template<> struct enumbra::detail::base_helper<enums::TestSparseFlags::_enum> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSparseFlags; };
 template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::TestSparseFlags; };
-template<> struct enumbra::detail::base_helper<enums::TestSingleFlag::_Value> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSingleFlag; };
+template<> struct enumbra::detail::base_helper<enums::TestSingleFlag::_enum> : enumbra::detail::type_info<true, true, false, true> { using base_type = enums::TestSingleFlag; };
 template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, false, true> { using base_type = enums::TestSingleFlag; };
+template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse::_enum> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, int, 5, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, int, 5, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Unsigned64Test::_enum> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, int, 4, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Unsigned64Test> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, int, 4, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed64Test::_enum> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, int, 3, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed64Test> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, int, 3, false, 64, 64> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed32Test::_enum> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, int, 3, false, 32, 32> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed32Test> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, int, 3, false, 32, 32> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed16Test::_enum> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, int, 3, false, 16, 16> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed16Test> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, int, 3, false, 16, 16> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed8Test::_enum> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, int, 3, false, 8, 8> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed8Test> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, int, 3, false, 8, 8> { };
+template<> struct enumbra::detail::value_enum_helper<enums::test_value::_enum> : enumbra::detail::value_enum_info<int32_t, 0, 2, int, 3, true, 3, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::test_value> : enumbra::detail::value_enum_info<int32_t, 0, 2, int, 3, true, 3, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::HexDiagonal::_enum> : enumbra::detail::value_enum_info<uint8_t, 0, 5, int, 6, true, 3, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::HexDiagonal> : enumbra::detail::value_enum_info<uint8_t, 0, 5, int, 6, true, 3, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest1::_enum> : enumbra::detail::value_enum_info<int8_t, -2, 1, int, 4, true, 2, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest1> : enumbra::detail::value_enum_info<int8_t, -2, 1, int, 4, true, 2, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest2::_enum> : enumbra::detail::value_enum_info<int8_t, -3, 0, int, 4, true, 3, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest2> : enumbra::detail::value_enum_info<int8_t, -3, 0, int, 4, true, 3, 2> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest3::_enum> : enumbra::detail::value_enum_info<int8_t, -3, 4, int, 2, false, 4, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest3> : enumbra::detail::value_enum_info<int8_t, -3, 4, int, 2, false, 4, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest4::_enum> : enumbra::detail::value_enum_info<int8_t, -4, 3, int, 2, false, 3, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest4> : enumbra::detail::value_enum_info<int8_t, -4, 3, int, 2, false, 3, 3> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned::_enum> : enumbra::detail::value_enum_info<uint8_t, 0, 0, int, 1, true, 1, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 0, 0, int, 1, true, 1, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed::_enum> : enumbra::detail::value_enum_info<int8_t, 0, 0, int, 1, true, 1, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, int, 1, true, 1, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned::_enum> : enumbra::detail::value_enum_info<uint8_t, 4, 4, int, 1, true, 3, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, int, 1, true, 3, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed::_enum> : enumbra::detail::value_enum_info<int8_t, 4, 4, int, 1, true, 4, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, int, 1, true, 4, 0> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::test_flags::_enum> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, int, 2, true, 2, 2> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::test_flags> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, int, 2, true, 2, 2> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::test_nodefault::_enum> : enumbra::detail::flags_enum_info<uint16_t, 0, 3, int, 2, true, 2, 2> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::test_nodefault> : enumbra::detail::flags_enum_info<uint16_t, 0, 3, int, 2, true, 2, 2> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::TestSparseFlags::_enum> : enumbra::detail::flags_enum_info<uint16_t, 0, 21, int, 3, false, 5, 5> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::TestSparseFlags> : enumbra::detail::flags_enum_info<uint16_t, 0, 21, int, 3, false, 5, 5> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::TestSingleFlag::_enum> : enumbra::detail::flags_enum_info<uint16_t, 0, 4, int, 1, true, 3, 3> { };
+template<> struct enumbra::detail::flags_enum_helper<enums::TestSingleFlag> : enumbra::detail::flags_enum_info<uint16_t, 0, 4, int, 1, true, 3, 3> { };
 // Template Specializations End

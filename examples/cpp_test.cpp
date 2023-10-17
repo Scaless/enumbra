@@ -16,7 +16,7 @@ struct Errata {
 	void enum_class_initializer_list() {
 		// BAD but I don't think it's possible for us to stop this without disallowing bitfields.
 		// enum class is allowed to be initialized from initializer list with no way to override.
-		test_nodefault::_Value qq{ 4 };
+		test_nodefault::_enum qq{ 4 };
 	}
 #endif
 };
@@ -60,7 +60,7 @@ void test_is_enumbra_type(const T& value)
 {
 	if constexpr (is_enumbra_struct<T>()) {
 		// T is an enumbra class type.
-		constexpr auto min = T::_min();
+		constexpr auto min = enumbra::min<T>();
 
 		T x = value;
 		x._zero();
@@ -70,7 +70,7 @@ void test_is_enumbra_type(const T& value)
 		// T is an 'enum class' contained within an enumbra struct type.
 		// T is convertible from its enum class type to its parent struct type with enumbra_base_t
 		using base_type = enumbra_base_t<T>;
-		constexpr auto min = base_type::_min();
+		constexpr auto min = enumbra::min<T>();
 
 		base_type x = value;
 		x._zero();
@@ -189,7 +189,7 @@ int main()
 
 	d = v.X; // uses implicit constructor
 
-	test_nodefault::_Value vv{};
+	test_nodefault::_enum vv{};
 	vv = ~vv;
 
 	TestSingleFlag z;
@@ -208,10 +208,33 @@ int main()
 	// Large integers
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-		STATIC_ASSERT(Max._to_underlying() == UINT64_MAX);
+		STATIC_ASSERT(enumbra::to_underlying(Max) == UINT64_MAX);
 
-		constexpr auto MaxFromStringResultFail = Unsigned64Test::_from_string("NAN");
+		constexpr auto MaxFromStringResultFail = from_string<Unsigned64Test>("NAN");
 		STATIC_ASSERT(MaxFromStringResultFail.first == false);
 	}
+
 	
+	// Range-for
+	for (auto& key : Unsigned64Test::_values)
+	{
+		constexpr auto x = enumbra::min<test_string_parse>();
+		constexpr auto y = enumbra::max<test_string_parse>();
+
+		const test_nodefault e = test_nodefault::B;
+
+		const test_string_parse tsp = test_string_parse::D;
+		auto str = to_string(tsp);
+
+
+	}
+
+	{
+		test_string_parse zzz = enumbra::from_underlying_unsafe<test_string_parse>(4);
+		test_string_parse::_enum eee = enumbra::from_underlying_unsafe<test_string_parse>(4);
+
+
+		zzz = zzz;
+	}
+
 }
