@@ -11,6 +11,8 @@ using namespace enums;
 #define STATIC_ASSERT_MSG(x,y)
 #endif
 
+#define UNUSED(x) (void)x
+
 struct V
 {
 	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W);
@@ -45,13 +47,14 @@ void test_value_vs_flags()
 
 // Parameter is const& so we can pass in all types here, even bitfields
 template<typename T>
-void test_is_enumbra_type(const T& value)
+void test_is_enumbra_type(const T&)
 {
 	if constexpr (is_enumbra_enum<T>())
 	{
 		// T is an 'enum class' contained within an enumbra struct type.
 		// T is convertible from its enum class type to its parent struct type with enumbra_base_t
 		constexpr auto min = enumbra::min<T>();
+		UNUSED(min);
 	}
 	else if constexpr (std::is_enum_v<T>)
 	{
@@ -113,6 +116,8 @@ int main()
 	d = test_nodefault::B ^ d;
 
 	switch (d) {
+	case test_nodefault::B: break;
+	case test_nodefault::C: break;
 	default:break;
 	}
 
@@ -133,10 +138,6 @@ int main()
 	b = (HexDiagonal::NORTH == f);
 	b = (HexDiagonal::NORTH != f);
 	f = b ? f : f;
-
-	switch (f) {
-	case HexDiagonal::NORTH: break;
-	}
 
 	// Test packed bitfields
 	V v;
@@ -171,6 +172,8 @@ int main()
 
 	TestSingleFlag z{};
 	const bool q = z == z;
+	UNUSED(q);
+	
 	z |= TestSingleFlag::C;
 	z = z | z;
 
@@ -185,8 +188,10 @@ int main()
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
 		STATIC_ASSERT(to_underlying(Max) == UINT64_MAX);
+		UNUSED(Max);
 
-		constexpr auto z = enumbra::min<HexDiagonal>();
+		constexpr auto m = enumbra::min<HexDiagonal>();
+		UNUSED(m);
 
 		constexpr auto MaxFromStringResultFail = from_string<Unsigned64Test>("NAN");
 		STATIC_ASSERT(MaxFromStringResultFail.first == false);
@@ -197,13 +202,13 @@ int main()
 	// Range-for
 	for (auto& key : values<test_string_parse>())
 	{
+		const auto str = to_string(key);
+		UNUSED(str);
+
 		constexpr auto x = enumbra::min<test_string_parse>();
+		UNUSED(x);
 		constexpr auto y = enumbra::max<test_string_parse>();
-
-		const test_nodefault e = test_nodefault::B;
-
-		const test_string_parse tsp = test_string_parse::D;
-		auto str = to_string(tsp);
+		UNUSED(y);
 	}
 
 	// is_valid
@@ -211,37 +216,48 @@ int main()
 		constexpr int64_t raw = 1;
 		constexpr bool valid = is_valid<test_string_parse>(raw);
 		STATIC_ASSERT(valid);
+		UNUSED(valid);
 
 		constexpr int64_t raw2 = 0;
 		constexpr bool valid2 = is_valid<test_string_parse>(raw2);
 		STATIC_ASSERT(valid2 == false);
+		UNUSED(valid2);
 	}
 	{
 		constexpr uint8_t raw = 0;
 		constexpr bool valid = is_valid<HexDiagonal>(raw);
 		STATIC_ASSERT(valid);
+		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
 		constexpr bool valid2 = is_valid<HexDiagonal>(raw2);
 		STATIC_ASSERT(valid2 == false);
-		HexDiagonal d = from_underlying_unsafe<HexDiagonal>(raw2);
+		UNUSED(valid2);
+
+		HexDiagonal hd = from_underlying_unsafe<HexDiagonal>(raw2);
+		UNUSED(hd);
 	}
 
 	{
 		struct q_t {
 			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags);
 		};
-		q_t q{};
-		ENUMBRA_ZERO(q.flags);
-		ENUMBRA_SET(q.flags, test_flags::B);
-		ENUMBRA_TOGGLE(q.flags, test_flags::B);
-		ENUMBRA_UNSET(q.flags, test_flags::B);
+		q_t qt{};
+		ENUMBRA_ZERO(qt.flags);
+		ENUMBRA_SET(qt.flags, test_flags::B);
+		ENUMBRA_TOGGLE(qt.flags, test_flags::B);
+		ENUMBRA_UNSET(qt.flags, test_flags::B);
 
-		test_flags f = default_value<test_flags>();
-		ENUMBRA_ZERO(f);
-		ENUMBRA_SET(f, test_flags::C);
-		ENUMBRA_TOGGLE(f, test_flags::B);
-		ENUMBRA_UNSET(f, test_flags::B);
+		test_flags tf = default_value<test_flags>();
+		ENUMBRA_ZERO(tf);
+		ENUMBRA_SET(tf, test_flags::C);
+		ENUMBRA_TOGGLE(tf, test_flags::B);
+		ENUMBRA_UNSET(tf, test_flags::B);
+
+		zero(tf);
+		set(tf, test_flags::C);
+		toggle(tf, test_flags::B);
+		unset(tf, test_flags::B);
 	}
 
 	{
@@ -250,6 +266,7 @@ int main()
 		zzz = eee;
 
 		auto ccc = to_underlying(eee);
+		UNUSED(ccc);
 	}
 
 }
