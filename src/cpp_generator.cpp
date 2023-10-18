@@ -324,7 +324,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// REQUIRED MACROS
 	{
 		// Increment this if macros below are modified.
-		const int enumbra_required_macros_version = 3;
+		const int enumbra_required_macros_version = 6;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
 			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
@@ -336,18 +336,16 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#define ENUMBRA_CPP_VERSION 17"},
 			{ "#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)"},
 			{ "#define ENUMBRA_CPP_VERSION 14"},
-			{ "#elif ((defined(_MSC_VER) && _MSC_VER >= 1700 /*VS2012*/)) || (__cplusplus >= 201103L)"},
-			{ "#define ENUMBRA_CPP_VERSION 11"},
 			{ "#else"},
-			{ "#error enumbra generated headers require a C++11 or higher compiler."},
+			{ "#error enumbra generated headers require a C++14 or higher compiler."},
 			{ "#endif"},
 			{ "" },
-			{"// Non-const constexpr functions were added in C++14"},
-			{"#if __cpp_constexpr >= 201304L"},
-			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
-			{"#else"},
-			{"#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
-			{"#endif"},
+			{ "// Non-const constexpr functions were added in C++14"},
+			{ "#if __cpp_constexpr >= 201304L"},
+			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
+			{ "#else"},
+			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
+			{ "#endif"},
 			{ "" },
 
 			{ "#else // check existing version supported" },
@@ -370,21 +368,27 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	if (cfg.cpp_config.enumbra_bitfield_macros)
 	{
 		// Increment this if macros below are modified.
-		const int enumbra_optinoal_macros_version = 4;
+		const int enumbra_optinoal_macros_version = 6;
 		std::vector<const char*> macro_strings = {
 			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
 			{ "#define ENUMBRA_OPTIONAL_MACROS_VERSION {1}" },
 			{ "" },
+			{ "// Bitfield convenience functions"},
+			{ "#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }}"},
+			{ "#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }}"},
+			{ "#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }}"},
+			{ "#define ENUMBRA_FLIP(Field, Value) {{ decltype(Field) _field_ = Field; flip(_field_, Value); Field = _field_; }}"},
+			{ "" },
 			{ "// Bit field storage helper" },
-			{ "#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>();" },
-			{ "#define ENUMBRA_INIT(Name, InitValue) Name(enumbra::enumbra_base_t<decltype(Name)>(InitValue)._value())" },
-			{ "#define ENUMBRA_INIT_DEFAULT(Name) Name(enumbra::enumbra_base_t<decltype(Name)>()._value())" },
+			{ "#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();" },
+			{ "#define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())" },
+			{ "#define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())" },
 			{ "" },
 			{ "#if ENUMBRA_CPP_VERSION >= 20" },
 			{ "// Bit field storage helper with type-checked member initialization" },
-			{ "#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>() {{ enumbra::enumbra_base_t<Enum>(InitValue)._value() }};" },
+			{ "#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ InitValue }};" },
 			{ "// Bit field storage helper with default value initialization" },
-			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum::_enum Name : ::enumbra::bits_required_storage<Enum>() {{ Enum()._value() }};" },
+			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ ::enumbra::default_value<Enum>() }};" },
 			{ "#endif" },
 			{ "" },
 			{ "#else // check existing version supported" },
@@ -407,24 +411,26 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	{
 		const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 5
+#define ENUMBRA_BASE_TEMPLATES_VERSION 6
 namespace enumbra {{
     namespace detail {{
         // Type info
-        template<bool is_enumbra, bool is_enum_class, bool is_value_enum, bool is_flags_enum>
+        template<bool is_enumbra, bool is_value_enum, bool is_flags_enum>
         struct type_info {{ 
             static constexpr bool enumbra_type = is_enumbra;
-            static constexpr bool enumbra_enum_class = is_enum_class;
             static constexpr bool enumbra_value_enum = is_value_enum;
             static constexpr bool enumbra_flags_enum = is_flags_enum;
         }};
 
         // Value enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v, typename count_type, count_type count_v,
+        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
+            underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct value_enum_info {{
+			using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
+            static constexpr underlying_type def = default_v;
             static constexpr count_type count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
@@ -432,11 +438,14 @@ namespace enumbra {{
         }};
 
         // Flags enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v, typename count_type, count_type count_v,
+        template<typename underlying_type, underlying_type min_v, underlying_type max_v, 
+            underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct flags_enum_info {{
+			using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
+            static constexpr underlying_type def = default_v;
             static constexpr count_type count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
@@ -445,7 +454,7 @@ namespace enumbra {{
         
         // Default template for non-enumbra types
         template<class T>
-        struct base_helper : type_info<false, false, false, false> {{ using base_type = T; }};
+        struct base_helper : type_info<false, false, false> {{ }};
         template<class T>
         struct value_enum_helper;
         template<class T>
@@ -454,68 +463,72 @@ namespace enumbra {{
         // Constexpr string compare
         template<class T> constexpr bool streq(T* a, T* b) {{ return *a == *b && (*a == '\0' || streq(a + 1, b + 1)); }}
     }} // end namespace enumbra::detail
-    template<class T> using enumbra_base_t = typename detail::base_helper<T>::base_type;
-    template<class T> constexpr bool is_enumbra_type() {{ return detail::base_helper<T>::enumbra_type; }}
-    template<class T> constexpr bool is_enumbra_type(T) {{ return detail::base_helper<T>::enumbra_type; }}
-    template<class T> constexpr bool is_enumbra_struct() {{ return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }}
-    template<class T> constexpr bool is_enumbra_struct(T) {{ return is_enumbra_type<T>() && !detail::base_helper<T>::enumbra_enum_class; }}
-    template<class T> constexpr bool is_enumbra_scoped_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }}
-    template<class T> constexpr bool is_enumbra_scoped_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_enum_class; }}
-    template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }}
-    template<class T> constexpr bool is_enumbra_value_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_value_enum; }}
-    template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }}
-    template<class T> constexpr bool is_enumbra_flags_enum(T) {{ return is_enumbra_type<T>() && detail::base_helper<T>::enumbra_flags_enum; }}
+    template<class T> constexpr bool is_enumbra_enum() {{ return detail::base_helper<T>::enumbra_type; }}
+    template<class T> constexpr bool is_enumbra_enum(T) {{ return detail::base_helper<T>::enumbra_type; }}
+    template<class T> constexpr bool is_enumbra_value_enum() {{ return is_enumbra_enum<T>() && detail::base_helper<T>::enumbra_value_enum; }}
+    template<class T> constexpr bool is_enumbra_value_enum(T) {{ return is_enumbra_enum<T>() && detail::base_helper<T>::enumbra_value_enum; }}
+    template<class T> constexpr bool is_enumbra_flags_enum() {{ return is_enumbra_enum<T>() && detail::base_helper<T>::enumbra_flags_enum; }}
+    template<class T> constexpr bool is_enumbra_flags_enum(T) {{ return is_enumbra_enum<T>() && detail::base_helper<T>::enumbra_flags_enum; }}
     
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto min() {{ return detail::value_enum_helper<T>::min; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto min() {{ return detail::flags_enum_helper<T>::min; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto min() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr T min() {{ return static_cast<T>(detail::value_enum_helper<T>::min); }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr T min() {{ return static_cast<T>(detail::flags_enum_helper<T>::min); }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr T min() = delete;
 
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto max() {{ return detail::value_enum_helper<T>::max; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto max() {{ return detail::flags_enum_helper<T>::max; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto max() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr T max() {{ return static_cast<T>(detail::value_enum_helper<T>::max); }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr T max() {{ return static_cast<T>(detail::flags_enum_helper<T>::max); }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr T max() = delete;
 
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto count() {{ return detail::value_enum_helper<T>::count; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto count() {{ return detail::flags_enum_helper<T>::count; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto count() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr T default_value() {{ return static_cast<T>(detail::value_enum_helper<T>::def); }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr T default_value() {{ return static_cast<T>(detail::flags_enum_helper<T>::def); }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr T default_value() = delete;
 
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto is_contiguous() {{ return detail::value_enum_helper<T>::is_contiguous; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto is_contiguous() {{ return detail::flags_enum_helper<T>::is_contiguous; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto is_contiguous() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr int count() {{ return detail::value_enum_helper<T>::count; }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr int count() {{ return detail::flags_enum_helper<T>::count; }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr int count() = delete;
 
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto bits_required_storage() {{ return detail::value_enum_helper<T>::bits_required_storage; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto bits_required_storage() {{ return detail::flags_enum_helper<T>::bits_required_storage; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto bits_required_storage() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr bool is_contiguous() {{ return detail::value_enum_helper<T>::is_contiguous; }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr bool is_contiguous() {{ return detail::flags_enum_helper<T>::is_contiguous; }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr bool is_contiguous() = delete;
 
-    template<class T, std::enable_if_t<is_enumbra_value_enum<T>(), T>* = nullptr>
-    constexpr auto bits_required_transmission() {{ return detail::value_enum_helper<T>::bits_required_transmission; }}
-    template<class T, std::enable_if_t<is_enumbra_flags_enum<T>(), T>* = nullptr>
-    constexpr auto bits_required_transmission() {{ return detail::flags_enum_helper<T>::bits_required_transmission; }}
-    template<class T, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
-    constexpr auto bits_required_transmission() = delete;
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_storage() {{ return detail::value_enum_helper<T>::bits_required_storage; }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_storage() {{ return detail::flags_enum_helper<T>::bits_required_storage; }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_storage() = delete;
 
-    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<is_enumbra_type<T>(), T>* = nullptr>
-    constexpr T from_underlying_unsafe(underlying_type e) {{ return T(static_cast<detail::base_helper<T>::base_type::_enum>(e)); }}
-    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_transmission() {{ return detail::value_enum_helper<T>::bits_required_transmission; }}
+    template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_transmission() {{ return detail::flags_enum_helper<T>::bits_required_transmission; }}
+    template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr int bits_required_transmission() = delete;
+
+    template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename std::enable_if<is_enumbra_enum<T>(), T>::type* = nullptr>
+    constexpr T from_underlying_unsafe(underlying_type e) {{ return static_cast<T>(e); }}
+    template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr T from_underlying_unsafe(underlying_type e) = delete;
 
-    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<is_enumbra_type<T>(), T>* = nullptr>
-    constexpr underlying_type to_underlying(T e) {{ return static_cast<underlying_type>(e._value()); }}
-    template<class T, class underlying_type = detail::base_helper<T>::base_type::_underlying_type, std::enable_if_t<!is_enumbra_type<T>(), T>* = nullptr>
+    template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
+    constexpr underlying_type to_underlying(T e) {{ return static_cast<underlying_type>(e); }}
+	template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    constexpr underlying_type to_underlying(T e) {{ return static_cast<underlying_type>(e); }}
+    template<class T, class underlying_type = T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) = delete;
 
 }} // end namespace enumbra
@@ -550,8 +563,25 @@ namespace enumbra {{
 
 	// Default Templates
 	write_line_tabbed(1, "// Begin Default Templates");
+	if (cfg.cpp_config.string_table_type == StringTableType::ConstWCharPtr)
+	{
+		write_line_tabbed(1, "template<class T>");
+		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, T> from_wstring(const wchar_t* str) = delete;");
+	}
+	else
+	{
+		write_line_tabbed(1, "template<class T>");
+		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, T> from_string(const char* str) = delete;");
+	}
+	write_linefeed();
 	write_line_tabbed(1, "template<class T>");
-	write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, typename T::_enum> from_string(const char* str) = delete;");
+	write_line_tabbed(1, "constexpr auto& values() = delete;");
+	write_linefeed();
+	write_line_tabbed(1, "template<class T>");
+	write_line_tabbed(1, "constexpr auto& flags() = delete;");
+	write_linefeed();
+	write_line_tabbed(1, "template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>");
+	write_line_tabbed(1, "constexpr bool is_valid(underlying_type value) = delete;");
 	write_line_tabbed(1, "// End Default Templates");
 	write_linefeed();
 
@@ -595,7 +625,7 @@ namespace enumbra {{
 
 		const int64_t max_abs_representable_signed = std::max(std::abs(static_cast<int64_t>(min_entry.p_value) - 1), static_cast<int64_t>(max_entry.p_value));
 		const uint64_t max_abs_representable = is_size_type_signed ? max_abs_representable_signed : static_cast<uint64_t>(max_entry.p_value);
-			
+
 		size_t bits_required_storage = get_storage_bits_required(max_abs_representable);
 		const size_t bits_required_transmission = get_transmission_bits_required(max_entry.p_value - min_entry.p_value);
 
@@ -630,88 +660,77 @@ namespace enumbra {{
 		bool is_contiguous = is_value_set_contiguous(unique_values);
 
 		// Definition
-		write_line("// {} Definition", e.name);
-		write_line("struct {} {{", e.name);
+		write_line_tabbed(1, "// {} Definition", e.name);
 		{
-			write_line_tabbed(1, "using _underlying_type = {};", size_type);
-			write_line_tabbed(1, "enum class _enum : {} {{", size_type);
+			write_line_tabbed(1, "enum class {0} : {1} {{", e.name, size_type);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{ v.p_value, type_bits, is_size_type_signed });
 			}
 			write_line_tabbed(1, "}};");
-			write_linefeed();
+		}
+		write_linefeed();
 
-			write_line_tabbed(1, "constexpr {}() : value_(_enum({})) {{ }}", e.name, Int128FormatValue{ default_entry.p_value, type_bits, is_size_type_signed });
-			write_line_tabbed(1, "constexpr {}(_enum v) : value_(v) {{ }}", e.name);
-			write_linefeed();
+		// Values Array
+		// TODO: where's the best place for this to be stored?
+		write_line_tabbed(1, "namespace detail {{ namespace {0} {{", e.name);
+		write_line_tabbed(2, "constexpr std::array<::{2}{0}, {1}> values_arr =", e.name, entry_count, full_ns);
+		write_line_tabbed(2, "{{{{");
+		for (const auto& v : e.values) {
+			write_line_tabbed(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+		}
+		write_line_tabbed(2, "}}}};");
+		write_line_tabbed(1, "}} }}");
+		write_linefeed();
 
-			for (const auto& v : e.values) {
-				write_line_tabbed(1, "static constexpr _enum {0} = _enum::{0};", v.name);
-			}
-			write_linefeed();
+		write_line_tabbed(1, "template<>");
+		write_line_tabbed(1, "constexpr auto& values<{0}>()", e.name);
+		write_line_tabbed(1, "{{");
+		write_line_tabbed(2, "return detail::{0}::values_arr;", e.name);
+		write_line_tabbed(1, "}}");
+		write_linefeed();
 
-			// Values Array
-			write_line_tabbed(1, "static constexpr std::array<_enum, {}> _values = {{{{", entry_count);
-			const int MaxValuesWidth = 120;
-			size_t CurrentValuesWidth = 8;
-			write_tab(2);
-			for (const auto& v : e.values) {
-				CurrentValuesWidth += v.name.length() + 2;
-				if (CurrentValuesWidth < MaxValuesWidth) {
-					write("{}, ", v.name);
-				}
-				else {
-					write_line_tabbed(2, "{},", v.name);
-					CurrentValuesWidth = 8;
-				}
-			}
-			write_linefeed();
-			write_line_tabbed(1, "}}}};");
-			write_linefeed();
-
-			// Operators
-			write_line_tabbed(1, "constexpr _enum _value() const {{ return value_; }}");
-			write_line_tabbed(1, "constexpr operator _enum() const {{ return value_; }}");
-			write_line_tabbed(1, "explicit operator bool() = delete;");
-			write_linefeed();
-
-			// is_valid variations
-			if (is_contiguous)
+		// is_valid variations
+		if (is_contiguous)
+		{
+			if ((min_entry.p_value == 0) && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
 			{
-				if ((min_entry.p_value == 0) && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
-				{
-					write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
-					write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
-				}
-				else
-				{
-					write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed }, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
-					write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed }, Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed });
-				}
+				write_line_tabbed(1, "template<>", e.name);
+				write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return v <= {2}; }}",
+					e.name,
+					size_type,
+					Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed }
+				);
 			}
 			else
 			{
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({0} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v) return true; }} return false; }}", e.name);
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({1} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
+				write_line_tabbed(1, "template<>", e.name);
+				write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return ({2} <= v) && (v <= {3}); }}",
+					e.name,
+					size_type,
+					Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed },
+					Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed }
+				);
 			}
-			write_linefeed();
-
-		
-
-			// Private Members
-			write_linefeed();
-			write_line("private:");
-			write_line_tabbed(1, "_enum value_;");
-
 		}
-		// End of struct
-		write_line("}};");
+		else
+		{
+			write_line_tabbed(1, "template<>", e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<{0}>({1} v) {{", e.name, size_type);
+			write_line_tabbed(2, "const {0} test = static_cast<{0}>(v);", e.name, size_type);
+			write_line_tabbed(2, "for(std::size_t i = 0; i < values<{0}>().size(); i++) {{", e.name, size_type);
+			write_line_tabbed(3, "const auto& val = values<{0}>()[i];", e.name, size_type);
+			write_line_tabbed(3, "if(val == static_cast<{0}>(test))", e.name, size_type);
+			write_line_tabbed(4, "return true;", e.name, size_type);
+			write_line_tabbed(2, "}}");
+			write_line_tabbed(2, "return false;");
+			write_line_tabbed(1, "}}");
+		}
 		write_linefeed();
 
 		// String Functions
-		write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_{1}string(const {2}::_enum v) {{", char_type, string_function_prefix, e.name);
+		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_{1}string(const {2} v) {{", char_type, string_function_prefix, e.name);
 		write_line_tabbed(2, "switch (v) {{");
-		for (auto v : e.values) {
+		for (auto& v : e.values) {
 			write_line_tabbed(3, "case {2}::{0}: return {1}\"{0}\";", v.name, string_literal_prefix, e.name);
 		}
 		write_line_tabbed(2, "}}");
@@ -722,30 +741,22 @@ namespace enumbra {{
 		// MSVC:C28020 complains about the comparision in the loop because it effectively expands to 0 <= x <= 0
 		if (e.values.size() == 1)
 		{
+			const auto& v = e.values.at(0);
 			write_line_tabbed(1, "template<>", e.name);
-			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}::_enum> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
-
-			// Value String Table
-			// TODO: refactor this out later. Just compare to the one string.
-			write_line_tabbed(2, "constexpr std::array<std::pair<{2}::_enum,{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count, e.name);
-			for (const auto& v : e.values) {
-				write_line_tabbed(3, "std::make_pair({2}::{1}, {0}\"{1}\"),", string_literal_prefix, v.name, e.name);
-			}
-			write_line_tabbed(2, "}}}};");
-
-			write_line_tabbed(2, "if (enumbra::detail::streq(string_lookup_[0].second, str)) {{");
-			write_line_tabbed(3, "return std::make_pair(true, string_lookup_[0].first);");
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(2, "if (enumbra::detail::streq({0}\"{1}\", str)) {{", string_literal_prefix, v.name);
+			write_line_tabbed(3, "return std::make_pair(true, {0}::{1});", e.name, v.name);
 			write_line_tabbed(2, "}}");
-			write_line_tabbed(2, "return std::make_pair(false, {0}::_enum());", e.name);
+			write_line_tabbed(2, "return std::make_pair(false, {0}());", e.name);
 			write_line_tabbed(1, "}}");
 		}
 		else
 		{
 			write_line_tabbed(1, "template<>");
-			write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}::_enum> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
 
 			// Value String Table
-			write_line_tabbed(2, "constexpr std::array<std::pair<{2}::_enum,{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count, e.name);
+			write_line_tabbed(2, "constexpr std::array<std::pair<{2},{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count, e.name);
 			for (const auto& v : e.values) {
 				write_line_tabbed(3, "std::make_pair({2}::{1}, {0}\"{1}\"),", string_literal_prefix, v.name, e.name);
 			}
@@ -756,46 +767,26 @@ namespace enumbra {{
 			write_line_tabbed(4, "return std::make_pair(true, string_lookup_[i].first);");
 			write_line_tabbed(3, "}}");
 			write_line_tabbed(2, "}}");
-			write_line_tabbed(2, "return std::make_pair(false, {0}::_enum());", e.name);
+			write_line_tabbed(2, "return std::make_pair(false, {0}());", e.name);
 			write_line_tabbed(1, "}}");
 		}
 
-		/*std::vector<const char*> operator_strings = {
-			{"// {} Operator Overloads"},
-			{"constexpr bool operator==(const {0}& a, const {0}& b) {{ return a.value() == b.value(); }}"},
-			{"constexpr bool operator!=(const {0}& a, const {0}& b) {{ return a.value() != b.value(); }}"},
-		};
-		for (auto& str : operator_strings) {
-			write_line(str, e.name);
-		}*/
-
+		// Helper specializations
 		template_specializations.emplace_back(
-			fmt::format("template<> struct enumbra::detail::value_enum_helper<{0}{1}::_enum> : enumbra::detail::value_enum_info<{2}, {3}, {4}, int, {5}, {6}, {7}, {8}> {{{{ }}}};",
+			fmt::format("template<> struct enumbra::detail::value_enum_helper<{0}{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, int, {6}, {7}, {8}, {9}> {{{{ }}}};",
 				full_ns,
 				e.name,
 				size_type,
 				Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed },
 				Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed },
-				unique_entry_count, 
-				is_contiguous ? "true" : "false",
-				bits_required_storage,
-				bits_required_transmission
-			)
-		);
-		template_specializations.emplace_back(
-			fmt::format("template<> struct enumbra::detail::value_enum_helper<{0}{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, int, {5}, {6}, {7}, {8}> {{{{ }}}};",
-				full_ns,
-				e.name,
-				size_type,
-				Int128FormatValue{ min_entry.p_value, type_bits, is_size_type_signed },
-				Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed },
+				Int128FormatValue{ default_entry.p_value, type_bits, is_size_type_signed },
 				unique_entry_count,
 				is_contiguous ? "true" : "false",
 				bits_required_storage,
 				bits_required_transmission
 			)
 		);
-		
+
 		write_linefeed();
 	}
 
@@ -845,9 +836,10 @@ namespace enumbra {{
 			max_value |= static_cast<uint64_t>(v.p_value);
 		}
 
+		// TODO: Add default<>
 		const uint64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
 
-		const size_t entry_count = e.values.size();
+		//const size_t entry_count = e.values.size();
 		const size_t bits_required_storage = get_storage_bits_required(max_value);
 		const size_t bits_required_transmission = bits_required_storage;
 		const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
@@ -863,146 +855,91 @@ namespace enumbra {{
 		bool is_contiguous = is_flags_set_contiguous(unique_values);
 
 		// Definition
-		write_line("// {} Definition", e.name);
-		write_line("struct {} {{", e.name);
+		write_line_tabbed(1, "// {} Definition", e.name);
 		{
-			write_line_tabbed(1, "using _underlying_type = {};", size_type);
-			write_line_tabbed(1, "enum class _enum : {} {{", size_type);
+			write_line_tabbed(1, "enum class {0} : {1} {{", e.name, size_type);
 			for (const auto& v : e.values) {
 				write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{ v.p_value, type_bits, is_size_type_signed });
 			}
 			write_line_tabbed(1, "}};");
-			write_linefeed();
-
-			write_line_tabbed(1, "constexpr {}() : value_(_enum({})) {{ }}", e.name, default_value);
-			write_line_tabbed(1, "constexpr {}(_enum v) : value_(v) {{ }}", e.name);
-			write_linefeed();
-
-			for (const auto& v : e.values) {
-				write_line_tabbed(1, "static constexpr _enum {0} = _enum::{0};", v.name);
-			}
-			write_linefeed();
-
-			// Values Array
-			write_line_tabbed(1, "static constexpr std::array<_enum, {}> _values = {{{{", entry_count);
-			const int MaxValuesWidth = 120;
-			size_t CurrentValuesWidth = 8;
-			write_tab(2);
-			for (const auto& v : e.values) {
-				CurrentValuesWidth += v.name.length() + 2;
-				if (CurrentValuesWidth < MaxValuesWidth) {
-					write("{}, ", v.name);
-				}
-				else {
-					write_line_tabbed(2, "{},", v.name);
-					CurrentValuesWidth = 8;
-				}
-			}
-			write_linefeed();
-			write_line_tabbed(1, "}}}};");
-			write_linefeed();
-
-			// Operators
-			write_line_tabbed(1, "constexpr _enum _value() const {{ return value_; }}");
-			write_line_tabbed(1, "constexpr explicit operator bool() const = delete;");
-			write_linefeed();
-
-			// Functions
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void _zero() {{ value_ = static_cast<_enum>(0); }}", e.name);
-			write_line_tabbed(1, "constexpr bool _test(_enum v) const {{ return (static_cast<{0}>(value_) & static_cast<{0}>(v)) == static_cast<{0}>(v); }}", size_type);
-			write_line_tabbed(1, "constexpr void _set(_enum v) {{ value_ = static_cast<_enum>(static_cast<uint32_t>(value_) | static_cast<uint32_t>(v)); }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void _unset(_enum v) {{ value_ = static_cast<_enum>(static_cast<{0}>(value_) & (~static_cast<{0}>(v))); }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC void _flip(_enum v) {{ value_ = static_cast<_enum>(static_cast<{0}>(value_) ^ static_cast<{0}>(v)); }}", size_type);
-			write_line_tabbed(1, "constexpr bool _all() const {{ return static_cast<{0}>(value_) >= {1:#x}; }}", size_type, max_value);
-			write_line_tabbed(1, "constexpr bool _any() const {{ return static_cast<{0}>(value_) > 0; }}", size_type);
-			write_line_tabbed(1, "constexpr bool _none() const {{ return static_cast<{0}>(value_) == 0; }}", size_type);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_single() const {{ {0} n = static_cast<{0}>(value_); return n && !(n & (n - 1)); }}", size_type);
-			write_linefeed();
-
-			// is_valid variations
-			if (is_contiguous)
-			{
-				if (min_value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
-				{
-					write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
-					write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
-				}
-				else
-				{
-					write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
-					write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
-				}
-			}
-			else
-			{
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({0} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
-				write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({1} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
-			}
-			write_linefeed();
-
-			write_line("private:");
-			write_line_tabbed(1, "_enum value_;");
 		}
-		write_line("}};");
 		write_linefeed();
+
+		write_line_tabbed(1, "namespace detail {{ namespace {0} {{", e.name);
+		write_line_tabbed(2, "constexpr std::array<::{2}{0}, {1}> flags_arr =", e.name, unique_entry_count, full_ns);
+		write_line_tabbed(2, "{{{{");
+		for (const auto& v : e.values) {
+			write_line_tabbed(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+		}
+		write_line_tabbed(2, "}}}};");
+		write_line_tabbed(1, "}} }}");
+		write_linefeed();
+
+		write_line_tabbed(1, "template<>");
+		write_line_tabbed(1, "constexpr auto& flags<{0}>()", e.name);
+		write_line_tabbed(1, "{{");
+		write_line_tabbed(2, "return detail::{0}::flags_arr;", e.name);
+		write_line_tabbed(1, "}}");
+		write_linefeed();
+
+		//// Functions
+		write_line_tabbed(1, "constexpr void zero({0}& value) {{ value = static_cast<{0}>(0); }}", e.name);
+		write_line_tabbed(1, "constexpr bool test({0} value, {0} flags) {{ return (static_cast<{1}>(flags) & static_cast<{1}>(value)) == static_cast<{1}>(flags); }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr void set({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) | static_cast<{1}>(flags)); }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr void unset({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) & (~static_cast<{1}>(flags))); }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr void flip({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr bool is_all({0} value) {{ return static_cast<{1}>(value) >= {2:#x}; }}", e.name, size_type, max_value);
+		write_line_tabbed(1, "constexpr bool is_any({0} value) {{ return static_cast<{1}>(value) > 0; }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr bool is_none({0} value) {{ return static_cast<{1}>(value) == 0; }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr bool is_single({0} value) {{ {1} n = static_cast<{1}>(value); return n && !(n & (n - 1)); }}", e.name, size_type);
+		write_linefeed();
+
+		//// is_valid variations
+		//if (is_contiguous)
+		//{
+		//	if (min_value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
+		//	{
+		//		write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
+		//		write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
+		//	}
+		//	else
+		//	{
+		//		write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
+		//		write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
+		//	}
+		//}
+		//else
+		//{
+		//	write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({0} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
+		//	write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({1} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
+		//}
+		//write_linefeed();
 
 		std::vector<const char*> operator_strings = {
 			{"// {} Operator Overloads"},
-			{"constexpr bool operator==(const {0}& a, const {0}& b) {{ return a._value() == b._value(); }}"},
-			{"constexpr bool operator!=(const {0}& a, const {0}& b) {{ return a._value() != b._value(); }}"},
 
-			// Value operators are first because they are required for the operators afterwards
-			{"constexpr {0}::_enum operator~(const {0}::_enum a) {{ return static_cast<{0}::_enum>(~static_cast<{1}>(a)); }}"},
-			{"constexpr {0}::_enum operator|(const {0}::_enum a, const {0}::_enum b) {{ return static_cast<{0}::_enum>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
-			{"constexpr {0}::_enum operator&(const {0}::_enum a, const {0}::_enum b) {{ return static_cast<{0}::_enum>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
-			{"constexpr {0}::_enum operator^(const {0}::_enum a, const {0}::_enum b) {{ return static_cast<{0}::_enum>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
-
-			// Just not possible without being able to do non-const reference to bit field
-			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator|=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
-			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator&=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
-			//{"ENUMBRA_CONSTEXPR_NONCONSTFUNC void operator^=({0}::Value a, const {0}::Value b) {{ a = static_cast<{0}::Value>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
-
-			{"constexpr {0} operator~(const {0} a) {{ return ~a._value(); }}"},
-			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return a._value() | b._value(); }}"},
-			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return a._value() & b._value(); }}"},
-			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return a._value() ^ b._value(); }}"},
-
-			// Unnecessary? Value can implicitly construct parent class.
-			//{"constexpr {0} operator|(const {0} a, const {0}::Value b) {{ return a.value() | b; }}"},
-			//{"constexpr {0} operator&(const {0} a, const {0}::Value b) {{ return a.value() & b; }}"},
-			//{"constexpr {0} operator^(const {0} a, const {0}::Value b) {{ return a.value() ^ b; }}"},
-			//{"constexpr {0} operator|(const {0}::Value a, const {0} b) {{ return a | b.value(); }}"},
-			//{"constexpr {0} operator&(const {0}::Value a, const {0} b) {{ return a & b.value(); }}"},
-			//{"constexpr {0} operator^(const {0}::Value a, const {0} b) {{ return a ^ b.value(); }}"},
+			{"constexpr {0} operator~(const {0} a) {{ return static_cast<{0}>(~static_cast<{1}>(a)); }}"},
+			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
+			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
+			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
 
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
 			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
 		};
 		for (auto& str : operator_strings) {
-			write_line(str, e.name, size_type);
+			write_line_tabbed(1, str, e.name, size_type);
 		}
 
+		// Helper specializations
 		template_specializations.emplace_back(
-			fmt::format("template<> struct enumbra::detail::flags_enum_helper<{0}{1}::_enum> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, int, {5}, {6}, {7}, {8}> {{{{ }}}};",
+			fmt::format("template<> struct enumbra::detail::flags_enum_helper<{0}{1}> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, {5}, int, {6}, {7}, {8}, {9}> {{{{ }}}};",
 				full_ns,
 				e.name,
 				size_type,
 				Int128FormatValue{ min_value, type_bits, is_size_type_signed },
 				Int128FormatValue{ max_value, type_bits, is_size_type_signed },
-				unique_entry_count,
-				is_contiguous ? "true" : "false",
-				bits_required_storage,
-				bits_required_transmission
-			)
-		);
-		template_specializations.emplace_back(
-			fmt::format("template<> struct enumbra::detail::flags_enum_helper<{0}{1}> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, int, {5}, {6}, {7}, {8}> {{{{ }}}};",
-				full_ns,
-				e.name,
-				size_type,
-				Int128FormatValue{ min_value, type_bits, is_size_type_signed },
-				Int128FormatValue{ max_value, type_bits, is_size_type_signed },
+				Int128FormatValue{ default_value, type_bits, is_size_type_signed },
 				unique_entry_count,
 				is_contiguous ? "true" : "false",
 				bits_required_storage,
@@ -1019,8 +956,6 @@ namespace enumbra {{
 	}
 	write_linefeed();
 
-	
-
 	// MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
 	{
 		write_line("// Template Specializations Begin");
@@ -1028,28 +963,24 @@ namespace enumbra {{
 		// Value Enum Template Specializations
 		for (auto& e : enum_meta.value_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{4}{1}::_enum> : enumbra::detail::type_info<true, true, {2}, {3}> {{ using base_type = {4}{1}; }};"},
-				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, false, {2}, {3}> {{ using base_type = {4}{1}; }};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, {2}, {3}> {{ }};"},
 			};
 			for (auto& str : template_strings) {
 				write_line(str, TAB, e.name, "true", "false", full_ns);
 			}
-			// template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse::_enum> : enumbra::detail::value_enum_info<int64_t, 1, 2, int, 3, true, 4, 4> {  };
-			// template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, 1, 2, int, 3, true, 4, 4> {  };
-
 		}
 
 		// Flags Enum Template Specializations
 		for (auto& e : enum_meta.flag_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{4}{1}::_enum> : enumbra::detail::type_info<true, true, {2}, {3}> {{ using base_type = {4}{1}; }};"},
-				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, false, {2}, {3}> {{ using base_type = {4}{1}; }};"},
+				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, {2}, {3}> {{ }};"},
 			};
 			for (auto& str : template_strings) {
 				write_line(str, TAB, e.name, "false", "true", full_ns);
 			}
 		}
 
+		// Write out the buffered template specializations
 		for (auto& s : template_specializations)
 		{
 			write_line(s);

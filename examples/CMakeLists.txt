@@ -32,12 +32,3 @@ if(MSVC)
 else()
 	target_compile_options(enumbra_cpp14_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
-
-# C++ 11 Project
-add_executable (enumbra_cpp11_test "cpp_test.cpp")
-target_compile_features(enumbra_cpp11_test PRIVATE cxx_std_11)
-if(MSVC)
-	target_compile_options(enumbra_cpp11_test PRIVATE /WX)
-else()
-	target_compile_options(enumbra_cpp11_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
-endif()

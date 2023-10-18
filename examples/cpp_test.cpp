@@ -11,16 +11,6 @@ using namespace enums;
 #define STATIC_ASSERT_MSG(x,y)
 #endif
 
-struct Errata {
-#if ENUMBRA_CPP_VERSION >= 17
-	void enum_class_initializer_list() {
-		// BAD but I don't think it's possible for us to stop this without disallowing bitfields.
-		// enum class is allowed to be initialized from initializer list with no way to override.
-		test_nodefault::_enum qq{ 4 };
-	}
-#endif
-};
-
 struct V
 {
 	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W);
@@ -31,8 +21,8 @@ struct V
 	V() :
 		ENUMBRA_INIT_DEFAULT(W),
 		ENUMBRA_INIT(X, test_nodefault::B),
-		Y(test_nodefault()._value()),
-		Z(test_nodefault()._value())
+		Y(test_nodefault()),
+		Z(test_nodefault())
 	{ }
 };
 STATIC_ASSERT(sizeof(V) == 2);
@@ -42,12 +32,11 @@ template<typename T>
 void test_value_vs_flags()
 {
 	if constexpr (is_enumbra_flags_enum<T>()) {
-		STATIC_ASSERT(enumbra_base_t<T>::is_enumbra_flags_enum());
-		enumbra_base_t<T> x;
-		x.reset_zero(); // Only flags should have this function
+		T x{};
+		//x.reset_zero(); // Only flags should have this function
 	}
 	else if constexpr (is_enumbra_value_enum<T>()) {
-		STATIC_ASSERT(enumbra_base_t<T>::is_enumbra_value_enum());
+		
 	}
 	else {
 		STATIC_ASSERT_MSG(std::false_type::operator(), "T is not an enumbra type.");
@@ -58,22 +47,11 @@ void test_value_vs_flags()
 template<typename T>
 void test_is_enumbra_type(const T& value)
 {
-	if constexpr (is_enumbra_struct<T>()) {
-		// T is an enumbra class type.
-		constexpr auto min = enumbra::min<T>();
-
-		T x = value;
-		x._zero();
-	}
-	else if constexpr (is_enumbra_scoped_enum<T>())
+	if constexpr (is_enumbra_enum<T>())
 	{
 		// T is an 'enum class' contained within an enumbra struct type.
 		// T is convertible from its enum class type to its parent struct type with enumbra_base_t
-		using base_type = enumbra_base_t<T>;
 		constexpr auto min = enumbra::min<T>();
-
-		base_type x = value;
-		x._zero();
 	}
 	else if constexpr (std::is_enum_v<T>)
 	{
@@ -99,7 +77,7 @@ struct Struct20
 {
 	// Correct usage
 	ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C);
-	ENUMBRA_PACK_INIT(test_nodefault, B, test_nodefault()._value());
+	ENUMBRA_PACK_INIT(test_nodefault, B, default_value<test_nodefault>());
 	ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C);
 
 	// Not allowed
@@ -134,9 +112,8 @@ int main()
 	d = test_nodefault::B & d;
 	d = test_nodefault::B ^ d;
 
-	switch (d._value()) {
-		// Possible but error prone
-		// Better to use if/elseif with explicit checks
+	switch (d) {
+	default:break;
 	}
 
 	bool b;
@@ -148,7 +125,7 @@ int main()
 	b = (test_nodefault::B != d);
 	d = b ? d : d;
 
-	HexDiagonal f;
+	HexDiagonal f{};
 	b = (f == f);
 	b = (f != f);
 	b = (f == HexDiagonal::NORTH);
@@ -165,8 +142,8 @@ int main()
 	V v;
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
-	v.Z = d._value();
-	v.X = v.X | d._value();
+	v.Z = d;
+	v.X = v.X | d;
 
 	struct D {
 		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);
@@ -189,17 +166,16 @@ int main()
 
 	d = v.X; // uses implicit constructor
 
-	test_nodefault::_enum vv{};
+	test_nodefault vv{};
 	vv = ~vv;
 
-	TestSingleFlag z;
+	TestSingleFlag z{};
 	const bool q = z == z;
 	z |= TestSingleFlag::C;
 	z = z | z;
 
 #if ENUMBRA_CPP_VERSION >= 17
 	test_is_enumbra_type(d);
-	test_is_enumbra_type(d._value());
 	test_is_enumbra_type(v.X);
 	test_is_enumbra_type(vv);
 	test_is_enumbra_type(NonEnumbraEnum::A);
@@ -208,15 +184,18 @@ int main()
 	// Large integers
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-		STATIC_ASSERT(enumbra::to_underlying(Max) == UINT64_MAX);
+		STATIC_ASSERT(to_underlying(Max) == UINT64_MAX);
+
+		constexpr auto z = enumbra::min<HexDiagonal>();
 
 		constexpr auto MaxFromStringResultFail = from_string<Unsigned64Test>("NAN");
 		STATIC_ASSERT(MaxFromStringResultFail.first == false);
 	}
 
+	auto arr = values<test_string_parse>();
 	
 	// Range-for
-	for (auto& key : Unsigned64Test::_values)
+	for (auto& key : values<test_string_parse>())
 	{
 		constexpr auto x = enumbra::min<test_string_parse>();
 		constexpr auto y = enumbra::max<test_string_parse>();
@@ -225,16 +204,52 @@ int main()
 
 		const test_string_parse tsp = test_string_parse::D;
 		auto str = to_string(tsp);
+	}
 
+	// is_valid
+	{
+		constexpr int64_t raw = 1;
+		constexpr bool valid = is_valid<test_string_parse>(raw);
+		STATIC_ASSERT(valid);
 
+		constexpr int64_t raw2 = 0;
+		constexpr bool valid2 = is_valid<test_string_parse>(raw2);
+		STATIC_ASSERT(valid2 == false);
+	}
+	{
+		constexpr uint8_t raw = 0;
+		constexpr bool valid = is_valid<HexDiagonal>(raw);
+		STATIC_ASSERT(valid);
+
+		constexpr uint8_t raw2 = 6;
+		constexpr bool valid2 = is_valid<HexDiagonal>(raw2);
+		STATIC_ASSERT(valid2 == false);
+		HexDiagonal d = from_underlying_unsafe<HexDiagonal>(raw2);
 	}
 
 	{
-		test_string_parse zzz = enumbra::from_underlying_unsafe<test_string_parse>(4);
-		test_string_parse::_enum eee = enumbra::from_underlying_unsafe<test_string_parse>(4);
+		struct q_t {
+			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags);
+		};
+		q_t q{};
+		ENUMBRA_ZERO(q.flags);
+		ENUMBRA_SET(q.flags, test_flags::B);
+		ENUMBRA_FLIP(q.flags, test_flags::B);
+		ENUMBRA_UNSET(q.flags, test_flags::B);
 
+		test_flags f = default_value<test_flags>();
+		ENUMBRA_ZERO(f);
+		ENUMBRA_SET(f, test_flags::C);
+		ENUMBRA_FLIP(f, test_flags::B);
+		ENUMBRA_UNSET(f, test_flags::B);
+	}
 
-		zzz = zzz;
+	{
+		test_string_parse zzz = enumbra::from_underlying_unsafe<test_string_parse>(-1);
+		test_string_parse eee = enumbra::from_underlying_unsafe<test_string_parse>(1);
+		zzz = eee;
+
+		auto ccc = to_underlying(eee);
 	}
 
 }
