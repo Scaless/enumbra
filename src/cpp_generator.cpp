@@ -340,14 +340,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#error enumbra generated headers require a C++14 or higher compiler."},
 			{ "#endif"},
 			{ "" },
-			{ "// Non-const constexpr functions were added in C++14"},
-			{ "#if __cpp_constexpr >= 201304L"},
-			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr"},
-			{ "#else"},
-			{ "#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline"},
-			{ "#endif"},
-			{ "" },
-
 			{ "#else // check existing version supported" },
 			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
 			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
@@ -566,12 +558,12 @@ namespace enumbra {{
 	if (cfg.cpp_config.string_table_type == StringTableType::ConstWCharPtr)
 	{
 		write_line_tabbed(1, "template<class T>");
-		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, T> from_wstring(const wchar_t* str) = delete;");
+		write_line_tabbed(1, "constexpr std::pair<bool, T> from_wstring(const wchar_t* str) = delete;");
 	}
 	else
 	{
 		write_line_tabbed(1, "template<class T>");
-		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, T> from_string(const char* str) = delete;");
+		write_line_tabbed(1, "constexpr std::pair<bool, T> from_string(const char* str) = delete;");
 	}
 	write_linefeed();
 	write_line_tabbed(1, "template<class T>");
@@ -715,7 +707,7 @@ namespace enumbra {{
 		else
 		{
 			write_line_tabbed(1, "template<>", e.name);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<{0}>({1} v) {{", e.name, size_type);
+			write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{", e.name, size_type);
 			write_line_tabbed(2, "const {0} test = static_cast<{0}>(v);", e.name, size_type);
 			write_line_tabbed(2, "for(std::size_t i = 0; i < values<{0}>().size(); i++) {{", e.name, size_type);
 			write_line_tabbed(3, "const auto& val = values<{0}>()[i];", e.name, size_type);
@@ -728,7 +720,7 @@ namespace enumbra {{
 		write_linefeed();
 
 		// String Functions
-		write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC {0} to_{1}string(const {2} v) {{", char_type, string_function_prefix, e.name);
+		write_line_tabbed(1, "constexpr {0} to_{1}string(const {2} v) {{", char_type, string_function_prefix, e.name);
 		write_line_tabbed(2, "switch (v) {{");
 		for (auto& v : e.values) {
 			write_line_tabbed(3, "case {2}::{0}: return {1}\"{0}\";", v.name, string_literal_prefix, e.name);
@@ -743,7 +735,7 @@ namespace enumbra {{
 		{
 			const auto& v = e.values.at(0);
 			write_line_tabbed(1, "template<>", e.name);
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
 			write_line_tabbed(2, "if (enumbra::detail::streq({0}\"{1}\", str)) {{", string_literal_prefix, v.name);
 			write_line_tabbed(3, "return std::make_pair(true, {0}::{1});", e.name, v.name);
 			write_line_tabbed(2, "}}");
@@ -753,7 +745,7 @@ namespace enumbra {{
 		else
 		{
 			write_line_tabbed(1, "template<>");
-			write_line_tabbed(1, "ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
 
 			// Value String Table
 			write_line_tabbed(2, "constexpr std::array<std::pair<{2},{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count, e.name);
@@ -910,8 +902,8 @@ namespace enumbra {{
 		//}
 		//else
 		//{
-		//	write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({0} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
-		//	write_line_tabbed(1, "static ENUMBRA_CONSTEXPR_NONCONSTFUNC bool _is_valid({1} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
+		//	write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
+		//	write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ for(std::size_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
 		//}
 		//write_linefeed();
 
@@ -923,9 +915,9 @@ namespace enumbra {{
 			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
 			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
 
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
-			{"ENUMBRA_CONSTEXPR_NONCONSTFUNC {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
+			{"constexpr {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
+			{"constexpr {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
+			{"constexpr {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
 		};
 		for (auto& str : operator_strings) {
 			write_line_tabbed(1, str, e.name, size_type);

@@ -26,13 +26,6 @@
 #error enumbra generated headers require a C++14 or higher compiler.
 #endif
 
-// Non-const constexpr functions were added in C++14
-#if __cpp_constexpr >= 201304L
-#define ENUMBRA_CONSTEXPR_NONCONSTFUNC constexpr
-#else
-#define ENUMBRA_CONSTEXPR_NONCONSTFUNC inline
-#endif
-
 #else // check existing version supported
 #if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0
 #error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system.
@@ -211,7 +204,7 @@ namespace enums {
 
     // Begin Default Templates
     template<class T>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, T> from_string(const char* str) = delete;
+    constexpr std::pair<bool, T> from_string(const char* str) = delete;
 
     template<class T>
     constexpr auto& values() = delete;
@@ -250,7 +243,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<test_string_parse>(int64_t v) {
+    constexpr bool is_valid<test_string_parse>(int64_t v) {
         const test_string_parse test = static_cast<test_string_parse>(v);
         for(std::size_t i = 0; i < values<test_string_parse>().size(); i++) {
             const auto& val = values<test_string_parse>()[i];
@@ -260,7 +253,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const test_string_parse v) {
+    constexpr const char* to_string(const test_string_parse v) {
         switch (v) {
             case test_string_parse::B: return "B";
             case test_string_parse::C: return "C";
@@ -272,7 +265,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, test_string_parse> from_string<test_string_parse>(const char* str) {
+    constexpr std::pair<bool, test_string_parse> from_string<test_string_parse>(const char* str) {
         constexpr std::array<std::pair<test_string_parse,const char*>, 5> string_lookup_ = {{
             std::make_pair(test_string_parse::B, "B"),
             std::make_pair(test_string_parse::C, "C"),
@@ -313,7 +306,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<Unsigned64Test>(uint64_t v) {
+    constexpr bool is_valid<Unsigned64Test>(uint64_t v) {
         const Unsigned64Test test = static_cast<Unsigned64Test>(v);
         for(std::size_t i = 0; i < values<Unsigned64Test>().size(); i++) {
             const auto& val = values<Unsigned64Test>()[i];
@@ -323,7 +316,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Unsigned64Test v) {
+    constexpr const char* to_string(const Unsigned64Test v) {
         switch (v) {
             case Unsigned64Test::MAX: return "MAX";
             case Unsigned64Test::MIN: return "MIN";
@@ -334,7 +327,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Unsigned64Test> from_string<Unsigned64Test>(const char* str) {
+    constexpr std::pair<bool, Unsigned64Test> from_string<Unsigned64Test>(const char* str) {
         constexpr std::array<std::pair<Unsigned64Test,const char*>, 4> string_lookup_ = {{
             std::make_pair(Unsigned64Test::MAX, "MAX"),
             std::make_pair(Unsigned64Test::MIN, "MIN"),
@@ -372,7 +365,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<Signed64Test>(int64_t v) {
+    constexpr bool is_valid<Signed64Test>(int64_t v) {
         const Signed64Test test = static_cast<Signed64Test>(v);
         for(std::size_t i = 0; i < values<Signed64Test>().size(); i++) {
             const auto& val = values<Signed64Test>()[i];
@@ -382,7 +375,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed64Test v) {
+    constexpr const char* to_string(const Signed64Test v) {
         switch (v) {
             case Signed64Test::MIN: return "MIN";
             case Signed64Test::MAX: return "MAX";
@@ -392,7 +385,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed64Test> from_string<Signed64Test>(const char* str) {
+    constexpr std::pair<bool, Signed64Test> from_string<Signed64Test>(const char* str) {
         constexpr std::array<std::pair<Signed64Test,const char*>, 3> string_lookup_ = {{
             std::make_pair(Signed64Test::MIN, "MIN"),
             std::make_pair(Signed64Test::MAX, "MAX"),
@@ -429,7 +422,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<Signed32Test>(int32_t v) {
+    constexpr bool is_valid<Signed32Test>(int32_t v) {
         const Signed32Test test = static_cast<Signed32Test>(v);
         for(std::size_t i = 0; i < values<Signed32Test>().size(); i++) {
             const auto& val = values<Signed32Test>()[i];
@@ -439,7 +432,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed32Test v) {
+    constexpr const char* to_string(const Signed32Test v) {
         switch (v) {
             case Signed32Test::MIN: return "MIN";
             case Signed32Test::MAX: return "MAX";
@@ -449,7 +442,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed32Test> from_string<Signed32Test>(const char* str) {
+    constexpr std::pair<bool, Signed32Test> from_string<Signed32Test>(const char* str) {
         constexpr std::array<std::pair<Signed32Test,const char*>, 3> string_lookup_ = {{
             std::make_pair(Signed32Test::MIN, "MIN"),
             std::make_pair(Signed32Test::MAX, "MAX"),
@@ -486,7 +479,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<Signed16Test>(int16_t v) {
+    constexpr bool is_valid<Signed16Test>(int16_t v) {
         const Signed16Test test = static_cast<Signed16Test>(v);
         for(std::size_t i = 0; i < values<Signed16Test>().size(); i++) {
             const auto& val = values<Signed16Test>()[i];
@@ -496,7 +489,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed16Test v) {
+    constexpr const char* to_string(const Signed16Test v) {
         switch (v) {
             case Signed16Test::MIN: return "MIN";
             case Signed16Test::MAX: return "MAX";
@@ -506,7 +499,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed16Test> from_string<Signed16Test>(const char* str) {
+    constexpr std::pair<bool, Signed16Test> from_string<Signed16Test>(const char* str) {
         constexpr std::array<std::pair<Signed16Test,const char*>, 3> string_lookup_ = {{
             std::make_pair(Signed16Test::MIN, "MIN"),
             std::make_pair(Signed16Test::MAX, "MAX"),
@@ -543,7 +536,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<Signed8Test>(int8_t v) {
+    constexpr bool is_valid<Signed8Test>(int8_t v) {
         const Signed8Test test = static_cast<Signed8Test>(v);
         for(std::size_t i = 0; i < values<Signed8Test>().size(); i++) {
             const auto& val = values<Signed8Test>()[i];
@@ -553,7 +546,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const Signed8Test v) {
+    constexpr const char* to_string(const Signed8Test v) {
         switch (v) {
             case Signed8Test::V_INT_MIN: return "V_INT_MIN";
             case Signed8Test::V_INT_MAX: return "V_INT_MAX";
@@ -563,7 +556,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, Signed8Test> from_string<Signed8Test>(const char* str) {
+    constexpr std::pair<bool, Signed8Test> from_string<Signed8Test>(const char* str) {
         constexpr std::array<std::pair<Signed8Test,const char*>, 3> string_lookup_ = {{
             std::make_pair(Signed8Test::V_INT_MIN, "V_INT_MIN"),
             std::make_pair(Signed8Test::V_INT_MAX, "V_INT_MAX"),
@@ -602,7 +595,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<test_value>(int32_t v) { return (0 <= v) && (v <= 2); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const test_value v) {
+    constexpr const char* to_string(const test_value v) {
         switch (v) {
             case test_value::A: return "A";
             case test_value::B: return "B";
@@ -612,7 +605,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, test_value> from_string<test_value>(const char* str) {
+    constexpr std::pair<bool, test_value> from_string<test_value>(const char* str) {
         constexpr std::array<std::pair<test_value,const char*>, 3> string_lookup_ = {{
             std::make_pair(test_value::A, "A"),
             std::make_pair(test_value::B, "B"),
@@ -657,7 +650,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<HexDiagonal>(uint8_t v) { return v <= 5; }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const HexDiagonal v) {
+    constexpr const char* to_string(const HexDiagonal v) {
         switch (v) {
             case HexDiagonal::NORTH: return "NORTH";
             case HexDiagonal::NORTH_EAST: return "NORTH_EAST";
@@ -670,7 +663,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, HexDiagonal> from_string<HexDiagonal>(const char* str) {
+    constexpr std::pair<bool, HexDiagonal> from_string<HexDiagonal>(const char* str) {
         constexpr std::array<std::pair<HexDiagonal,const char*>, 6> string_lookup_ = {{
             std::make_pair(HexDiagonal::NORTH, "NORTH"),
             std::make_pair(HexDiagonal::NORTH_EAST, "NORTH_EAST"),
@@ -714,7 +707,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<NegativeTest1>(int8_t v) { return (-2 <= v) && (v <= 1); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest1 v) {
+    constexpr const char* to_string(const NegativeTest1 v) {
         switch (v) {
             case NegativeTest1::A: return "A";
             case NegativeTest1::B: return "B";
@@ -725,7 +718,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest1> from_string<NegativeTest1>(const char* str) {
+    constexpr std::pair<bool, NegativeTest1> from_string<NegativeTest1>(const char* str) {
         constexpr std::array<std::pair<NegativeTest1,const char*>, 4> string_lookup_ = {{
             std::make_pair(NegativeTest1::A, "A"),
             std::make_pair(NegativeTest1::B, "B"),
@@ -767,7 +760,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<NegativeTest2>(int8_t v) { return (-3 <= v) && (v <= 0); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest2 v) {
+    constexpr const char* to_string(const NegativeTest2 v) {
         switch (v) {
             case NegativeTest2::A: return "A";
             case NegativeTest2::B: return "B";
@@ -778,7 +771,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest2> from_string<NegativeTest2>(const char* str) {
+    constexpr std::pair<bool, NegativeTest2> from_string<NegativeTest2>(const char* str) {
         constexpr std::array<std::pair<NegativeTest2,const char*>, 4> string_lookup_ = {{
             std::make_pair(NegativeTest2::A, "A"),
             std::make_pair(NegativeTest2::B, "B"),
@@ -814,7 +807,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<NegativeTest3>(int8_t v) {
+    constexpr bool is_valid<NegativeTest3>(int8_t v) {
         const NegativeTest3 test = static_cast<NegativeTest3>(v);
         for(std::size_t i = 0; i < values<NegativeTest3>().size(); i++) {
             const auto& val = values<NegativeTest3>()[i];
@@ -824,7 +817,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest3 v) {
+    constexpr const char* to_string(const NegativeTest3 v) {
         switch (v) {
             case NegativeTest3::A: return "A";
             case NegativeTest3::B: return "B";
@@ -833,7 +826,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest3> from_string<NegativeTest3>(const char* str) {
+    constexpr std::pair<bool, NegativeTest3> from_string<NegativeTest3>(const char* str) {
         constexpr std::array<std::pair<NegativeTest3,const char*>, 2> string_lookup_ = {{
             std::make_pair(NegativeTest3::A, "A"),
             std::make_pair(NegativeTest3::B, "B"),
@@ -867,7 +860,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC bool is_valid<NegativeTest4>(int8_t v) {
+    constexpr bool is_valid<NegativeTest4>(int8_t v) {
         const NegativeTest4 test = static_cast<NegativeTest4>(v);
         for(std::size_t i = 0; i < values<NegativeTest4>().size(); i++) {
             const auto& val = values<NegativeTest4>()[i];
@@ -877,7 +870,7 @@ namespace enums {
         return false;
     }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const NegativeTest4 v) {
+    constexpr const char* to_string(const NegativeTest4 v) {
         switch (v) {
             case NegativeTest4::A: return "A";
             case NegativeTest4::B: return "B";
@@ -886,7 +879,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, NegativeTest4> from_string<NegativeTest4>(const char* str) {
+    constexpr std::pair<bool, NegativeTest4> from_string<NegativeTest4>(const char* str) {
         constexpr std::array<std::pair<NegativeTest4,const char*>, 2> string_lookup_ = {{
             std::make_pair(NegativeTest4::A, "A"),
             std::make_pair(NegativeTest4::B, "B"),
@@ -920,7 +913,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<EmptyTest1Unsigned>(uint8_t v) { return v <= 0; }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Unsigned v) {
+    constexpr const char* to_string(const EmptyTest1Unsigned v) {
         switch (v) {
             case EmptyTest1Unsigned::A: return "A";
         }
@@ -928,7 +921,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str) {
+    constexpr std::pair<bool, EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str) {
         if (enumbra::detail::streq("A", str)) {
             return std::make_pair(true, EmptyTest1Unsigned::A);
         }
@@ -956,7 +949,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<EmptyTest1Signed>(int8_t v) { return (0 <= v) && (v <= 0); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const EmptyTest1Signed v) {
+    constexpr const char* to_string(const EmptyTest1Signed v) {
         switch (v) {
             case EmptyTest1Signed::A: return "A";
         }
@@ -964,7 +957,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str) {
+    constexpr std::pair<bool, EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str) {
         if (enumbra::detail::streq("A", str)) {
             return std::make_pair(true, EmptyTest1Signed::A);
         }
@@ -992,7 +985,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<SingleTest1Unsigned>(uint8_t v) { return (4 <= v) && (v <= 4); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Unsigned v) {
+    constexpr const char* to_string(const SingleTest1Unsigned v) {
         switch (v) {
             case SingleTest1Unsigned::A: return "A";
         }
@@ -1000,7 +993,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str) {
+    constexpr std::pair<bool, SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str) {
         if (enumbra::detail::streq("A", str)) {
             return std::make_pair(true, SingleTest1Unsigned::A);
         }
@@ -1028,7 +1021,7 @@ namespace enums {
     template<>
     constexpr bool is_valid<SingleTest1Signed>(int8_t v) { return (4 <= v) && (v <= 4); }
 
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC const char* to_string(const SingleTest1Signed v) {
+    constexpr const char* to_string(const SingleTest1Signed v) {
         switch (v) {
             case SingleTest1Signed::A: return "A";
         }
@@ -1036,7 +1029,7 @@ namespace enums {
     }
 
     template<>
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC std::pair<bool, SingleTest1Signed> from_string<SingleTest1Signed>(const char* str) {
+    constexpr std::pair<bool, SingleTest1Signed> from_string<SingleTest1Signed>(const char* str) {
         if (enumbra::detail::streq("A", str)) {
             return std::make_pair(true, SingleTest1Signed::A);
         }
@@ -1078,9 +1071,9 @@ namespace enums {
     constexpr test_flags operator|(const test_flags a, const test_flags b) { return static_cast<test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
     constexpr test_flags operator&(const test_flags a, const test_flags b) { return static_cast<test_flags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
     constexpr test_flags operator^(const test_flags a, const test_flags b) { return static_cast<test_flags>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_flags& operator|=(test_flags& a, const test_flags b) { a = a | b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_flags& operator&=(test_flags& a, const test_flags b) { a = a & b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_flags& operator^=(test_flags& a, const test_flags b) { a = a ^ b; return a; }
+    constexpr test_flags& operator|=(test_flags& a, const test_flags b) { a = a | b; return a; }
+    constexpr test_flags& operator&=(test_flags& a, const test_flags b) { a = a & b; return a; }
+    constexpr test_flags& operator^=(test_flags& a, const test_flags b) { a = a ^ b; return a; }
 
     // test_nodefault Definition
     enum class test_nodefault : uint16_t {
@@ -1117,9 +1110,9 @@ namespace enums {
     constexpr test_nodefault operator|(const test_nodefault a, const test_nodefault b) { return static_cast<test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
     constexpr test_nodefault operator&(const test_nodefault a, const test_nodefault b) { return static_cast<test_nodefault>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
     constexpr test_nodefault operator^(const test_nodefault a, const test_nodefault b) { return static_cast<test_nodefault>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_nodefault& operator|=(test_nodefault& a, const test_nodefault b) { a = a | b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_nodefault& operator&=(test_nodefault& a, const test_nodefault b) { a = a & b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC test_nodefault& operator^=(test_nodefault& a, const test_nodefault b) { a = a ^ b; return a; }
+    constexpr test_nodefault& operator|=(test_nodefault& a, const test_nodefault b) { a = a | b; return a; }
+    constexpr test_nodefault& operator&=(test_nodefault& a, const test_nodefault b) { a = a & b; return a; }
+    constexpr test_nodefault& operator^=(test_nodefault& a, const test_nodefault b) { a = a ^ b; return a; }
 
     // TestSparseFlags Definition
     enum class TestSparseFlags : uint16_t {
@@ -1158,9 +1151,9 @@ namespace enums {
     constexpr TestSparseFlags operator|(const TestSparseFlags a, const TestSparseFlags b) { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
     constexpr TestSparseFlags operator&(const TestSparseFlags a, const TestSparseFlags b) { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
     constexpr TestSparseFlags operator^(const TestSparseFlags a, const TestSparseFlags b) { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSparseFlags& operator|=(TestSparseFlags& a, const TestSparseFlags b) { a = a | b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSparseFlags& operator&=(TestSparseFlags& a, const TestSparseFlags b) { a = a & b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSparseFlags& operator^=(TestSparseFlags& a, const TestSparseFlags b) { a = a ^ b; return a; }
+    constexpr TestSparseFlags& operator|=(TestSparseFlags& a, const TestSparseFlags b) { a = a | b; return a; }
+    constexpr TestSparseFlags& operator&=(TestSparseFlags& a, const TestSparseFlags b) { a = a & b; return a; }
+    constexpr TestSparseFlags& operator^=(TestSparseFlags& a, const TestSparseFlags b) { a = a ^ b; return a; }
 
     // TestSingleFlag Definition
     enum class TestSingleFlag : uint16_t {
@@ -1195,9 +1188,9 @@ namespace enums {
     constexpr TestSingleFlag operator|(const TestSingleFlag a, const TestSingleFlag b) { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
     constexpr TestSingleFlag operator&(const TestSingleFlag a, const TestSingleFlag b) { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
     constexpr TestSingleFlag operator^(const TestSingleFlag a, const TestSingleFlag b) { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSingleFlag& operator|=(TestSingleFlag& a, const TestSingleFlag b) { a = a | b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSingleFlag& operator&=(TestSingleFlag& a, const TestSingleFlag b) { a = a & b; return a; }
-    ENUMBRA_CONSTEXPR_NONCONSTFUNC TestSingleFlag& operator^=(TestSingleFlag& a, const TestSingleFlag b) { a = a ^ b; return a; }
+    constexpr TestSingleFlag& operator|=(TestSingleFlag& a, const TestSingleFlag b) { a = a | b; return a; }
+    constexpr TestSingleFlag& operator&=(TestSingleFlag& a, const TestSingleFlag b) { a = a & b; return a; }
+    constexpr TestSingleFlag& operator^=(TestSingleFlag& a, const TestSingleFlag b) { a = a ^ b; return a; }
 
 } // namespace enums
 
