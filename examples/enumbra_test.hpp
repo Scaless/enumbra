@@ -43,7 +43,7 @@
 #define ENUMBRA_ZERO(Field) { decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }
 #define ENUMBRA_SET(Field, Value) { decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }
 #define ENUMBRA_UNSET(Field, Value) { decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }
-#define ENUMBRA_FLIP(Field, Value) { decltype(Field) _field_ = Field; flip(_field_, Value); Field = _field_; }
+#define ENUMBRA_TOGGLE(Field, Value) { decltype(Field) _field_ = Field; toggle(_field_, Value); Field = _field_; }
 
 // Bit field storage helper
 #define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
@@ -1060,7 +1060,7 @@ namespace enums {
     constexpr bool test(test_flags value, test_flags flags) { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
     constexpr void set(test_flags& value, test_flags flags) { value = static_cast<test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
     constexpr void unset(test_flags& value, test_flags flags) { value = static_cast<test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
-    constexpr void flip(test_flags& value, test_flags flags) { value = static_cast<test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
+    constexpr void toggle(test_flags& value, test_flags flags) { value = static_cast<test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
     constexpr bool is_all(test_flags value) { return static_cast<uint32_t>(value) >= 0x3; }
     constexpr bool is_any(test_flags value) { return static_cast<uint32_t>(value) > 0; }
     constexpr bool is_none(test_flags value) { return static_cast<uint32_t>(value) == 0; }
@@ -1099,7 +1099,7 @@ namespace enums {
     constexpr bool test(test_nodefault value, test_nodefault flags) { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
     constexpr void set(test_nodefault& value, test_nodefault flags) { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
     constexpr void unset(test_nodefault& value, test_nodefault flags) { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void flip(test_nodefault& value, test_nodefault flags) { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+    constexpr void toggle(test_nodefault& value, test_nodefault flags) { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
     constexpr bool is_all(test_nodefault value) { return static_cast<uint16_t>(value) >= 0x3; }
     constexpr bool is_any(test_nodefault value) { return static_cast<uint16_t>(value) > 0; }
     constexpr bool is_none(test_nodefault value) { return static_cast<uint16_t>(value) == 0; }
@@ -1140,7 +1140,7 @@ namespace enums {
     constexpr bool test(TestSparseFlags value, TestSparseFlags flags) { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
     constexpr void set(TestSparseFlags& value, TestSparseFlags flags) { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
     constexpr void unset(TestSparseFlags& value, TestSparseFlags flags) { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void flip(TestSparseFlags& value, TestSparseFlags flags) { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+    constexpr void toggle(TestSparseFlags& value, TestSparseFlags flags) { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
     constexpr bool is_all(TestSparseFlags value) { return static_cast<uint16_t>(value) >= 0x15; }
     constexpr bool is_any(TestSparseFlags value) { return static_cast<uint16_t>(value) > 0; }
     constexpr bool is_none(TestSparseFlags value) { return static_cast<uint16_t>(value) == 0; }
@@ -1177,7 +1177,7 @@ namespace enums {
     constexpr bool test(TestSingleFlag value, TestSingleFlag flags) { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
     constexpr void set(TestSingleFlag& value, TestSingleFlag flags) { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
     constexpr void unset(TestSingleFlag& value, TestSingleFlag flags) { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void flip(TestSingleFlag& value, TestSingleFlag flags) { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+    constexpr void toggle(TestSingleFlag& value, TestSingleFlag flags) { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
     constexpr bool is_all(TestSingleFlag value) { return static_cast<uint16_t>(value) >= 0x4; }
     constexpr bool is_any(TestSingleFlag value) { return static_cast<uint16_t>(value) > 0; }
     constexpr bool is_none(TestSingleFlag value) { return static_cast<uint16_t>(value) == 0; }

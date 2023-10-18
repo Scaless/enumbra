@@ -369,7 +369,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 			{ "#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }}"},
 			{ "#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }}"},
 			{ "#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }}"},
-			{ "#define ENUMBRA_FLIP(Field, Value) {{ decltype(Field) _field_ = Field; flip(_field_, Value); Field = _field_; }}"},
+			{ "#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; toggle(_field_, Value); Field = _field_; }}"},
 			{ "" },
 			{ "// Bit field storage helper" },
 			{ "#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();" },
@@ -879,7 +879,7 @@ namespace enumbra {{
 		write_line_tabbed(1, "constexpr bool test({0} value, {0} flags) {{ return (static_cast<{1}>(flags) & static_cast<{1}>(value)) == static_cast<{1}>(flags); }}", e.name, size_type);
 		write_line_tabbed(1, "constexpr void set({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) | static_cast<{1}>(flags)); }}", e.name, size_type);
 		write_line_tabbed(1, "constexpr void unset({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) & (~static_cast<{1}>(flags))); }}", e.name, size_type);
-		write_line_tabbed(1, "constexpr void flip({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}", e.name, size_type);
+		write_line_tabbed(1, "constexpr void toggle({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}", e.name, size_type);
 		write_line_tabbed(1, "constexpr bool is_all({0} value) {{ return static_cast<{1}>(value) >= {2:#x}; }}", e.name, size_type, max_value);
 		write_line_tabbed(1, "constexpr bool is_any({0} value) {{ return static_cast<{1}>(value) > 0; }}", e.name, size_type);
 		write_line_tabbed(1, "constexpr bool is_none({0} value) {{ return static_cast<{1}>(value) == 0; }}", e.name, size_type);

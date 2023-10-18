@@ -234,13 +234,13 @@ int main()
 		q_t q{};
 		ENUMBRA_ZERO(q.flags);
 		ENUMBRA_SET(q.flags, test_flags::B);
-		ENUMBRA_FLIP(q.flags, test_flags::B);
+		ENUMBRA_TOGGLE(q.flags, test_flags::B);
 		ENUMBRA_UNSET(q.flags, test_flags::B);
 
 		test_flags f = default_value<test_flags>();
 		ENUMBRA_ZERO(f);
 		ENUMBRA_SET(f, test_flags::C);
-		ENUMBRA_FLIP(f, test_flags::B);
+		ENUMBRA_TOGGLE(f, test_flags::B);
 		ENUMBRA_UNSET(f, test_flags::B);
 	}
 
