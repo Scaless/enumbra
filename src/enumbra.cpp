@@ -152,16 +152,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, json_cfg["include_guard"]);
 		c.additional_includes = get_array<std::string>(json_cfg["additional_includes"]);
 
-		c.value_enum_name_prefix = json_cfg.value("value_enum_name_prefix", "");
-		c.flags_enum_name_prefix = json_cfg.value("flags_enum_name_prefix", "");
-		c.value_enum_name_postfix = json_cfg.value("value_enum_name_postfix", "");
-		c.flags_enum_name_postfix = json_cfg.value("flags_enum_name_postfix", "");
-
-		c.value_enum_value_prefix = json_cfg.value("value_enum_value_prefix", "");
-		c.flags_enum_value_prefix = json_cfg.value("flags_enum_value_prefix", "");
-		c.value_enum_value_postfix = json_cfg.value("value_enum_value_postfix", "");
-		c.flags_enum_value_postfix = json_cfg.value("flags_enum_value_postfix", "");
-
 		for (auto iter : json_cfg["size_types"])
 		{
 			enum_size_type t;

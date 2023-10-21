@@ -81,15 +81,6 @@ namespace enumbra {
 			LineEndingStyle line_ending_style{ LineEndingStyle::LF };
 			std::string output_tab_characters{};
 
-			std::string value_enum_name_prefix;
-			std::string value_enum_name_postfix;
-			std::string flags_enum_name_prefix;
-			std::string flags_enum_name_postfix;
-			std::string value_enum_value_prefix;
-			std::string value_enum_value_postfix;
-			std::string flags_enum_value_prefix;
-			std::string flags_enum_value_postfix;
-
 			std::vector<enum_size_type> size_types;
 			size_t default_value_enum_size_type_index{ SIZE_MAX };
 			size_t default_flags_enum_size_type_index{ SIZE_MAX };

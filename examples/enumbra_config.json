@@ -14,14 +14,6 @@
       "additional_includes": [
         "<cstdint>"
       ],
-      "value_enum_name_postfix": "",
-      "value_enum_value_postfix": "",
-      "value_enum_name_prefix": "",
-      "value_enum_value_prefix": "",
-      "flags_enum_name_postfix": "",
-      "flags_enum_value_postfix": "",
-      "flags_enum_name_prefix": "",
-      "flags_enum_value_prefix": "",
       "default_flags_enum_size_type": "unsigned32",
       "default_value_enum_size_type": "unsigned32",
       "flags_enum_smallest_unsigned_evaluation_order": [
