@@ -68,7 +68,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 6
+#define ENUMBRA_BASE_TEMPLATES_VERSION 7
 namespace enumbra {
     namespace detail {
         // Type info
@@ -118,7 +118,13 @@ namespace enumbra {
         struct flags_enum_helper;
 
         // Constexpr string compare
-        template<class T> constexpr bool streq(T* a, T* b) { return *a == *b && (*a == '\0' || streq(a + 1, b + 1)); }
+        template<class T> constexpr bool streq_s(T* a, std::size_t a_len, T* b, std::size_t b_len) {
+            if(a == nullptr) { return false; }
+            if(b == nullptr) { return false; }
+            if(a_len != b_len) { return false; }
+            for(std::size_t i = 0; i < a_len; ++i) { if(a[i] != b[i]) { return false; } }
+            return true;
+        }
     } // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() { return detail::base_helper<T>::enumbra_type; }
     template<class T> constexpr bool is_enumbra_enum(T) { return detail::base_helper<T>::enumbra_type; }
@@ -192,9 +198,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 4
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 7
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 4
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 7
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -203,7 +209,7 @@ namespace enums {
 
     // Begin Default Templates
     template<class T>
-    constexpr std::pair<bool, T> from_string(const char* str) = delete;
+    constexpr std::pair<bool, T> from_string(const char* str, std::size_t len) = delete;
 
     template<class T>
     constexpr auto& values() = delete;
@@ -233,7 +239,27 @@ namespace enums {
             ::enums::test_string_parse::E,
             ::enums::test_string_parse::F,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 5),
+        }};
+        constexpr std::array<const char*, 5> enum_strings = {{
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+        }};
+        constexpr std::array<::enums::test_string_parse, 5> enum_string_values = {{
+            ::enums::test_string_parse::B,
+            ::enums::test_string_parse::C,
+            ::enums::test_string_parse::D,
+            ::enums::test_string_parse::E,
+            ::enums::test_string_parse::F,
+        }};
+    }}
 
     template<>
     constexpr auto& values<test_string_parse>()
@@ -264,20 +290,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, test_string_parse> from_string<test_string_parse>(const char* str) {
-        constexpr std::array<std::pair<test_string_parse,const char*>, 5> string_lookup_ = {{
-            std::make_pair(test_string_parse::B, "B"),
-            std::make_pair(test_string_parse::C, "C"),
-            std::make_pair(test_string_parse::D, "D"),
-            std::make_pair(test_string_parse::E, "E"),
-            std::make_pair(test_string_parse::F, "F"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, test_string_parse> from_string<test_string_parse>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, test_string_parse());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::test_string_parse::string_sizes.size(); ++i) {
+            const auto& current = detail::test_string_parse::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::test_string_parse::string_offset_and_counts[i].first;
+                count = detail::test_string_parse::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, test_string_parse());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::test_string_parse::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::test_string_parse::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // Unsigned64Test Definition
@@ -296,7 +332,27 @@ namespace enums {
             ::enums::Unsigned64Test::V_UINT16_MAX,
             ::enums::Unsigned64Test::V_UINT32_MAX,
         }};
-    } }
+        constexpr std::array<std::size_t, 2> string_sizes = {{
+            3,
+            12,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 2> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+            std::make_pair<std::size_t, std::size_t>(2, 2),
+        }};
+        constexpr std::array<const char*, 4> enum_strings = {{
+            "MAX",
+            "MIN",
+            "V_UINT16_MAX",
+            "V_UINT32_MAX",
+        }};
+        constexpr std::array<::enums::Unsigned64Test, 4> enum_string_values = {{
+            ::enums::Unsigned64Test::MAX,
+            ::enums::Unsigned64Test::MIN,
+            ::enums::Unsigned64Test::V_UINT16_MAX,
+            ::enums::Unsigned64Test::V_UINT32_MAX,
+        }};
+    }}
 
     template<>
     constexpr auto& values<Unsigned64Test>()
@@ -326,19 +382,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, Unsigned64Test> from_string<Unsigned64Test>(const char* str) {
-        constexpr std::array<std::pair<Unsigned64Test,const char*>, 4> string_lookup_ = {{
-            std::make_pair(Unsigned64Test::MAX, "MAX"),
-            std::make_pair(Unsigned64Test::MIN, "MIN"),
-            std::make_pair(Unsigned64Test::V_UINT16_MAX, "V_UINT16_MAX"),
-            std::make_pair(Unsigned64Test::V_UINT32_MAX, "V_UINT32_MAX"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, Unsigned64Test> from_string<Unsigned64Test>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, Unsigned64Test());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::Unsigned64Test::string_sizes.size(); ++i) {
+            const auto& current = detail::Unsigned64Test::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::Unsigned64Test::string_offset_and_counts[i].first;
+                count = detail::Unsigned64Test::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, Unsigned64Test());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::Unsigned64Test::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::Unsigned64Test::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // Signed64Test Definition
@@ -355,7 +422,25 @@ namespace enums {
             ::enums::Signed64Test::MAX,
             ::enums::Signed64Test::NEG_ONE,
         }};
-    } }
+        constexpr std::array<std::size_t, 2> string_sizes = {{
+            3,
+            7,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 2> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+            std::make_pair<std::size_t, std::size_t>(2, 1),
+        }};
+        constexpr std::array<const char*, 3> enum_strings = {{
+            "MIN",
+            "MAX",
+            "NEG_ONE",
+        }};
+        constexpr std::array<::enums::Signed64Test, 3> enum_string_values = {{
+            ::enums::Signed64Test::MIN,
+            ::enums::Signed64Test::MAX,
+            ::enums::Signed64Test::NEG_ONE,
+        }};
+    }}
 
     template<>
     constexpr auto& values<Signed64Test>()
@@ -384,18 +469,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, Signed64Test> from_string<Signed64Test>(const char* str) {
-        constexpr std::array<std::pair<Signed64Test,const char*>, 3> string_lookup_ = {{
-            std::make_pair(Signed64Test::MIN, "MIN"),
-            std::make_pair(Signed64Test::MAX, "MAX"),
-            std::make_pair(Signed64Test::NEG_ONE, "NEG_ONE"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, Signed64Test> from_string<Signed64Test>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, Signed64Test());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::Signed64Test::string_sizes.size(); ++i) {
+            const auto& current = detail::Signed64Test::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::Signed64Test::string_offset_and_counts[i].first;
+                count = detail::Signed64Test::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, Signed64Test());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::Signed64Test::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::Signed64Test::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // Signed32Test Definition
@@ -412,7 +509,25 @@ namespace enums {
             ::enums::Signed32Test::MAX,
             ::enums::Signed32Test::NEG_ONE,
         }};
-    } }
+        constexpr std::array<std::size_t, 2> string_sizes = {{
+            3,
+            7,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 2> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+            std::make_pair<std::size_t, std::size_t>(2, 1),
+        }};
+        constexpr std::array<const char*, 3> enum_strings = {{
+            "MIN",
+            "MAX",
+            "NEG_ONE",
+        }};
+        constexpr std::array<::enums::Signed32Test, 3> enum_string_values = {{
+            ::enums::Signed32Test::MIN,
+            ::enums::Signed32Test::MAX,
+            ::enums::Signed32Test::NEG_ONE,
+        }};
+    }}
 
     template<>
     constexpr auto& values<Signed32Test>()
@@ -441,18 +556,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, Signed32Test> from_string<Signed32Test>(const char* str) {
-        constexpr std::array<std::pair<Signed32Test,const char*>, 3> string_lookup_ = {{
-            std::make_pair(Signed32Test::MIN, "MIN"),
-            std::make_pair(Signed32Test::MAX, "MAX"),
-            std::make_pair(Signed32Test::NEG_ONE, "NEG_ONE"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, Signed32Test> from_string<Signed32Test>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, Signed32Test());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::Signed32Test::string_sizes.size(); ++i) {
+            const auto& current = detail::Signed32Test::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::Signed32Test::string_offset_and_counts[i].first;
+                count = detail::Signed32Test::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, Signed32Test());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::Signed32Test::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::Signed32Test::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // Signed16Test Definition
@@ -469,7 +596,25 @@ namespace enums {
             ::enums::Signed16Test::MAX,
             ::enums::Signed16Test::NEG_ONE,
         }};
-    } }
+        constexpr std::array<std::size_t, 2> string_sizes = {{
+            3,
+            7,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 2> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+            std::make_pair<std::size_t, std::size_t>(2, 1),
+        }};
+        constexpr std::array<const char*, 3> enum_strings = {{
+            "MIN",
+            "MAX",
+            "NEG_ONE",
+        }};
+        constexpr std::array<::enums::Signed16Test, 3> enum_string_values = {{
+            ::enums::Signed16Test::MIN,
+            ::enums::Signed16Test::MAX,
+            ::enums::Signed16Test::NEG_ONE,
+        }};
+    }}
 
     template<>
     constexpr auto& values<Signed16Test>()
@@ -498,18 +643,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, Signed16Test> from_string<Signed16Test>(const char* str) {
-        constexpr std::array<std::pair<Signed16Test,const char*>, 3> string_lookup_ = {{
-            std::make_pair(Signed16Test::MIN, "MIN"),
-            std::make_pair(Signed16Test::MAX, "MAX"),
-            std::make_pair(Signed16Test::NEG_ONE, "NEG_ONE"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, Signed16Test> from_string<Signed16Test>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, Signed16Test());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::Signed16Test::string_sizes.size(); ++i) {
+            const auto& current = detail::Signed16Test::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::Signed16Test::string_offset_and_counts[i].first;
+                count = detail::Signed16Test::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, Signed16Test());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::Signed16Test::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::Signed16Test::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // Signed8Test Definition
@@ -526,7 +683,23 @@ namespace enums {
             ::enums::Signed8Test::V_INT_MAX,
             ::enums::Signed8Test::V_NEG_ONE,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            9,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 3),
+        }};
+        constexpr std::array<const char*, 3> enum_strings = {{
+            "V_INT_MIN",
+            "V_INT_MAX",
+            "V_NEG_ONE",
+        }};
+        constexpr std::array<::enums::Signed8Test, 3> enum_string_values = {{
+            ::enums::Signed8Test::V_INT_MIN,
+            ::enums::Signed8Test::V_INT_MAX,
+            ::enums::Signed8Test::V_NEG_ONE,
+        }};
+    }}
 
     template<>
     constexpr auto& values<Signed8Test>()
@@ -555,18 +728,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, Signed8Test> from_string<Signed8Test>(const char* str) {
-        constexpr std::array<std::pair<Signed8Test,const char*>, 3> string_lookup_ = {{
-            std::make_pair(Signed8Test::V_INT_MIN, "V_INT_MIN"),
-            std::make_pair(Signed8Test::V_INT_MAX, "V_INT_MAX"),
-            std::make_pair(Signed8Test::V_NEG_ONE, "V_NEG_ONE"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, Signed8Test> from_string<Signed8Test>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, Signed8Test());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::Signed8Test::string_sizes.size(); ++i) {
+            const auto& current = detail::Signed8Test::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::Signed8Test::string_offset_and_counts[i].first;
+                count = detail::Signed8Test::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, Signed8Test());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::Signed8Test::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::Signed8Test::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // test_value Definition
@@ -583,7 +768,23 @@ namespace enums {
             ::enums::test_value::B,
             ::enums::test_value::C,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 3),
+        }};
+        constexpr std::array<const char*, 3> enum_strings = {{
+            "A",
+            "B",
+            "C",
+        }};
+        constexpr std::array<::enums::test_value, 3> enum_string_values = {{
+            ::enums::test_value::A,
+            ::enums::test_value::B,
+            ::enums::test_value::C,
+        }};
+    }}
 
     template<>
     constexpr auto& values<test_value>()
@@ -604,18 +805,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, test_value> from_string<test_value>(const char* str) {
-        constexpr std::array<std::pair<test_value,const char*>, 3> string_lookup_ = {{
-            std::make_pair(test_value::A, "A"),
-            std::make_pair(test_value::B, "B"),
-            std::make_pair(test_value::C, "C"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, test_value> from_string<test_value>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, test_value());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::test_value::string_sizes.size(); ++i) {
+            const auto& current = detail::test_value::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::test_value::string_offset_and_counts[i].first;
+                count = detail::test_value::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, test_value());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::test_value::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::test_value::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // HexDiagonal Definition
@@ -638,7 +851,31 @@ namespace enums {
             ::enums::HexDiagonal::SOUTH_WEST,
             ::enums::HexDiagonal::NORTH_WEST,
         }};
-    } }
+        constexpr std::array<std::size_t, 2> string_sizes = {{
+            5,
+            10,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 2> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+            std::make_pair<std::size_t, std::size_t>(2, 4),
+        }};
+        constexpr std::array<const char*, 6> enum_strings = {{
+            "NORTH",
+            "SOUTH",
+            "NORTH_EAST",
+            "SOUTH_EAST",
+            "SOUTH_WEST",
+            "NORTH_WEST",
+        }};
+        constexpr std::array<::enums::HexDiagonal, 6> enum_string_values = {{
+            ::enums::HexDiagonal::NORTH,
+            ::enums::HexDiagonal::SOUTH,
+            ::enums::HexDiagonal::NORTH_EAST,
+            ::enums::HexDiagonal::SOUTH_EAST,
+            ::enums::HexDiagonal::SOUTH_WEST,
+            ::enums::HexDiagonal::NORTH_WEST,
+        }};
+    }}
 
     template<>
     constexpr auto& values<HexDiagonal>()
@@ -662,21 +899,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, HexDiagonal> from_string<HexDiagonal>(const char* str) {
-        constexpr std::array<std::pair<HexDiagonal,const char*>, 6> string_lookup_ = {{
-            std::make_pair(HexDiagonal::NORTH, "NORTH"),
-            std::make_pair(HexDiagonal::NORTH_EAST, "NORTH_EAST"),
-            std::make_pair(HexDiagonal::SOUTH_EAST, "SOUTH_EAST"),
-            std::make_pair(HexDiagonal::SOUTH, "SOUTH"),
-            std::make_pair(HexDiagonal::SOUTH_WEST, "SOUTH_WEST"),
-            std::make_pair(HexDiagonal::NORTH_WEST, "NORTH_WEST"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, HexDiagonal> from_string<HexDiagonal>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, HexDiagonal());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::HexDiagonal::string_sizes.size(); ++i) {
+            const auto& current = detail::HexDiagonal::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::HexDiagonal::string_offset_and_counts[i].first;
+                count = detail::HexDiagonal::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, HexDiagonal());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::HexDiagonal::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::HexDiagonal::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // NegativeTest1 Definition
@@ -695,7 +941,25 @@ namespace enums {
             ::enums::NegativeTest1::C,
             ::enums::NegativeTest1::D,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 4),
+        }};
+        constexpr std::array<const char*, 4> enum_strings = {{
+            "A",
+            "B",
+            "C",
+            "D",
+        }};
+        constexpr std::array<::enums::NegativeTest1, 4> enum_string_values = {{
+            ::enums::NegativeTest1::A,
+            ::enums::NegativeTest1::B,
+            ::enums::NegativeTest1::C,
+            ::enums::NegativeTest1::D,
+        }};
+    }}
 
     template<>
     constexpr auto& values<NegativeTest1>()
@@ -717,19 +981,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, NegativeTest1> from_string<NegativeTest1>(const char* str) {
-        constexpr std::array<std::pair<NegativeTest1,const char*>, 4> string_lookup_ = {{
-            std::make_pair(NegativeTest1::A, "A"),
-            std::make_pair(NegativeTest1::B, "B"),
-            std::make_pair(NegativeTest1::C, "C"),
-            std::make_pair(NegativeTest1::D, "D"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, NegativeTest1> from_string<NegativeTest1>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, NegativeTest1());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::NegativeTest1::string_sizes.size(); ++i) {
+            const auto& current = detail::NegativeTest1::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::NegativeTest1::string_offset_and_counts[i].first;
+                count = detail::NegativeTest1::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, NegativeTest1());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::NegativeTest1::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::NegativeTest1::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // NegativeTest2 Definition
@@ -748,7 +1023,25 @@ namespace enums {
             ::enums::NegativeTest2::C,
             ::enums::NegativeTest2::D,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 4),
+        }};
+        constexpr std::array<const char*, 4> enum_strings = {{
+            "A",
+            "B",
+            "C",
+            "D",
+        }};
+        constexpr std::array<::enums::NegativeTest2, 4> enum_string_values = {{
+            ::enums::NegativeTest2::A,
+            ::enums::NegativeTest2::B,
+            ::enums::NegativeTest2::C,
+            ::enums::NegativeTest2::D,
+        }};
+    }}
 
     template<>
     constexpr auto& values<NegativeTest2>()
@@ -770,19 +1063,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, NegativeTest2> from_string<NegativeTest2>(const char* str) {
-        constexpr std::array<std::pair<NegativeTest2,const char*>, 4> string_lookup_ = {{
-            std::make_pair(NegativeTest2::A, "A"),
-            std::make_pair(NegativeTest2::B, "B"),
-            std::make_pair(NegativeTest2::C, "C"),
-            std::make_pair(NegativeTest2::D, "D"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, NegativeTest2> from_string<NegativeTest2>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, NegativeTest2());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::NegativeTest2::string_sizes.size(); ++i) {
+            const auto& current = detail::NegativeTest2::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::NegativeTest2::string_offset_and_counts[i].first;
+                count = detail::NegativeTest2::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, NegativeTest2());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::NegativeTest2::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::NegativeTest2::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // NegativeTest3 Definition
@@ -797,7 +1101,21 @@ namespace enums {
             ::enums::NegativeTest3::A,
             ::enums::NegativeTest3::B,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+        }};
+        constexpr std::array<const char*, 2> enum_strings = {{
+            "A",
+            "B",
+        }};
+        constexpr std::array<::enums::NegativeTest3, 2> enum_string_values = {{
+            ::enums::NegativeTest3::A,
+            ::enums::NegativeTest3::B,
+        }};
+    }}
 
     template<>
     constexpr auto& values<NegativeTest3>()
@@ -825,17 +1143,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, NegativeTest3> from_string<NegativeTest3>(const char* str) {
-        constexpr std::array<std::pair<NegativeTest3,const char*>, 2> string_lookup_ = {{
-            std::make_pair(NegativeTest3::A, "A"),
-            std::make_pair(NegativeTest3::B, "B"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, NegativeTest3> from_string<NegativeTest3>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, NegativeTest3());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::NegativeTest3::string_sizes.size(); ++i) {
+            const auto& current = detail::NegativeTest3::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::NegativeTest3::string_offset_and_counts[i].first;
+                count = detail::NegativeTest3::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, NegativeTest3());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::NegativeTest3::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::NegativeTest3::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // NegativeTest4 Definition
@@ -850,7 +1181,21 @@ namespace enums {
             ::enums::NegativeTest4::A,
             ::enums::NegativeTest4::B,
         }};
-    } }
+        constexpr std::array<std::size_t, 1> string_sizes = {{
+            1,
+        }};
+        constexpr std::array<std::pair<std::size_t, std::size_t>, 1> string_offset_and_counts = {{
+            std::make_pair<std::size_t, std::size_t>(0, 2),
+        }};
+        constexpr std::array<const char*, 2> enum_strings = {{
+            "A",
+            "B",
+        }};
+        constexpr std::array<::enums::NegativeTest4, 2> enum_string_values = {{
+            ::enums::NegativeTest4::A,
+            ::enums::NegativeTest4::B,
+        }};
+    }}
 
     template<>
     constexpr auto& values<NegativeTest4>()
@@ -878,17 +1223,30 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, NegativeTest4> from_string<NegativeTest4>(const char* str) {
-        constexpr std::array<std::pair<NegativeTest4,const char*>, 2> string_lookup_ = {{
-            std::make_pair(NegativeTest4::A, "A"),
-            std::make_pair(NegativeTest4::B, "B"),
-        }};
-        for (std::size_t i = 0; i < string_lookup_.size(); i++) {
-            if (enumbra::detail::streq(string_lookup_[i].second, str)) {
-                return std::make_pair(true, string_lookup_[i].first);
+    constexpr std::pair<bool, NegativeTest4> from_string<NegativeTest4>(const char* str, std::size_t len) {
+        constexpr auto empty_val = std::make_pair(false, NegativeTest4());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::NegativeTest4::string_sizes.size(); ++i) {
+            const auto& current = detail::NegativeTest4::string_sizes[i];
+            if (current > len) { return empty_val; }
+            if (current == len) { 
+                offset = detail::NegativeTest4::string_offset_and_counts[i].first;
+                count = detail::NegativeTest4::string_offset_and_counts[i].second;
+                break;
             }
         }
-        return std::make_pair(false, NegativeTest4());
+        if (count == 0) { return empty_val; }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& e_str = detail::NegativeTest4::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {
+                return std::make_pair(true, detail::NegativeTest4::enum_string_values[offset + i]);
+            }
+        }
+
+        return empty_val;
     }
 
     // EmptyTest1Unsigned Definition
@@ -901,7 +1259,7 @@ namespace enums {
         {{
             ::enums::EmptyTest1Unsigned::A,
         }};
-    } }
+    }}
 
     template<>
     constexpr auto& values<EmptyTest1Unsigned>()
@@ -920,8 +1278,8 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str) {
-        if (enumbra::detail::streq("A", str)) {
+    constexpr std::pair<bool, EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str, std::size_t len) {
+        if (enumbra::detail::streq_s("A", 1, str, len)) {
             return std::make_pair(true, EmptyTest1Unsigned::A);
         }
         return std::make_pair(false, EmptyTest1Unsigned());
@@ -937,7 +1295,7 @@ namespace enums {
         {{
             ::enums::EmptyTest1Signed::A,
         }};
-    } }
+    }}
 
     template<>
     constexpr auto& values<EmptyTest1Signed>()
@@ -956,8 +1314,8 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str) {
-        if (enumbra::detail::streq("A", str)) {
+    constexpr std::pair<bool, EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str, std::size_t len) {
+        if (enumbra::detail::streq_s("A", 1, str, len)) {
             return std::make_pair(true, EmptyTest1Signed::A);
         }
         return std::make_pair(false, EmptyTest1Signed());
@@ -973,7 +1331,7 @@ namespace enums {
         {{
             ::enums::SingleTest1Unsigned::A,
         }};
-    } }
+    }}
 
     template<>
     constexpr auto& values<SingleTest1Unsigned>()
@@ -992,8 +1350,8 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str) {
-        if (enumbra::detail::streq("A", str)) {
+    constexpr std::pair<bool, SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str, std::size_t len) {
+        if (enumbra::detail::streq_s("A", 1, str, len)) {
             return std::make_pair(true, SingleTest1Unsigned::A);
         }
         return std::make_pair(false, SingleTest1Unsigned());
@@ -1009,7 +1367,7 @@ namespace enums {
         {{
             ::enums::SingleTest1Signed::A,
         }};
-    } }
+    }}
 
     template<>
     constexpr auto& values<SingleTest1Signed>()
@@ -1028,8 +1386,8 @@ namespace enums {
     }
 
     template<>
-    constexpr std::pair<bool, SingleTest1Signed> from_string<SingleTest1Signed>(const char* str) {
-        if (enumbra::detail::streq("A", str)) {
+    constexpr std::pair<bool, SingleTest1Signed> from_string<SingleTest1Signed>(const char* str, std::size_t len) {
+        if (enumbra::detail::streq_s("A", 1, str, len)) {
             return std::make_pair(true, SingleTest1Signed::A);
         }
         return std::make_pair(false, SingleTest1Signed());

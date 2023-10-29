@@ -258,6 +258,8 @@ bool is_flags_set_contiguous(const std::set<int128> flags)
 	return true;
 }
 
+
+
 const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta)
 {
 	auto& cpp = cfg.cpp_config;
@@ -394,9 +396,11 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 
 	// TEMPLATES
 	{
+		// Increment this if templates below are modified.
+		const int enumbra_templates_version = 7;
 		const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 6
+#define ENUMBRA_BASE_TEMPLATES_VERSION {0}
 namespace enumbra {{
     namespace detail {{
         // Type info
@@ -446,7 +450,13 @@ namespace enumbra {{
         struct flags_enum_helper;
 
         // Constexpr string compare
-        template<class T> constexpr bool streq(T* a, T* b) {{ return *a == *b && (*a == '\0' || streq(a + 1, b + 1)); }}
+        template<class T> constexpr bool streq_s(T* a, std::size_t a_len, T* b, std::size_t b_len) {{
+            if(a == nullptr) {{ return false; }}
+            if(b == nullptr) {{ return false; }}
+            if(a_len != b_len) {{ return false; }}
+            for(std::size_t i = 0; i < a_len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
+            return true;
+        }}
     }} // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() {{ return detail::base_helper<T>::enumbra_type; }}
     template<class T> constexpr bool is_enumbra_enum(T) {{ return detail::base_helper<T>::enumbra_type; }}
@@ -520,14 +530,14 @@ namespace enumbra {{
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 4
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < {0}
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 4
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > {0}
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION)";
 
-		write_line(str_templates);
+		write_line(str_templates, enumbra_templates_version);
 		write_linefeed();
 	}
 
@@ -547,15 +557,15 @@ namespace enumbra {{
 
 	// Default Templates
 	write_line_tabbed(1, "// Begin Default Templates");
+
+	write_line_tabbed(1, "template<class T>");
 	if (cfg.cpp_config.string_table_type == StringTableType::ConstWCharPtr)
 	{
-		write_line_tabbed(1, "template<class T>");
-		write_line_tabbed(1, "constexpr std::pair<bool, T> from_wstring(const wchar_t* str) = delete;");
+		write_line_tabbed(1, "constexpr std::pair<bool, T> from_wstring(const wchar_t* str, std::size_t len) = delete;");
 	}
 	else
 	{
-		write_line_tabbed(1, "template<class T>");
-		write_line_tabbed(1, "constexpr std::pair<bool, T> from_string(const char* str) = delete;");
+		write_line_tabbed(1, "constexpr std::pair<bool, T> from_string(const char* str, std::size_t len) = delete;");
 	}
 
 	const std::string default_templates = R"(
@@ -657,16 +667,92 @@ namespace enumbra {{
 		}
 		write_linefeed();
 
-		// Values Array
-		// TODO: where's the best place for this to be stored?
+		// detail namespace
 		write_line_tabbed(1, "namespace detail {{ namespace {0} {{", e.name);
+
+		// values_arr
 		write_line_tabbed(2, "constexpr std::array<::{2}{0}, {1}> values_arr =", e.name, entry_count, full_ns);
 		write_line_tabbed(2, "{{{{");
 		for (const auto& v : e.values) {
 			write_line_tabbed(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
 		}
 		write_line_tabbed(2, "}}}};");
-		write_line_tabbed(1, "}} }}");
+
+		if (e.values.size() > 1)
+		{
+
+
+			struct StringLookupTables
+			{
+				std::vector<size_t> sizes;
+				std::vector<std::pair<size_t, size_t>> offset_and_count;
+				std::vector<enum_entry> entries;
+			};
+
+			auto generate_string_lookup_tables = [&]() -> StringLookupTables
+				{
+					StringLookupTables output;
+
+					// Put strings into buckets by size
+					std::map<size_t, std::vector<enum_entry>> buckets_by_size;
+					for (auto& ed : e.values)
+					{
+						buckets_by_size[ed.name.length()].push_back(ed);
+					}
+
+					size_t offset = 0;
+					for (auto& bucket : buckets_by_size)
+					{
+						output.sizes.push_back(bucket.first);
+
+						const size_t count = bucket.second.size();
+						output.offset_and_count.push_back({ offset, count });
+						offset += count;
+
+						for (auto& entry : bucket.second)
+						{
+							output.entries.push_back(entry);
+						}
+					}
+
+					return output;
+				};
+
+			auto string_tables = generate_string_lookup_tables();
+
+			// string_sizes
+			write_line_tabbed(2, "constexpr std::array<std::size_t, {0}> string_sizes = {{{{", string_tables.sizes.size());
+			for (auto& s : string_tables.sizes) {
+				write_line_tabbed(3, "{0},", s);
+			}
+			write_line_tabbed(2, "}}}};");
+
+			// offset_and_count
+			write_line_tabbed(2, "constexpr std::array<std::pair<std::size_t, std::size_t>, {0}> string_offset_and_counts = {{{{", string_tables.offset_and_count.size());
+			for (auto& s : string_tables.offset_and_count) {
+				write_line_tabbed(3, "std::make_pair<std::size_t, std::size_t>({0}, {1}),", s.first, s.second);
+			}
+			write_line_tabbed(2, "}}}};");
+
+			// enum_strings
+			write_line_tabbed(2, "constexpr std::array<{0}, {1}> enum_strings = {{{{", char_type, string_tables.entries.size());
+			for (auto& s : string_tables.entries) {
+				write_line_tabbed(3, "{0}\"{1}\",", string_literal_prefix, s.name);
+			}
+			write_line_tabbed(2, "}}}};");
+
+			// enum_string_values
+			write_line_tabbed(2, "constexpr std::array<::{2}{1}, {0}> enum_string_values = {{{{", entry_count, e.name, full_ns);
+			for (auto& v : string_tables.entries)
+			{
+				write_line_tabbed(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
+			}
+			write_line_tabbed(2, "}}}};");
+
+		}
+
+
+		write_line_tabbed(1, "}}}}");
 		write_linefeed();
 
 		write_line_tabbed(1, "template<>");
@@ -734,13 +820,13 @@ namespace enumbra {{
 		write_line_tabbed(1, "}}");
 		write_linefeed();
 
-		// MSVC:C28020 complains about the comparision in the loop because it effectively expands to 0 <= x <= 0
+		// from_string
 		if (e.values.size() == 1)
 		{
 			const auto& v = e.values.at(0);
 			write_line_tabbed(1, "template<>", e.name);
-			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
-			write_line_tabbed(2, "if (enumbra::detail::streq({0}\"{1}\", str)) {{", string_literal_prefix, v.name);
+			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(2, "if (enumbra::detail::streq_s({0}\"{1}\", {2}, str, len)) {{", string_literal_prefix, v.name, v.name.length());
 			write_line_tabbed(3, "return std::make_pair(true, {0}::{1});", e.name, v.name);
 			write_line_tabbed(2, "}}");
 			write_line_tabbed(2, "return std::make_pair(false, {0}());", e.name);
@@ -749,22 +835,37 @@ namespace enumbra {{
 		else
 		{
 			write_line_tabbed(1, "template<>");
-			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
 
 			// Value String Table
-			write_line_tabbed(2, "constexpr std::array<std::pair<{2},{0}>, {1}> string_lookup_ = {{{{", char_type, entry_count, e.name);
-			for (const auto& v : e.values) {
-				write_line_tabbed(3, "std::make_pair({2}::{1}, {0}\"{1}\"),", string_literal_prefix, v.name, e.name);
-			}
-			write_line_tabbed(2, "}}}};");
+			const std::string from_string_complex = R"(        constexpr auto empty_val = std::make_pair(false, {0}());
+        std::size_t offset = 0;
+        std::size_t count = 0;
+        for (std::size_t i = 0; i < detail::{0}::string_sizes.size(); ++i) {{
+            const auto& current = detail::{0}::string_sizes[i];
+            if (current > len) {{ return empty_val; }}
+            if (current == len) {{ 
+                offset = detail::{0}::string_offset_and_counts[i].first;
+                count = detail::{0}::string_offset_and_counts[i].second;
+                break;
+            }}
+        }}
+        if (count == 0) {{ return empty_val; }}
 
-			write_line_tabbed(2, "for (std::size_t i = 0; i < string_lookup_.size(); i++) {{");
-			write_line_tabbed(3, "if (enumbra::detail::streq(string_lookup_[i].second, str)) {{");
-			write_line_tabbed(4, "return std::make_pair(true, string_lookup_[i].first);");
-			write_line_tabbed(3, "}}");
-			write_line_tabbed(2, "}}");
-			write_line_tabbed(2, "return std::make_pair(false, {0}());", e.name);
-			write_line_tabbed(1, "}}");
+        for (std::size_t i = 0; i < count; ++i)
+        {{
+            const auto& e_str = detail::{0}::enum_strings[offset + i];
+            if (enumbra::detail::streq_s(e_str, len, str, len)) {{
+                return std::make_pair(true, detail::{0}::enum_string_values[offset + i]);
+            }}
+        }}
+
+        return empty_val;
+    }}
+)";
+			write(from_string_complex,
+				e.name
+			);
 		}
 
 		// Helper specializations

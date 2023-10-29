@@ -6,15 +6,6 @@ BUG-CODEGEN: User-Default templates in user namespace may conflict if multiple f
 ENUMBRA: Move pre-condition checking to a function outside of generator to be able to re-use for other generators
 ENUMBRA: Split cpp generator into more reasonable sections rather than one giant function.
 
-CODEGEN: from_string string lookup could probably be optimized a bit by pre-sorting the array by string length and adding a second table with offsets
-         would need a non-null terminated version of constexpr streq
-         Q: are there compiler limits on size of array at constexpr time?
-         maybe add a configuration option:
-         optimize_for_speed = pack strings into a single array for faster searching
-         optimize_for_space = use array of pointers to strings, to allow compiler to de-duplicate
-CODEGEN: from_string add a length parameter to {w}char* overload
-CODEGEN: from_string early-out conditions (nullptr, empty string, string length < min, string length > max)
-CODEGEN: use 'enumbra' namespace instead of 'detail', less chance of conflicting with user
 CODEGEN: Add option for split compilation of Header and Implementation vs. Header-Only.
          output_implementation = header_only / header_and_implementation
          add/edit command line parameters: remove cppout, add cppouthpp/cppoutheader/cppoutimpl

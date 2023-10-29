@@ -193,14 +193,17 @@ int main()
 		constexpr auto m = enumbra::min<HexDiagonal>();
 		UNUSED(m);
 
-		constexpr auto MaxFromStringResultFail = from_string<Unsigned64Test>("NAN");
-		STATIC_ASSERT(MaxFromStringResultFail.first == false);
+		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
+		STATIC_ASSERT(NANFail.first == false);
+
+		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
+		STATIC_ASSERT(MAXSuccess.first == true);
 	}
 
-	auto arr = values<test_string_parse>();
+	auto& arr = values<test_string_parse>();
 	
 	// Range-for
-	for (auto& key : values<test_string_parse>())
+	for (auto& key : arr)
 	{
 		const auto str = to_string(key);
 		UNUSED(str);
