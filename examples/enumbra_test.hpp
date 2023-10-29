@@ -911,7 +911,7 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<EmptyTest1Unsigned>(uint8_t v) { return v <= 0; }
+    constexpr bool is_valid<EmptyTest1Unsigned>(uint8_t v) { return 0 == v; }
 
     constexpr const char* to_string(const EmptyTest1Unsigned v) {
         switch (v) {
@@ -947,7 +947,7 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<EmptyTest1Signed>(int8_t v) { return (0 <= v) && (v <= 0); }
+    constexpr bool is_valid<EmptyTest1Signed>(int8_t v) { return 0 == v; }
 
     constexpr const char* to_string(const EmptyTest1Signed v) {
         switch (v) {
@@ -983,7 +983,7 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<SingleTest1Unsigned>(uint8_t v) { return (4 <= v) && (v <= 4); }
+    constexpr bool is_valid<SingleTest1Unsigned>(uint8_t v) { return 4 == v; }
 
     constexpr const char* to_string(const SingleTest1Unsigned v) {
         switch (v) {
@@ -1019,7 +1019,7 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<SingleTest1Signed>(int8_t v) { return (4 <= v) && (v <= 4); }
+    constexpr bool is_valid<SingleTest1Signed>(int8_t v) { return 4 == v; }
 
     constexpr const char* to_string(const SingleTest1Signed v) {
         switch (v) {

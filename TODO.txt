@@ -7,7 +7,6 @@ ENUMBRA: Move pre-condition checking to a function outside of generator to be ab
 ENUMBRA: Split cpp generator into more reasonable sections rather than one giant function.
 ENUMBRA: Remove options for user-configured line feed / tab spacing to simplify code. Standardize on \n and 4-space tabs.
 
-CODEGEN: is_valid for enums with a single value can use (x == $) instead of ($ <= x && x <= $)
 CODEGEN: from_string string lookup could probably be optimized a bit by pre-sorting the array by string length and adding a second table with offsets
          would need a non-null terminated version of constexpr streq
          Q: are there compiler limits on size of array at constexpr time?

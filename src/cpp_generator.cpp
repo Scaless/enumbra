@@ -682,7 +682,16 @@ namespace enumbra {{
 		write_linefeed();
 
 		// is_valid variations
-		if (is_contiguous)
+		if (e.values.size() == 1)
+		{
+			write_line_tabbed(1, "template<>", e.name);
+			write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return {2} == v; }}",
+				e.name,
+				size_type,
+				Int128FormatValue{ max_entry.p_value, type_bits, is_size_type_signed }
+			);
+		}
+		else if (is_contiguous)
 		{
 			if ((min_entry.p_value == 0) && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
 			{
