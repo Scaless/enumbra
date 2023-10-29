@@ -5,7 +5,6 @@ BUG-CODEGEN: User-Default templates in user namespace may conflict if multiple f
 
 ENUMBRA: Move pre-condition checking to a function outside of generator to be able to re-use for other generators
 ENUMBRA: Split cpp generator into more reasonable sections rather than one giant function.
-ENUMBRA: Remove options for user-configured line feed / tab spacing to simplify code. Standardize on \n and 4-space tabs.
 
 CODEGEN: from_string string lookup could probably be optimized a bit by pre-sorting the array by string length and adding a second table with offsets
          would need a non-null terminated version of constexpr streq

@@ -52,16 +52,6 @@ namespace enumbra {
 			{ "name_and_description", StringTableLayout::NameAndDescription },
 		} };
 
-		enum class LineEndingStyle {
-			LF,
-			CRLF
-		};
-		constexpr std::array<std::pair<std::string_view, LineEndingStyle>, 2> LineEndingStyleMapped
-		{ {
-			{ "LF", LineEndingStyle::LF },
-			{ "CRLF", LineEndingStyle::CRLF },
-		} };
-
 		struct enum_size_type {
 			std::string name;
 			uint64_t bits{ 0 };
@@ -78,8 +68,6 @@ namespace enumbra {
 			std::vector<std::string> additional_includes;
 			IncludeGuardStyle include_guard_style{ IncludeGuardStyle::PragmaOnce };
 			bool time_generated_in_header{ true };
-			LineEndingStyle line_ending_style{ LineEndingStyle::LF };
-			std::string output_tab_characters{};
 
 			std::vector<enum_size_type> size_types;
 			size_t default_value_enum_size_type_index{ SIZE_MAX };

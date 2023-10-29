@@ -12,8 +12,8 @@
 #include <array>
 #include <cstdint>
 
-#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)
-#define ENUMBRA_REQUIRED_MACROS_VERSION 6
+#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION) 
+#define ENUMBRA_REQUIRED_MACROS_VERSION 6 
 
 // Find out what language version we're using
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)
@@ -26,13 +26,13 @@
 #error enumbra generated headers require a C++14 or higher compiler.
 #endif
 
-#else // check existing version supported
-#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0
-#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 6
-#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 6
-#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
+#else // check existing version supported 
+#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0 
+#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system. 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 6 
+#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version. 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 6 
+#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version. 
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
@@ -67,7 +67,6 @@
 #endif // end check existing version supported
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
-
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION 6
 namespace enumbra {
@@ -85,7 +84,7 @@ namespace enumbra {
             underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct value_enum_info {
-			using underlying_t = underlying_type;
+            using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
@@ -100,7 +99,7 @@ namespace enumbra {
             underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct flags_enum_info {
-			using underlying_t = underlying_type;
+            using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
@@ -184,7 +183,7 @@ namespace enumbra {
 
     template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) { return static_cast<underlying_type>(e); }
-	template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) { return static_cast<underlying_type>(e); }
     template<class T, class underlying_type = T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) = delete;

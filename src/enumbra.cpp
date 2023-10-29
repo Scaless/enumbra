@@ -145,9 +145,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 		cpp_config& c = enumbra_config.cpp_config;
 
 		c.output_namespace = get_array<std::string>(json_cfg["output_namespace"]);
-		c.line_ending_style = get_mapped<LineEndingStyle>(LineEndingStyleMapped, json_cfg["output_line_ending_style"]);
 		c.time_generated_in_header = json_cfg["time_generated_in_header"].get<bool>();
-		c.output_tab_characters = json_cfg["output_tab_characters"].get<std::string>();
 		c.preamble_text = get_array<std::string>(json_cfg["preamble_text"]);
 		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, json_cfg["include_guard"]);
 		c.additional_includes = get_array<std::string>(json_cfg["additional_includes"]);

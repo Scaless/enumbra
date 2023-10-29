@@ -4,8 +4,6 @@
       "output_namespace": [
         "enums"
       ],
-      "output_line_ending_style": "LF",
-      "output_tab_characters": "    ",
       "time_generated_in_header": false,
       "preamble_text": [
 

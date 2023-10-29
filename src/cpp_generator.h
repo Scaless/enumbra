@@ -14,8 +14,6 @@ public:
 	const std::string& generate_cpp_output(const enumbra::enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta);
 
 private:
-	std::string LF; // Line Feed as configured in enumbra_config
-	std::string TAB; // Tabs as configured in enumbra_config
 	std::string Output; // Final output
 
 	template <typename... Args>
@@ -25,12 +23,12 @@ private:
 
 	void write_linefeed(int count = 1) {
 		for (int i = 0; i < count; i++)
-			write("{}", LF);
+			write("\n");
 	}
 
 	void write_tab(int count = 1) {
 		for (int i = 0; i < count; i++)
-			write("{}", TAB);
+			write("    ");
 	}
 
 	template <typename... Args>
@@ -42,7 +40,7 @@ private:
 	template <typename... Args>
 	void write_line_tabbed(int tab_count, std::string_view fmt, Args&&... args) {
 		for (int i = 0; i < tab_count; i++)
-			write("{}", TAB);
+			write("    ");
 		write(fmt, args...);
 		write_linefeed();
 	}

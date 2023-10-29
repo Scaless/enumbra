@@ -268,8 +268,6 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	enum_meta_has_unique_enum_names(enum_meta);
 
 	// Setting up re-usable tokens
-	LF = (cpp.line_ending_style == cpp::LineEndingStyle::LF) ? "\n" : "\r\n";
-	TAB = cpp.output_tab_characters;
 	const std::string def_macro = fmt::format("ENUMBRA_{}_H", to_upper(enum_meta.block_name));
 
 	// Enumbra pre-preamble
@@ -319,40 +317,37 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	for (const auto& inc : cpp.additional_includes) {
 		write_line("#include {}", inc);
 	}
-	write_linefeed();
 
 	// REQUIRED MACROS
 	{
 		// Increment this if macros below are modified.
 		const int enumbra_required_macros_version = 6;
-		std::vector<const char*> macro_strings = {
-			{ "#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)" },
-			{ "#define ENUMBRA_REQUIRED_MACROS_VERSION {1}" },
-			{ "" },
-			{ "// Find out what language version we're using"},
-			{ "#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)"},
-			{ "#define ENUMBRA_CPP_VERSION 20"},
-			{ "#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)"},
-			{ "#define ENUMBRA_CPP_VERSION 17"},
-			{ "#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)"},
-			{ "#define ENUMBRA_CPP_VERSION 14"},
-			{ "#else"},
-			{ "#error enumbra generated headers require a C++14 or higher compiler."},
-			{ "#endif"},
-			{ "" },
-			{ "#else // check existing version supported" },
-			{ "#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
-			{ "#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
-			{ "#endif // end check existing version supported"},
-			{ "#endif // ENUMBRA_REQUIRED_MACROS_VERSION" },
-		};
-		for (auto& str : macro_strings) {
-			write_line(str, TAB, enumbra_required_macros_version);
-		}
+		const std::string macro_strings = R"(
+#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION) 
+#define ENUMBRA_REQUIRED_MACROS_VERSION {0} 
+
+// Find out what language version we're using
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)) || (__cplusplus >= 202002L)
+#define ENUMBRA_CPP_VERSION 20
+#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) || (__cplusplus >= 201703L)
+#define ENUMBRA_CPP_VERSION 17
+#elif ((defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)) || (__cplusplus >= 201402L)
+#define ENUMBRA_CPP_VERSION 14
+#else
+#error enumbra generated headers require a C++14 or higher compiler.
+#endif
+
+#else // check existing version supported 
+#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0 
+#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system. 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < {0} 
+#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version. 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > {0} 
+#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version. 
+#endif // end check existing version supported
+#endif // ENUMBRA_REQUIRED_MACROS_VERSION)";
+
+		write(macro_strings, enumbra_required_macros_version);
 		write_linefeed();
 	}
 
@@ -361,41 +356,39 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	{
 		// Increment this if macros below are modified.
 		const int enumbra_optinoal_macros_version = 6;
-		std::vector<const char*> macro_strings = {
-			{ "#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)" },
-			{ "#define ENUMBRA_OPTIONAL_MACROS_VERSION {1}" },
-			{ "" },
-			{ "// Bitfield convenience functions"},
-			{ "#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }}"},
-			{ "#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }}"},
-			{ "#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }}"},
-			{ "#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; toggle(_field_, Value); Field = _field_; }}"},
-			{ "" },
-			{ "// Bit field storage helper" },
-			{ "#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();" },
-			{ "#define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())" },
-			{ "#define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())" },
-			{ "" },
-			{ "#if ENUMBRA_CPP_VERSION >= 20" },
-			{ "// Bit field storage helper with type-checked member initialization" },
-			{ "#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ InitValue }};" },
-			{ "// Bit field storage helper with default value initialization" },
-			{ "#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ ::enumbra::default_value<Enum>() }};" },
-			{ "#endif" },
-			{ "" },
-			{ "#else // check existing version supported" },
-			{ "#if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0" },
-			{ "#error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system." },
-			{ "#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < {1}" },
-			{ "#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version." },
-			{ "#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > {1}" },
-			{ "#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version." },
-			{ "#endif // end check existing version supported" },
-			{ "#endif // ENUMBRA_OPTIONAL_MACROS_VERSION" },
-		};
-		for (auto& str : macro_strings) {
-			write_line(str, TAB, enumbra_optinoal_macros_version);
-		}
+		std::string macro_strings = R"(
+#if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
+#define ENUMBRA_OPTIONAL_MACROS_VERSION {0}
+
+// Bitfield convenience functions
+#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }}
+#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }}
+#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }}
+#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; toggle(_field_, Value); Field = _field_; }}
+
+// Bit field storage helper
+#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
+#define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())
+#define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())
+
+#if ENUMBRA_CPP_VERSION >= 20
+// Bit field storage helper with type-checked member initialization
+#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ InitValue }};
+// Bit field storage helper with default value initialization
+#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ ::enumbra::default_value<Enum>() }};
+#endif
+
+#else // check existing version supported
+#if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0
+#error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system.
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < {0}
+#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > {0}
+#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
+#endif // end check existing version supported
+#endif // ENUMBRA_OPTIONAL_MACROS_VERSION)";
+
+		write(macro_strings, enumbra_optinoal_macros_version);
 		write_linefeed();
 	}
 
@@ -419,7 +412,7 @@ namespace enumbra {{
             underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct value_enum_info {{
-			using underlying_t = underlying_type;
+            using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
@@ -434,7 +427,7 @@ namespace enumbra {{
             underlying_type default_v, typename count_type, count_type count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct flags_enum_info {{
-			using underlying_t = underlying_type;
+            using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
@@ -518,7 +511,7 @@ namespace enumbra {{
 
     template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) {{ return static_cast<underlying_type>(e); }}
-	template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
+    template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) {{ return static_cast<underlying_type>(e); }}
     template<class T, class underlying_type = T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) = delete;
@@ -535,7 +528,6 @@ namespace enumbra {{
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION)";
 
 		write_line(str_templates);
-
 		write_linefeed();
 	}
 
@@ -565,17 +557,20 @@ namespace enumbra {{
 		write_line_tabbed(1, "template<class T>");
 		write_line_tabbed(1, "constexpr std::pair<bool, T> from_string(const char* str) = delete;");
 	}
-	write_linefeed();
-	write_line_tabbed(1, "template<class T>");
-	write_line_tabbed(1, "constexpr auto& values() = delete;");
-	write_linefeed();
-	write_line_tabbed(1, "template<class T>");
-	write_line_tabbed(1, "constexpr auto& flags() = delete;");
-	write_linefeed();
-	write_line_tabbed(1, "template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>");
-	write_line_tabbed(1, "constexpr bool is_valid(underlying_type value) = delete;");
-	write_line_tabbed(1, "// End Default Templates");
-	write_linefeed();
+
+	const std::string default_templates = R"(
+    template<class T>
+    constexpr auto& values() = delete;
+
+    template<class T>
+    constexpr auto& flags() = delete;
+
+    template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>
+    constexpr bool is_valid(underlying_type value) = delete;
+    // End Default Templates
+
+)";
+	write(default_templates);
 
 	// VALUE ENUM DEFINITIONS
 	for (auto& e : enum_meta.value_enum_definitions) {
@@ -964,20 +959,20 @@ namespace enumbra {{
 		// Value Enum Template Specializations
 		for (auto& e : enum_meta.value_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, {2}, {3}> {{ }};"},
+				{"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};"},
 			};
 			for (auto& str : template_strings) {
-				write_line(str, TAB, e.name, "true", "false", full_ns);
+				write_line(str, e.name, "true", "false", full_ns);
 			}
 		}
 
 		// Flags Enum Template Specializations
 		for (auto& e : enum_meta.flag_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{4}{1}> : enumbra::detail::type_info<true, {2}, {3}> {{ }};"},
+				{"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};"},
 			};
 			for (auto& str : template_strings) {
-				write_line(str, TAB, e.name, "false", "true", full_ns);
+				write_line(str, e.name, "false", "true", full_ns);
 			}
 		}
 
