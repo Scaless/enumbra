@@ -7,11 +7,11 @@ using namespace enumbra::cpp;
 
 std::string to_upper(const std::string& str)
 {
-	std::string strcopy = str;
-	for (auto& c : strcopy) {
+	std::string copy = str;
+	for (auto& c : copy) {
 		c = std::toupper(c, std::locale("en_US.utf8"));
 	}
-	return strcopy;
+	return copy;
 }
 
 struct Int128FormatValue
@@ -67,7 +67,7 @@ struct fmt::formatter<Int128FormatValue> {
 	}
 };
 
-const uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, const enum_definition& definition)
+uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, const enum_definition& definition)
 {
 	switch (style)
 	{
@@ -122,7 +122,7 @@ const uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle& style, con
 	}
 }
 
-const enum_entry& get_value_enum_entry(const ValueEnumDefaultValueStyle& style, const enum_definition& definition)
+enum_entry get_value_enum_entry(const ValueEnumDefaultValueStyle& style, const enum_definition& definition)
 {
 	switch (style)
 	{
@@ -312,6 +312,9 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 		write_line("#define {0}", def_macro);
 		write_linefeed();
 		break;
+    case enumbra::cpp::IncludeGuardStyle::None:
+    default:
+        break;
 	}
 
 	// INCLUDES
@@ -632,12 +635,12 @@ namespace enumbra {{
 		// To properly store and assign to this enum, we need 3 bits:
 		//   int8_t Value : 1; // maps to the range -1 - 0, unexpected!
 		//   int8_t Value : 2; // maps to the range -2 - 1, still not big enough
-		//   int8_t Value : 3; // maps to the range -4 - 3, big enough but we're wasting space
+		//   int8_t Value : 3; // maps to the range -4 - 3, big enough, but we're wasting space
 		// For this reason, when utilizing packed enums it is recommended to always prefer an unsigned underlying
 		// type unless your enum actually contains negative values.
 		if (is_size_type_signed && (max_entry.p_value > 0)) {
 			uint64_t signed_range_max = 0;
-			for (int i = 0; i < bits_required_storage - 1; i++) {
+			for (size_t i = 0; i < bits_required_storage - 1; i++) {
 				signed_range_max |= 1ULL << i;
 			}
 			if (static_cast<uint64_t>(max_entry.p_value) > signed_range_max) {
@@ -1013,16 +1016,16 @@ namespace enumbra {{
 		//write_linefeed();
 
 		std::vector<const char*> operator_strings = {
-			{"// {} Operator Overloads"},
+			"// {} Operator Overloads",
 
-			{"constexpr {0} operator~(const {0} a) {{ return static_cast<{0}>(~static_cast<{1}>(a)); }}"},
-			{"constexpr {0} operator|(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}"},
-			{"constexpr {0} operator&(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}"},
-			{"constexpr {0} operator^(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}"},
+			"constexpr {0} operator~(const {0} a) {{ return static_cast<{0}>(~static_cast<{1}>(a)); }}",
+			"constexpr {0} operator|(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}",
+			"constexpr {0} operator&(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}",
+			"constexpr {0} operator^(const {0} a, const {0} b) {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}",
 
-			{"constexpr {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}"},
-			{"constexpr {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}"},
-			{"constexpr {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}"},
+			"constexpr {0}& operator|=({0}& a, const {0} b) {{ a = a | b; return a; }}",
+			"constexpr {0}& operator&=({0}& a, const {0} b) {{ a = a & b; return a; }}",
+			"constexpr {0}& operator^=({0}& a, const {0} b) {{ a = a ^ b; return a; }}",
 		};
 		for (auto& str : operator_strings) {
 			write_line_tabbed(1, str, e.name, size_type);
@@ -1060,7 +1063,7 @@ namespace enumbra {{
 		// Value Enum Template Specializations
 		for (auto& e : enum_meta.value_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};"},
+				"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};",
 			};
 			for (auto& str : template_strings) {
 				write_line(str, e.name, "true", "false", full_ns);
@@ -1070,7 +1073,7 @@ namespace enumbra {{
 		// Flags Enum Template Specializations
 		for (auto& e : enum_meta.flag_enum_definitions) {
 			std::vector<const char*> template_strings = {
-				{"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};"},
+				"template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};",
 			};
 			for (auto& str : template_strings) {
 				write_line(str, e.name, "false", "true", full_ns);

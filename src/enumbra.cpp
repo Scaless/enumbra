@@ -13,8 +13,8 @@ using namespace enumbra;
 
 enumbra::enumbra_config load_enumbra_config(const std::string& config_file);
 enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_config, const std::string& config_file);
-void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_config);
-void parse_enumbra_csharp(enumbra::enumbra_config& enumbra_config, json& csharp_config);
+void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg);
+void parse_enumbra_csharp(enumbra::enumbra_config& enumbra_config, json& csharp_cfg);
 void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta_config& enum_config, json& meta_config);
 
 void print_help(const cxxopts::Options& options)
@@ -138,19 +138,19 @@ enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config& enumbra_conf
 	return cfg;
 }
 
-void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
+void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg)
 {
 	using namespace enumbra::cpp;
 	try {
 		cpp_config& c = enumbra_config.cpp_config;
 
-		c.output_namespace = get_array<std::string>(json_cfg["output_namespace"]);
-		c.time_generated_in_header = json_cfg["time_generated_in_header"].get<bool>();
-		c.preamble_text = get_array<std::string>(json_cfg["preamble_text"]);
-		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, json_cfg["include_guard"]);
-		c.additional_includes = get_array<std::string>(json_cfg["additional_includes"]);
+		c.output_namespace = get_array<std::string>(cpp_cfg["output_namespace"]);
+		c.time_generated_in_header = cpp_cfg["time_generated_in_header"].get<bool>();
+		c.preamble_text = get_array<std::string>(cpp_cfg["preamble_text"]);
+		c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, cpp_cfg["include_guard"]);
+		c.additional_includes = get_array<std::string>(cpp_cfg["additional_includes"]);
 
-		for (auto iter : json_cfg["size_types"])
+		for (auto iter : cpp_cfg["size_types"])
 		{
 			enum_size_type t;
 			t.name = iter["name"].get<std::string>();
@@ -175,7 +175,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			{
 				// To get the maximum, we fill all bits except the sign bit
 				t.max_possible_value = 0;
-				for (int i = 0; i < t.bits - 1; i++)
+				for (size_t i = 0; i < t.bits - 1; i++)
 				{
 					t.max_possible_value |= (int128(1) << i);
 				}
@@ -187,7 +187,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			{
 				// To get the maximum, we fill all bits
 				t.max_possible_value = 0;
-				for (int i = 0; i < t.bits; i++)
+				for (size_t i = 0; i < t.bits; i++)
 				{
 					t.max_possible_value |= (int128(1) << i);
 				}
@@ -202,19 +202,19 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			throw std::logic_error("size_types array is required. See the enumbra documentation for details.");
 		}
 
-		std::string default_value_enum_size_type = json_cfg["default_value_enum_size_type"].get<std::string>();
+		std::string default_value_enum_size_type = cpp_cfg["default_value_enum_size_type"].get<std::string>();
 		c.default_value_enum_size_type_index = c.get_size_type_index_from_name(default_value_enum_size_type);
 		if (c.default_value_enum_size_type_index == SIZE_MAX) {
 			throw std::logic_error("default_value_enum_size_type must reference an existing size_type.");
 		}
 
-		std::string default_flags_enum_size_type = json_cfg["default_flags_enum_size_type"].get<std::string>();
+		std::string default_flags_enum_size_type = cpp_cfg["default_flags_enum_size_type"].get<std::string>();
 		c.default_flags_enum_size_type_index = c.get_size_type_index_from_name(default_flags_enum_size_type);
 		if (c.default_flags_enum_size_type_index == SIZE_MAX) {
 			throw std::logic_error("default_flags_enum_size_type must reference an existing size_type.");
 		}
 
-		std::vector<std::string> flags_enum_smallest_unsigned_evaluation_order = get_array<std::string>(json_cfg["flags_enum_smallest_unsigned_evaluation_order"]);
+		std::vector<std::string> flags_enum_smallest_unsigned_evaluation_order = get_array<std::string>(cpp_cfg["flags_enum_smallest_unsigned_evaluation_order"]);
 		for (auto& str : flags_enum_smallest_unsigned_evaluation_order) {
 			auto index = c.get_size_type_index_from_name(str);
 			if (index == SIZE_MAX) {
@@ -223,7 +223,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			c.flags_enum_smallest_unsigned_evaluation_order.push_back(index);
 		}
 
-		std::vector<std::string> value_enum_smallest_unsigned_evaluation_order = get_array<std::string>(json_cfg["value_enum_smallest_unsigned_evaluation_order"]);
+		std::vector<std::string> value_enum_smallest_unsigned_evaluation_order = get_array<std::string>(cpp_cfg["value_enum_smallest_unsigned_evaluation_order"]);
 		for (auto& str : value_enum_smallest_unsigned_evaluation_order) {
 			auto index = c.get_size_type_index_from_name(str);
 			if (index == SIZE_MAX) {
@@ -232,7 +232,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			c.value_enum_smallest_unsigned_evaluation_order.push_back(index);
 		}
 
-		std::vector<std::string> value_enum_smallest_signed_evaluation_order = get_array<std::string>(json_cfg["value_enum_smallest_signed_evaluation_order"]);
+		std::vector<std::string> value_enum_smallest_signed_evaluation_order = get_array<std::string>(cpp_cfg["value_enum_smallest_signed_evaluation_order"]);
 		for (auto& str : value_enum_smallest_signed_evaluation_order) {
 			auto index = c.get_size_type_index_from_name(str);
 			if (index == SIZE_MAX) {
@@ -241,14 +241,14 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 			c.value_enum_smallest_signed_evaluation_order.push_back(index);
 		}
 
-		c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, json_cfg["string_table_layout"]);
+		c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_cfg["string_table_layout"]);
 		if (c.string_table_layout != StringTableLayout::None) {
-			c.string_table_type = get_mapped<StringTableType>(StringTableTypeMapped, json_cfg["string_table_type"]);
+			c.string_table_type = get_mapped<StringTableType>(StringTableTypeMapped, cpp_cfg["string_table_type"]);
 		}
 
-		c.min_max_functions = json_cfg["min_max_functions"].get<bool>();
-		c.bit_info_functions = json_cfg["bit_info_functions"].get<bool>();
-		c.enumbra_bitfield_macros = json_cfg["enumbra_bitfield_macros"].get<bool>();
+		c.min_max_functions = cpp_cfg["min_max_functions"].get<bool>();
+		c.bit_info_functions = cpp_cfg["bit_info_functions"].get<bool>();
+		c.enumbra_bitfield_macros = cpp_cfg["enumbra_bitfield_macros"].get<bool>();
 	}
 	catch (const std::exception& e) {
 
@@ -257,7 +257,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& json_cfg)
 	}
 }
 
-void parse_enumbra_csharp(enumbra::enumbra_config& /*enumbra_config*/, json& /*csharp_config*/)
+void parse_enumbra_csharp(enumbra::enumbra_config& /*enumbra_config*/, json& /*csharp_cfg*/)
 {
 	throw std::logic_error("parse_enumbra_csharp not implemented.");
 }
@@ -393,7 +393,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 				throw std::logic_error("entry_value type is not valid");
 			}
 
-			auto& size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
+			auto size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
 			validate_value_fits_in_size_type(size_type, ee.p_value);
 
 			current_value = ee.p_value + 1;
@@ -466,8 +466,6 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 
 		enum_config.flag_enum_definitions.push_back(def);
 	}
-
-	enum_config = enum_config;
 }
 
 size_t enumbra::cpp::cpp_config::get_size_type_index_from_name(std::string_view name)

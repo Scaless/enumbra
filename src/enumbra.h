@@ -11,7 +11,7 @@ using int128 = absl::int128;
 using uint128 = absl::uint128;
 
 namespace enumbra {
-	constexpr char* kEnumbraVersion = "0.1.0";
+	constexpr char kEnumbraVersion[] = "0.1.0";
 
 	namespace csharp {
 		// ...
@@ -85,7 +85,7 @@ namespace enumbra {
 			bool enumbra_bitfield_macros{ true };
 
 			size_t get_size_type_index_from_name(std::string_view name);
-			const enum_size_type& get_size_type_from_index(size_t index) const;
+			[[nodiscard]] const enum_size_type& get_size_type_from_index(size_t index) const;
 		};
 	}
 
@@ -193,7 +193,7 @@ namespace enumbra {
 		}
 
 		std::string exception = std::string(param) + " value must be one of: ";
-		for (int x = 0; x < map.size() - 1; x++) {
+		for (size_t x = 0; x < map.size() - 1; x++) {
 			exception += std::string(map[x].first) + ", ";
 		}
 		exception += map[map.size() - 1].first;

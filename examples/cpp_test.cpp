@@ -15,10 +15,10 @@ using namespace enums;
 
 struct V
 {
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W);
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X);
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y);
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z);
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
+	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
 
 	V() :
 		ENUMBRA_INIT_DEFAULT(W),
@@ -38,10 +38,10 @@ void test_value_vs_flags()
 		//x.reset_zero(); // Only flags should have this function
 	}
 	else if constexpr (is_enumbra_value_enum<T>()) {
-		
+
 	}
 	else {
-		STATIC_ASSERT_MSG(std::false_type::operator(), "T is not an enumbra type.");
+		STATIC_ASSERT_MSG(false, "T is not an enumbra type.");
 	}
 }
 
@@ -64,7 +64,7 @@ void test_is_enumbra_type(const T&)
 	}
 	else
 	{
-		STATIC_ASSERT_MSG(std::false_type::operator(), "T is not an enum class or enumbra type.");
+		STATIC_ASSERT_MSG(false, "T is not an enum class or enumbra type.");
 	}
 }
 #endif
@@ -79,20 +79,24 @@ enum class NonEnumbraEnum
 struct Struct20
 {
 	// Correct usage
-	ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C);
-	ENUMBRA_PACK_INIT(test_nodefault, B, default_value<test_nodefault>());
-	ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C);
+	ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C)
+	ENUMBRA_PACK_INIT(test_nodefault, B, default_value<test_nodefault>())
+	ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C)
 
 	// Not allowed
-	// ENUMBRA_PACK_INIT(test_nodefault, Ab, 4);
-	// ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnum::A);
-	// ENUMBRA_PACK_INIT(test_nodefault, C, test_flags::B);
+	// ENUMBRA_PACK_INIT(test_nodefault, Ab, 4)
+	// ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnum::A)
+	// ENUMBRA_PACK_INIT(test_nodefault, C, test_flags::B)
 };
 #endif
 
 int main()
 {
+    {
+
+    }
 	test_nodefault d;
+    test_nodefault c = test_nodefault::C;
 
 	d = test_nodefault::B;
 	d = test_nodefault::B | test_nodefault::C;
@@ -105,9 +109,9 @@ int main()
 	d &= test_nodefault::B;
 	d ^= test_nodefault::B;
 	d = ~d;
-	d = d | d;
-	d = d & d;
-	d = d ^ d;
+	d = d | c;
+	d = d & c;
+	d = d ^ c;
 	d = d | test_nodefault::B;
 	d = d & test_nodefault::B;
 	d = d ^ test_nodefault::B;
@@ -116,23 +120,24 @@ int main()
 	d = test_nodefault::B ^ d;
 
 	switch (d) {
-	case test_nodefault::B: break;
-	case test_nodefault::C: break;
-	default:break;
+	case test_nodefault::B:
+	case test_nodefault::C:
+        break;
 	}
 
 	bool b;
-	b = (d == d);
-	b = (d != d);
+	b = (d == c);
+	b = (d != c);
 	b = (d == test_nodefault::B);
 	b = (d != test_nodefault::B);
 	b = (test_nodefault::B == d);
 	b = (test_nodefault::B != d);
-	d = b ? d : d;
+	d = b ? d : c;
 
 	HexDiagonal f{};
-	b = (f == f);
-	b = (f != f);
+    HexDiagonal g{};
+	b = (f == g);
+	b = (f != g);
 	b = (f == HexDiagonal::NORTH);
 	b = (f != HexDiagonal::NORTH);
 	b = (HexDiagonal::NORTH == f);
@@ -147,7 +152,7 @@ int main()
 	v.X = v.X | d;
 
 	struct D {
-		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd);
+		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd)
 	};
 
 #if 0
@@ -170,12 +175,13 @@ int main()
 	test_nodefault vv{};
 	vv = ~vv;
 
-	TestSingleFlag z{};
-	const bool q = z == z;
+    TestSingleFlag zz{};
+    TestSingleFlag z{};
+	const bool q = z == zz;
 	UNUSED(q);
-	
+
 	z |= TestSingleFlag::C;
-	z = z | z;
+	z = z | zz;
 
 #if ENUMBRA_CPP_VERSION >= 17
 	test_is_enumbra_type(d);
@@ -195,13 +201,15 @@ int main()
 
 		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
 		STATIC_ASSERT(NANFail.first == false);
+        UNUSED(NANFail);
 
 		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
 		STATIC_ASSERT(MAXSuccess.first == true);
+        UNUSED(MAXSuccess);
 	}
 
 	auto& arr = values<test_string_parse>();
-	
+
 	// Range-for
 	for (auto& key : arr)
 	{
@@ -243,19 +251,19 @@ int main()
 
 	{
 		struct q_t {
-			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags);
+			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags)
 		};
 		q_t qt{};
-		ENUMBRA_ZERO(qt.flags);
-		ENUMBRA_SET(qt.flags, test_flags::B);
-		ENUMBRA_TOGGLE(qt.flags, test_flags::B);
-		ENUMBRA_UNSET(qt.flags, test_flags::B);
+		ENUMBRA_ZERO(qt.flags)
+		ENUMBRA_SET(qt.flags, test_flags::B)
+		ENUMBRA_TOGGLE(qt.flags, test_flags::B)
+		ENUMBRA_UNSET(qt.flags, test_flags::B)
 
 		test_flags tf = default_value<test_flags>();
-		ENUMBRA_ZERO(tf);
-		ENUMBRA_SET(tf, test_flags::C);
-		ENUMBRA_TOGGLE(tf, test_flags::B);
-		ENUMBRA_UNSET(tf, test_flags::B);
+		ENUMBRA_ZERO(tf)
+		ENUMBRA_SET(tf, test_flags::C)
+		ENUMBRA_TOGGLE(tf, test_flags::B)
+		ENUMBRA_UNSET(tf, test_flags::B)
 
 		zero(tf);
 		set(tf, test_flags::C);
@@ -267,6 +275,7 @@ int main()
 		test_string_parse zzz = enumbra::from_underlying_unsafe<test_string_parse>(-1);
 		test_string_parse eee = enumbra::from_underlying_unsafe<test_string_parse>(1);
 		zzz = eee;
+        UNUSED(zzz);
 
 		auto ccc = to_underlying(eee);
 		UNUSED(ccc);
