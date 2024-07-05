@@ -177,7 +177,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg)
 				t.max_possible_value = 0;
 				for (size_t i = 0; i < t.bits - 1; i++)
 				{
-					t.max_possible_value |= (int128(1) << i);
+					t.max_possible_value |= (int128(1) << static_cast<int>(i));
 				}
 			
 				// Minimum is found by inverting the max value, then subtract 1
@@ -189,7 +189,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg)
 				t.max_possible_value = 0;
 				for (size_t i = 0; i < t.bits; i++)
 				{
-					t.max_possible_value |= (int128(1) << i);
+					t.max_possible_value |= (int128(1) << static_cast<int>(i));
 				}
 
 				// Minimum always 0

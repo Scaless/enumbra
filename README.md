@@ -29,7 +29,7 @@ A Flags enum may represent no state, one state, or multiple states.
 # Generators
 
 ## C++
-Generated C++ code requires a minimum of C++14. Additional features are conditionally enabled up to C++20.  
+Generated C++ code requires a minimum of C++17. Additional features are conditionally enabled up to C++23.  
 
 Currently, `<array>` is the only required header in the generated output.  
 In the default enumbra_config, `<cstdint>` is also included. This can be overridden in your enumbra_config by specifying your own types.  

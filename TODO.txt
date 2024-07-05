@@ -20,4 +20,4 @@ FEATURE: how to do name aliasing to allow multiple names for the same value?
 FEATURE: improve warning/errors. Currently any tiny issue will immediately fail out of the process
          continue_on_error to get a list of all warnings/errors, but tool should NOT generate code if there are any
 
-GITHUB: Set up actions for automating builds on several compilers (preferably: Windows/MSVC2022, Linux/GCC, Linux/Clang). 
+GITHUB: Set up actions for automating builds on several compilers (preferably: Windows/MSVC2022, Windows/Clang, Linux/GCC, Linux/Clang).
