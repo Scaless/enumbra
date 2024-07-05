@@ -413,7 +413,7 @@ const std::string& cpp_generator::generate_cpp_output(const enumbra_config& cfg,
 	// TEMPLATES
 	{
 		// Increment this if templates below are modified.
-		const int enumbra_templates_version = 8;
+		const int enumbra_templates_version = 9;
 		const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -450,7 +450,7 @@ namespace enumbra {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
-            static constexpr underlying_type def = default_v;
+            static constexpr underlying_type default_value = default_v;
             static constexpr count_type count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
@@ -493,6 +493,12 @@ namespace enumbra {{
 #endif
             return true;
         }}
+
+        struct string_table_entry
+        {{
+            uint32_t offset = 0;
+            uint32_t count = 0;
+        }};
     }} // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() {{ return detail::base_helper<T>::enumbra_type; }}
     template<class T> constexpr bool is_enumbra_enum(T) {{ return detail::base_helper<T>::enumbra_type; }}
@@ -516,9 +522,9 @@ namespace enumbra {{
     constexpr T max() = delete;
 
     template<class T, typename std::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
-    constexpr T default_value() {{ return static_cast<T>(detail::value_enum_helper<T>::def); }}
+    constexpr T default_value() {{ return static_cast<T>(detail::value_enum_helper<T>::default_value); }}
     template<class T, typename std::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
-    constexpr T default_value() {{ return static_cast<T>(detail::flags_enum_helper<T>::def); }}
+    constexpr T default_value() {{ return static_cast<T>(detail::flags_enum_helper<T>::default_value); }}
     template<class T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr T default_value() = delete;
 
@@ -562,6 +568,20 @@ namespace enumbra {{
     template<class T, class underlying_type = T, typename std::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) = delete;
 
+    template<class T>
+    struct from_string_result
+    {{
+        bool success;
+        T result;
+    }};
+
+    template<class T>
+    struct from_wstring_result
+    {{
+        bool success;
+        T result;
+    }};
+
 }} // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
@@ -597,11 +617,11 @@ namespace enumbra {{
 	write_line_tabbed(1, "template<class T>");
 	if (cfg.cpp_config.string_table_type == StringTableType::ConstWCharPtr)
 	{
-		write_line_tabbed(1, "constexpr std::pair<bool, T> from_wstring(const wchar_t* str, std::size_t len) = delete;");
+		write_line_tabbed(1, "constexpr ::enumbra::from_wstring_result<T> from_wstring(const wchar_t* str, std::size_t len) = delete;");
 	}
 	else
 	{
-		write_line_tabbed(1, "constexpr std::pair<bool, T> from_string(const char* str, std::size_t len) = delete;");
+		write_line_tabbed(1, "constexpr ::enumbra::from_string_result<T> from_string(const char* str, std::size_t len) = delete;");
 	}
 
 	const std::string default_templates = R"(
@@ -704,7 +724,7 @@ namespace enumbra {{
 		write_linefeed();
 
 		// detail namespace
-		write_line_tabbed(1, "namespace detail {{ namespace {0} {{", e.name);
+		write_line_tabbed(1, "namespace detail::{0} {{", e.name);
 
 		// values_arr
 		write_line_tabbed(2, "constexpr std::array<::{2}{0}, {1}> values_arr =", e.name, entry_count, full_ns);
@@ -742,7 +762,7 @@ namespace enumbra {{
 						output.sizes.push_back(bucket.first);
 
 						const size_t count = bucket.second.size();
-						output.offset_and_count.push_back({ offset, count });
+						output.offset_and_count.emplace_back(offset, count);
 						offset += count;
 
 						for (auto& entry : bucket.second)
@@ -757,16 +777,16 @@ namespace enumbra {{
 			auto string_tables = generate_string_lookup_tables();
 
 			// string_sizes
-			write_line_tabbed(2, "constexpr std::array<std::size_t, {0}> string_sizes = {{{{", string_tables.sizes.size());
+			write_line_tabbed(2, "constexpr std::array<uint32_t, {0}> string_sizes = {{{{", string_tables.sizes.size());
 			for (auto& s : string_tables.sizes) {
 				write_line_tabbed(3, "{0},", s);
 			}
 			write_line_tabbed(2, "}}}};");
 
 			// offset_and_count
-			write_line_tabbed(2, "constexpr std::array<std::pair<std::size_t, std::size_t>, {0}> string_offset_and_counts = {{{{", string_tables.offset_and_count.size());
+			write_line_tabbed(2, "constexpr std::array<::enumbra::detail::string_table_entry, {0}> string_table_meta = {{{{", string_tables.offset_and_count.size());
 			for (auto& s : string_tables.offset_and_count) {
-				write_line_tabbed(3, "std::make_pair<std::size_t, std::size_t>({0}, {1}),", s.first, s.second);
+				write_line_tabbed(3, "{{{0}, {1}}},", s.first, s.second);
 			}
 			write_line_tabbed(2, "}}}};");
 
@@ -788,7 +808,8 @@ namespace enumbra {{
 		}
 
 
-		write_line_tabbed(1, "}}}}");
+        // End detail namespace
+		write_line_tabbed(1, "}}");
 		write_linefeed();
 
 		write_line_tabbed(1, "template<>");
@@ -834,11 +855,8 @@ namespace enumbra {{
 		{
 			write_line_tabbed(1, "template<>", e.name);
 			write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{", e.name, size_type);
-			write_line_tabbed(2, "const {0} test = static_cast<{0}>(v);", e.name, size_type);
-			write_line_tabbed(2, "for(std::size_t i = 0; i < values<{0}>().size(); i++) {{", e.name, size_type);
-			write_line_tabbed(3, "const auto& val = values<{0}>()[i];", e.name, size_type);
-			write_line_tabbed(3, "if(val == static_cast<{0}>(test))", e.name, size_type);
-			write_line_tabbed(4, "return true;", e.name, size_type);
+			write_line_tabbed(2, "for({0} val : values<{0}>()) {{", e.name, size_type);
+			write_line_tabbed(3, "if(val == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
 			write_line_tabbed(2, "}}");
 			write_line_tabbed(2, "return false;");
 			write_line_tabbed(1, "}}");
@@ -861,28 +879,28 @@ namespace enumbra {{
 		{
 			const auto& v = e.values.at(0);
 			write_line_tabbed(1, "template<>", e.name);
-			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
 			write_line_tabbed(2, "if (enumbra::detail::streq_s({0}\"{1}\", {2}, str, len)) {{", string_literal_prefix, v.name, v.name.length());
-			write_line_tabbed(3, "return std::make_pair(true, {0}::{1});", e.name, v.name);
+			write_line_tabbed(3, "return {{true, {0}::{1}}};", e.name, v.name);
 			write_line_tabbed(2, "}}");
-			write_line_tabbed(2, "return std::make_pair(false, {0}());", e.name);
+			write_line_tabbed(2, "return {{false, {0}()}};", e.name);
 			write_line_tabbed(1, "}}");
 		}
 		else
 		{
 			write_line_tabbed(1, "template<>");
-			write_line_tabbed(1, "constexpr std::pair<bool, {2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
+			write_line_tabbed(1, "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, std::size_t len) {{", string_function_prefix, char_type, e.name);
 
 			// Value String Table
-			const std::string from_string_complex = R"(        constexpr auto empty_val = std::make_pair(false, {0}());
-        std::size_t offset = 0;
-        std::size_t count = 0;
+			const std::string from_string_complex = R"(        constexpr ::enumbra::from_{1}string_result<{0}> empty_val = {{false, {0}()}};
+        uint32_t offset = 0;
+        uint32_t count = 0;
         for (std::size_t i = 0; i < detail::{0}::string_sizes.size(); ++i) {{
             const auto& current = detail::{0}::string_sizes[i];
             if (current > len) {{ return empty_val; }}
             if (current == len) {{ 
-                offset = detail::{0}::string_offset_and_counts[i].first;
-                count = detail::{0}::string_offset_and_counts[i].second;
+                offset = detail::{0}::string_table_meta[i].offset;
+                count = detail::{0}::string_table_meta[i].count;
                 break;
             }}
         }}
@@ -892,7 +910,7 @@ namespace enumbra {{
         {{
             const auto& e_str = detail::{0}::enum_strings[offset + i];
             if (enumbra::detail::streq_known_size(e_str, str, len)) {{
-                return std::make_pair(true, detail::{0}::enum_string_values[offset + i]);
+                return {{true, detail::{0}::enum_string_values[offset + i]}};
             }}
         }}
 
@@ -900,7 +918,8 @@ namespace enumbra {{
     }}
 )";
 			write(from_string_complex,
-				e.name
+				e.name,
+                string_function_prefix
 			);
 		}
 

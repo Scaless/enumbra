@@ -200,11 +200,11 @@ int main()
 		UNUSED(m);
 
 		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
-		STATIC_ASSERT(NANFail.first == false);
+		STATIC_ASSERT(NANFail.success == false);
         UNUSED(NANFail);
 
 		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
-		STATIC_ASSERT(MAXSuccess.first == true);
+		STATIC_ASSERT(MAXSuccess.success == true);
         UNUSED(MAXSuccess);
 	}
 
