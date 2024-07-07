@@ -116,6 +116,10 @@ namespace enumbra {
 		std::string description;
 		int128 p_value;
 	};
+    constexpr bool operator==(const enum_entry& lhs, const enum_entry& rhs)
+    {
+        return (lhs.name == rhs.name) && (lhs.description == rhs.description) && (lhs.p_value == rhs.p_value);
+    }
 
 	struct enum_definition
 	{

@@ -370,7 +370,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 11;
+        const int enumbra_templates_version = 12;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -513,14 +513,6 @@ namespace enumbra {{
         bool success;
         T result;
     }};
-
-    template<class T>
-    struct from_wstring_result
-    {{
-        bool success;
-        T result;
-    }};
-
 }} // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
@@ -615,7 +607,7 @@ namespace enumbra {{
         const size_t bits_required_transmission = get_transmission_bits_required(max_entry.p_value - min_entry.p_value);
 
         // Because of the way signed integers map to bit fields, a bit field may require an additional
-        // bit of storage to accomodate the sign bit even if it is unused. For example, given the following enum:
+        // bit of storage to accommodate the sign bit even if it is unused. For example, given the following enum:
         //   enum class ESignedValueBits : int8_t { A = 0, B = 1, C = 2, D = 3 }
         // To properly store and assign to this enum, we need 3 bits:
         //   int8_t Value : 1; // maps to the range -1 - 0, unexpected!
@@ -711,6 +703,9 @@ namespace enumbra {{
         }
         wl_tab(2, "}};");
 
+        const bool bStringTableSameAsValuesArray =
+                std::equal(e.values.cbegin(), e.values.cend(),
+                           string_tables.entries.cbegin(), string_tables.entries.cend());
         if (e.values.size() > 1) {
             // enum_strings
             size_t total_char_count = 0;
@@ -725,13 +720,15 @@ namespace enumbra {{
             }
             wl_tab(2, "}};");
 
-            // enum_string_values
-            wl_tab(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
-            for (auto &v: string_tables.entries) {
-                wl_tab(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
+            if(!bStringTableSameAsValuesArray)
+            {
+                // enum_string_values
+                wl_tab(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
+                for (auto &v: string_tables.entries) {
+                    wl_tab(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
+                }
+                wl_tab(2, "}};");
             }
-            wl_tab(2, "}};");
-
         }
 
         // End detail namespace
@@ -786,13 +783,11 @@ namespace enumbra {{
         // String Functions
         wl_tab(1, "constexpr const char* to_string(const {0} v) {{", e.name);
         wl_tab(2, "switch (v) {{");
-        if(string_tables.entries.size() == 1) {
+        if (string_tables.entries.size() == 1) {
             for (auto &v: e.values) {
                 wl_tab(3, "case {1}::{0}: return \"{0}\";", v.name, e.name);
             }
-        }
-        else
-        {
+        } else {
             for (auto &entry: string_tables.tables) {
                 uint32_t offset = entry.offset_str;
                 for (auto &e_name: entry.names) {
@@ -826,17 +821,14 @@ namespace enumbra {{
                    e.name);
             wl_tab(2, "if(str == nullptr) {{ return {{false, {0}()}}; }}", e.name);
 
-            if(string_tables.tables.size() == 1)
-            {
-                auto& first = string_tables.tables.front();
+            if (string_tables.tables.size() == 1) {
+                auto &first = string_tables.tables.front();
                 wl_tab(2, "if(len != {0}) {{ return {{false, {1}()}}; }}", first.size, e.name);
 
                 wl_tab(2, "constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
                 wl_tab(2, "constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
                 wl_tab(2, "constexpr ::std::uint32_t count = {0};", first.count);
-            }
-            else
-            {
+            } else {
                 wl_tab(2, "::std::uint32_t offset_str = 0;");
                 wl_tab(2, "::std::uint32_t offset_enum = 0;");
                 wl_tab(2, "::std::uint32_t count = 0;");
@@ -853,7 +845,11 @@ namespace enumbra {{
             wl_tab(2, "for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {{");
             wl_tab(3, "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + i, str, len)) {{",
                    e.name);
-            wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum]}};", e.name);
+            if(bStringTableSameAsValuesArray) {
+                wl_tab(4, "return {{true, detail::{0}::values_arr[offset_enum]}};", e.name);
+            } else {
+                wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum]}};", e.name);
+            }
             wl_tab(3, "}}");
             wl_tab(2, "}}");
 
