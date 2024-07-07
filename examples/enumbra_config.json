@@ -10,7 +10,7 @@
       ],
       "include_guard": "pragma_once",
       "additional_includes": [
-        "<cstdint>"
+
       ],
       "default_flags_enum_size_type": "unsigned32",
       "default_value_enum_size_type": "unsigned32",

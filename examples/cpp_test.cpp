@@ -1,5 +1,7 @@
 #include "enumbra_test.hpp"
 
+#include <type_traits>
+
 using namespace enumbra;
 using namespace enums;
 
