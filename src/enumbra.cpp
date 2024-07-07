@@ -242,9 +242,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg)
 		}
 
 		c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_cfg["string_table_layout"]);
-		if (c.string_table_layout != StringTableLayout::None) {
-			c.string_table_type = get_mapped<StringTableType>(StringTableTypeMapped, cpp_cfg["string_table_type"]);
-		}
 
 		c.min_max_functions = cpp_cfg["min_max_functions"].get<bool>();
 		c.bit_info_functions = cpp_cfg["bit_info_functions"].get<bool>();

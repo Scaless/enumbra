@@ -30,16 +30,6 @@ namespace enumbra {
 			{ "c_style", IncludeGuardStyle::CStyle },
 		} };
 
-		enum class StringTableType {
-			ConstCharPtr,
-			ConstWCharPtr
-		};
-		constexpr std::array<std::pair<std::string_view, StringTableType>, 4> StringTableTypeMapped
-		{ {
-			{ "const_char_ptr", StringTableType::ConstCharPtr },
-			{ "const_wchar_ptr", StringTableType::ConstWCharPtr },
-		} };
-
 		enum class StringTableLayout {
 			None,
 			NameOnly,
@@ -77,7 +67,6 @@ namespace enumbra {
 			std::vector<size_t> value_enum_smallest_unsigned_evaluation_order{};
 			std::vector<size_t> value_enum_smallest_signed_evaluation_order{};
 
-			StringTableType string_table_type{ StringTableType::ConstCharPtr };
 			StringTableLayout string_table_layout{ StringTableLayout::NameAndDescription };
 
 			bool min_max_functions{ true };

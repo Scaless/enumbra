@@ -565,13 +565,9 @@ namespace enumbra {{
     write_line_tabbed(1, "// Begin Default Templates");
 
     write_line_tabbed(1, "template<class T>");
-    if (cfg.cpp_config.string_table_type == StringTableType::ConstWCharPtr) {
-        write_line_tabbed(1,
-                          "constexpr ::enumbra::from_wstring_result<T> from_wstring(const wchar_t* str, ::std::uint16_t len) = delete;");
-    } else {
-        write_line_tabbed(1,
-                          "constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) = delete;");
-    }
+
+    write_line_tabbed(1,
+                      "constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) = delete;");
 
     const std::string default_templates = R"(
     template<class T>
@@ -620,12 +616,6 @@ namespace enumbra {{
         const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
         const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
         const int64_t type_bits = cpp.get_size_type_from_index(e.size_type_index).bits;
-        const std::string char_type =
-                cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "const char*" : "const wchar_t*";
-        const std::string string_literal_prefix =
-                cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "L";
-        const std::string string_function_prefix =
-                cfg.cpp_config.string_table_type == StringTableType::ConstCharPtr ? "" : "w";
 
         const int64_t max_abs_representable_signed = std::max(std::abs(static_cast<int64_t>(min_entry.p_value) - 1),
                                                               static_cast<int64_t>(max_entry.p_value));
@@ -734,9 +724,13 @@ namespace enumbra {{
             write_line_tabbed(2, "}};");
 
             // enum_strings
-            write_line_tabbed(2, "constexpr {0} enum_strings[{1}] = {{", char_type, string_tables.entries.size());
+//            size_t char_count = 0;
+//            for (auto &s: string_tables.entries) {
+//                // TODO: OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+//            }
+            write_line_tabbed(2, "constexpr const char* enum_strings[{0}] = {{", string_tables.entries.size());
             for (auto &s: string_tables.entries) {
-                write_line_tabbed(3, "{0}\"{1}\",", string_literal_prefix, s.name);
+                write_line_tabbed(3, "\"{0}\",", s.name);
             }
             write_line_tabbed(2, "}};");
 
@@ -799,13 +793,13 @@ namespace enumbra {{
         write_linefeed();
 
         // String Functions
-        write_line_tabbed(1, "constexpr {0} to_{1}string(const {2} v) {{", char_type, string_function_prefix, e.name);
+        write_line_tabbed(1, "constexpr const char* to_string(const {0} v) {{", e.name);
         write_line_tabbed(2, "switch (v) {{");
         for (auto &v: e.values) {
-            write_line_tabbed(3, "case {2}::{0}: return {1}\"{0}\";", v.name, string_literal_prefix, e.name);
+            write_line_tabbed(3, "case {1}::{0}: return \"{0}\";", v.name, e.name);
         }
         write_line_tabbed(2, "}}");
-        write_line_tabbed(2, "return {0}\"\";", string_literal_prefix);
+        write_line_tabbed(2, "return \"\";");
         write_line_tabbed(1, "}}");
         write_linefeed();
 
@@ -814,9 +808,9 @@ namespace enumbra {{
             const auto &v = e.values.at(0);
             write_line_tabbed(1, "template<>", e.name);
             write_line_tabbed(1,
-                              "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, ::std::uint16_t len) {{",
-                              string_function_prefix, char_type, e.name);
-            write_line_tabbed(2, "if (enumbra::detail::streq_s({0}\"{1}\", {2}, str, len)) {{", string_literal_prefix,
+                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
+                              e.name);
+            write_line_tabbed(2, "if (enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
                               v.name, v.name.length());
             write_line_tabbed(3, "return {{true, {0}::{1}}};", e.name, v.name);
             write_line_tabbed(2, "}}");
@@ -825,8 +819,8 @@ namespace enumbra {{
         } else if (string_tables.tables.size() == 1) {
             write_line_tabbed(1, "template<>");
             write_line_tabbed(1,
-                              "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, ::std::uint16_t len) {{",
-                              string_function_prefix, char_type, e.name);
+                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
+                              e.name);
 
             // Value String Table
             const std::string from_string_complex = R"(        if(detail::{0}::string_table_meta[0].size != len) {{
@@ -843,15 +837,12 @@ namespace enumbra {{
         return {{false, {0}()}};
     }}
 )";
-            write(from_string_complex,
-                  e.name,
-                  string_function_prefix
-            );
+            write(from_string_complex, e.name);
         } else {
             write_line_tabbed(1, "template<>");
             write_line_tabbed(1,
-                              "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, ::std::uint16_t len) {{",
-                              string_function_prefix, char_type, e.name);
+                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
+                              e.name);
 
             // Value String Table
             const std::string from_string_complex = R"(        for (auto meta_entry : detail::{0}::string_table_meta) {{
@@ -869,11 +860,7 @@ namespace enumbra {{
         return {{false, {0}()}};
     }}
 )";
-            write(from_string_complex,
-                  e.name,
-                  string_function_prefix,
-                  string_tables.tables.size()
-            );
+            write(from_string_complex, e.name);
         }
 
         // Helper specializations

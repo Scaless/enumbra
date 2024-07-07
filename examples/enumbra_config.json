@@ -33,7 +33,6 @@
         "signed64"
       ],
       "string_table_layout": "name_and_description",
-      "string_table_type": "const_char_ptr",
       "min_max_functions": true,
       "bit_info_functions": true,
       "enumbra_bitfield_macros": true,
