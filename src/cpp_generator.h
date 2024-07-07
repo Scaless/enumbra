@@ -38,7 +38,7 @@ private:
 	}
 
 	template <typename... Args>
-	void write_line_tabbed(int tab_count, std::string_view fmt, Args&&... args) {
+	void wl_tab(int tab_count, std::string_view fmt, Args&&... args) {
 		for (int i = 0; i < tab_count; i++)
 			write("    ");
 		write(fmt, args...);

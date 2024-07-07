@@ -370,7 +370,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 10;
+        const int enumbra_templates_version = 11;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -430,25 +430,14 @@ namespace enumbra {{
 
         // Constexpr string compare
         template<class T> constexpr bool streq_s(T* a, ::std::uint32_t a_len, T* b, ::std::uint32_t b_len) {{
-            if(a == nullptr) {{ return false; }}
-            if(b == nullptr) {{ return false; }}
             if(a_len != b_len) {{ return false; }}
             for(::std::uint32_t i = 0; i < a_len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
         template<class T> constexpr bool streq_known_size(T* a, T* b, ::std::uint32_t len) {{
-            if(a == nullptr) {{ return false; }}
-            if(b == nullptr) {{ return false; }}
             for(::std::uint32_t i = 0; i < len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
-
-        struct string_table_entry
-        {{
-            ::std::uint32_t offset = 0;
-            ::std::uint16_t count = 0;
-            ::std::uint16_t size = 0;
-        }};
     }} // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() {{ return detail::base_helper<T>::enumbra_type; }}
     template<class T> constexpr bool is_enumbra_enum(T) {{ return detail::base_helper<T>::enumbra_type; }}
@@ -562,12 +551,12 @@ namespace enumbra {{
     write_linefeed();
 
     // Default Templates
-    write_line_tabbed(1, "// Begin Default Templates");
+    wl_tab(1, "// Begin Default Templates");
 
-    write_line_tabbed(1, "template<class T>");
+    wl_tab(1, "template<class T>");
 
-    write_line_tabbed(1,
-                      "constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) = delete;");
+    wl_tab(1,
+           "constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) = delete;");
 
     const std::string default_templates = R"(
     template<class T>
@@ -646,9 +635,11 @@ namespace enumbra {{
 
         // Generate string lookup tables
         struct StringLookupTable {
-            size_t offset = 0;
+            size_t offset_str = 0;
+            size_t offset_enum = 0;
             size_t count = 0;
             size_t size = 0;
+            std::vector<std::string> names;
         };
         struct StringLookupTables {
             std::vector<StringLookupTable> tables;
@@ -664,16 +655,22 @@ namespace enumbra {{
                 buckets_by_size[ed.name.length()].push_back(ed);
             }
 
-            size_t current_offset = 0;
+            size_t offset_str = 0;
+            size_t offset_enum = 0;
             for (auto &bucket: buckets_by_size) {
                 const size_t count = bucket.second.size();
 
-                output.tables.emplace_back(StringLookupTable{current_offset, count, bucket.first});
-                current_offset += count;
-
+                std::vector<std::string> names;
                 for (auto &entry: bucket.second) {
                     output.entries.push_back(entry);
+                    names.push_back(entry.name);
                 }
+
+                output.tables.emplace_back(StringLookupTable{offset_str, offset_enum, count, bucket.first, names});
+
+                // TODO: Handle Padding
+                offset_str += (bucket.second.front().name.length() * count) + (1 * count);
+                offset_enum++;
             }
 
             return output;
@@ -693,174 +690,175 @@ namespace enumbra {{
         bool is_contiguous = is_value_set_contiguous(unique_values);
 
         // Definition
-        write_line_tabbed(1, "// {} Definition", e.name);
+        wl_tab(1, "// {} Definition", e.name);
         {
-            write_line_tabbed(1, "enum class {0} : {1} {{", e.name, size_type);
+            wl_tab(1, "enum class {0} : {1} {{", e.name, size_type);
             for (const auto &v: e.values) {
-                write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
+                wl_tab(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
             }
-            write_line_tabbed(1, "}};");
+            wl_tab(1, "}};");
         }
         write_linefeed();
 
         // begin detail namespace
-        write_line_tabbed(1, "namespace detail::{0} {{", e.name);
+        wl_tab(1, "namespace detail::{0} {{", e.name);
 
         // values_arr
-        write_line_tabbed(2, "constexpr ::{2}{0} values_arr[{1}] =", e.name, entry_count, full_ns);
-        write_line_tabbed(2, "{{");
+        wl_tab(2, "constexpr ::{2}{0} values_arr[{1}] =", e.name, entry_count, full_ns);
+        wl_tab(2, "{{");
         for (const auto &v: e.values) {
-            write_line_tabbed(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+            wl_tab(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
         }
-        write_line_tabbed(2, "}};");
+        wl_tab(2, "}};");
 
         if (e.values.size() > 1) {
-            // string_table_meta
-            write_line_tabbed(2, "constexpr ::enumbra::detail::string_table_entry string_table_meta[{0}] = {{",
-                              string_tables.tables.size());
-            for (auto &s: string_tables.tables) {
-                write_line_tabbed(3, "{{{0}, {1}, {2}}},", s.offset, s.count, s.size);
-            }
-            write_line_tabbed(2, "}};");
-
             // enum_strings
-//            size_t char_count = 0;
-//            for (auto &s: string_tables.entries) {
-//                // TODO: OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-//            }
-            write_line_tabbed(2, "constexpr const char* enum_strings[{0}] = {{", string_tables.entries.size());
+            size_t total_char_count = 0;
             for (auto &s: string_tables.entries) {
-                write_line_tabbed(3, "\"{0}\",", s.name);
+                total_char_count += s.name.size();
+                total_char_count += 1; // null terminator
             }
-            write_line_tabbed(2, "}};");
+            total_char_count += 1; // Final terminator
+            wl_tab(2, "constexpr const char enum_strings[{0}] = {{", total_char_count);
+            for (auto &s: string_tables.entries) {
+                wl_tab(3, R"("{0}\0")", s.name);
+            }
+            wl_tab(2, "}};");
 
             // enum_string_values
-            write_line_tabbed(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
+            wl_tab(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
             for (auto &v: string_tables.entries) {
-                write_line_tabbed(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
+                wl_tab(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
             }
-            write_line_tabbed(2, "}};");
+            wl_tab(2, "}};");
 
         }
 
         // End detail namespace
-        write_line_tabbed(1, "}}");
+        wl_tab(1, "}}");
         write_linefeed();
 
-        write_line_tabbed(1, "template<>");
-        write_line_tabbed(1, "constexpr auto& values<{0}>()", e.name);
-        write_line_tabbed(1, "{{");
-        write_line_tabbed(2, "return detail::{0}::values_arr;", e.name);
-        write_line_tabbed(1, "}}");
+        wl_tab(1, "template<>");
+        wl_tab(1, "constexpr auto& values<{0}>()", e.name);
+        wl_tab(1, "{{");
+        wl_tab(2, "return detail::{0}::values_arr;", e.name);
+        wl_tab(1, "}}");
         write_linefeed();
 
         // is_valid variations
         if (e.values.size() == 1) {
-            write_line_tabbed(1, "template<>", e.name);
-            write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return {2} == v; }}",
-                              e.name,
-                              size_type,
-                              Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
+            wl_tab(1, "template<>", e.name);
+            wl_tab(1, "constexpr bool is_valid<{0}>({1} v) {{ return {2} == v; }}",
+                   e.name,
+                   size_type,
+                   Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
             );
         } else if (is_contiguous) {
             if ((min_entry.p_value == 0) &&
                 !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
             {
-                write_line_tabbed(1, "template<>", e.name);
-                write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return v <= {2}; }}",
-                                  e.name,
-                                  size_type,
-                                  Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
+                wl_tab(1, "template<>", e.name);
+                wl_tab(1, "constexpr bool is_valid<{0}>({1} v) {{ return v <= {2}; }}",
+                       e.name,
+                       size_type,
+                       Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
                 );
             } else {
-                write_line_tabbed(1, "template<>", e.name);
-                write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{ return ({2} <= v) && (v <= {3}); }}",
-                                  e.name,
-                                  size_type,
-                                  Int128FormatValue{min_entry.p_value, type_bits, is_size_type_signed},
-                                  Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
+                wl_tab(1, "template<>", e.name);
+                wl_tab(1, "constexpr bool is_valid<{0}>({1} v) {{ return ({2} <= v) && (v <= {3}); }}",
+                       e.name,
+                       size_type,
+                       Int128FormatValue{min_entry.p_value, type_bits, is_size_type_signed},
+                       Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
                 );
             }
         } else {
-            write_line_tabbed(1, "template<>", e.name);
-            write_line_tabbed(1, "constexpr bool is_valid<{0}>({1} v) {{", e.name, size_type);
-            write_line_tabbed(2, "for(::std::uint32_t i = 0; i < {1}; i++) {{", e.name, e.values.size());
-            write_line_tabbed(3, "if(values<{0}>()[i] == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
-            write_line_tabbed(2, "}}");
-            write_line_tabbed(2, "return false;");
-            write_line_tabbed(1, "}}");
+            wl_tab(1, "template<>", e.name);
+            wl_tab(1, "constexpr bool is_valid<{0}>({1} v) {{", e.name, size_type);
+            wl_tab(2, "for(::std::uint32_t i = 0; i < {1}; i++) {{", e.name, e.values.size());
+            wl_tab(3, "if(values<{0}>()[i] == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
+            wl_tab(2, "}}");
+            wl_tab(2, "return false;");
+            wl_tab(1, "}}");
         }
         write_linefeed();
 
         // String Functions
-        write_line_tabbed(1, "constexpr const char* to_string(const {0} v) {{", e.name);
-        write_line_tabbed(2, "switch (v) {{");
-        for (auto &v: e.values) {
-            write_line_tabbed(3, "case {1}::{0}: return \"{0}\";", v.name, e.name);
+        wl_tab(1, "constexpr const char* to_string(const {0} v) {{", e.name);
+        wl_tab(2, "switch (v) {{");
+        if(string_tables.entries.size() == 1) {
+            for (auto &v: e.values) {
+                wl_tab(3, "case {1}::{0}: return \"{0}\";", v.name, e.name);
+            }
         }
-        write_line_tabbed(2, "}}");
-        write_line_tabbed(2, "return \"\";");
-        write_line_tabbed(1, "}}");
+        else
+        {
+            for (auto &entry: string_tables.tables) {
+                uint32_t offset = entry.offset_str;
+                for (auto &e_name: entry.names) {
+                    wl_tab(3, "case {0}::{1}: return &detail::{0}::enum_strings[{2}];", e.name, e_name, offset);
+                    offset += entry.size + 1;
+                }
+            }
+        }
+        wl_tab(2, "}}");
+        wl_tab(2, "return nullptr;");
+        wl_tab(1, "}}");
         write_linefeed();
 
         // from_string
         if (e.values.size() == 1) {
             const auto &v = e.values.at(0);
-            write_line_tabbed(1, "template<>", e.name);
-            write_line_tabbed(1,
-                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
-                              e.name);
-            write_line_tabbed(2, "if (enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
-                              v.name, v.name.length());
-            write_line_tabbed(3, "return {{true, {0}::{1}}};", e.name, v.name);
-            write_line_tabbed(2, "}}");
-            write_line_tabbed(2, "return {{false, {0}()}};", e.name);
-            write_line_tabbed(1, "}}");
-        } else if (string_tables.tables.size() == 1) {
-            write_line_tabbed(1, "template<>");
-            write_line_tabbed(1,
-                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
-                              e.name);
-
-            // Value String Table
-            const std::string from_string_complex = R"(        if(detail::{0}::string_table_meta[0].size != len) {{
-            return {{false, {0}()}};
-        }}
-
-        const ::std::uint32_t offset = detail::{0}::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::{0}::string_table_meta[0].count; ++i) {{
-            if (enumbra::detail::streq_known_size(detail::{0}::enum_strings[offset + i], str, len)) {{
-                return {{true, detail::{0}::enum_string_values[offset + i]}};
-            }}
-        }}
-
-        return {{false, {0}()}};
-    }}
-)";
-            write(from_string_complex, e.name);
+            wl_tab(1, "template<>", e.name);
+            wl_tab(1,
+                   "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
+                   e.name);
+            wl_tab(2, "if ((str != nullptr) && enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
+                   v.name, v.name.length());
+            wl_tab(3, "return {{true, {0}::{1}}};", e.name, v.name);
+            wl_tab(2, "}}");
+            wl_tab(2, "return {{false, {0}()}};", e.name);
+            wl_tab(1, "}}");
         } else {
-            write_line_tabbed(1, "template<>");
-            write_line_tabbed(1,
-                              "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
-                              e.name);
+            wl_tab(1, "template<>");
+            wl_tab(1,
+                   "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) {{",
+                   e.name);
+            wl_tab(2, "if(str == nullptr) {{ return {{false, {0}()}}; }}", e.name);
 
-            // Value String Table
-            const std::string from_string_complex = R"(        for (auto meta_entry : detail::{0}::string_table_meta) {{
-            if (meta_entry.size > len) {{ break; }}
-            if (meta_entry.size == len) {{
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {{
-                    const auto& e_str = detail::{0}::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {{
-                        return {{true, detail::{0}::enum_string_values[meta_entry.offset + i]}};
-                    }}
-                }}
-                break;
-            }}
-        }}
-        return {{false, {0}()}};
-    }}
-)";
-            write(from_string_complex, e.name);
+            if(string_tables.tables.size() == 1)
+            {
+                auto& first = string_tables.tables.front();
+                wl_tab(2, "if(len != {0}) {{ return {{false, {1}()}}; }}", first.size, e.name);
+
+                wl_tab(2, "constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
+                wl_tab(2, "constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
+                wl_tab(2, "constexpr ::std::uint32_t count = {0};", first.count);
+            }
+            else
+            {
+                wl_tab(2, "::std::uint32_t offset_str = 0;");
+                wl_tab(2, "::std::uint32_t offset_enum = 0;");
+                wl_tab(2, "::std::uint32_t count = 0;");
+                wl_tab(2, "switch(len)");
+                wl_tab(2, "{{");
+                for (auto &entry: string_tables.tables) {
+                    wl_tab(3, "case {0}: offset_str = {1}; offset_enum = {2}; count = {3}; break;",
+                           entry.size, entry.offset_str, entry.offset_enum, entry.count);
+                }
+                wl_tab(3, "default: return {{false, {0}()}};", e.name);
+                wl_tab(2, "}}");
+            }
+
+            wl_tab(2, "for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {{");
+            wl_tab(3, "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + i, str, len)) {{",
+                   e.name);
+            wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum]}};", e.name);
+            wl_tab(3, "}}");
+            wl_tab(2, "}}");
+
+            wl_tab(2, "return {{false, {0}()}};", e.name);
+            wl_tab(1, "}}");
         }
 
         // Helper specializations
@@ -949,56 +947,56 @@ namespace enumbra {{
         bool is_contiguous = is_flags_set_contiguous(unique_values);
 
         // Definition
-        write_line_tabbed(1, "// {} Definition", e.name);
+        wl_tab(1, "// {} Definition", e.name);
         {
-            write_line_tabbed(1, "enum class {0} : {1} {{", e.name, size_type);
+            wl_tab(1, "enum class {0} : {1} {{", e.name, size_type);
             for (const auto &v: e.values) {
-                write_line_tabbed(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
+                wl_tab(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
             }
-            write_line_tabbed(1, "}};");
+            wl_tab(1, "}};");
         }
         write_linefeed();
 
-        write_line_tabbed(1, "namespace detail::{0} {{", e.name);
-        write_line_tabbed(2, "constexpr ::{2}{0} flags_arr[{1}] =", e.name, unique_entry_count, full_ns);
-        write_line_tabbed(2, "{{");
+        wl_tab(1, "namespace detail::{0} {{", e.name);
+        wl_tab(2, "constexpr ::{2}{0} flags_arr[{1}] =", e.name, unique_entry_count, full_ns);
+        wl_tab(2, "{{");
         for (const auto &v: e.values) {
-            write_line_tabbed(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+            wl_tab(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
         }
-        write_line_tabbed(2, "}};");
-        write_line_tabbed(1, "}}");
+        wl_tab(2, "}};");
+        wl_tab(1, "}}");
         write_linefeed();
 
-        write_line_tabbed(1, "template<>");
-        write_line_tabbed(1, "constexpr auto& flags<{0}>()", e.name);
-        write_line_tabbed(1, "{{");
-        write_line_tabbed(2, "return detail::{0}::flags_arr;", e.name);
-        write_line_tabbed(1, "}}");
+        wl_tab(1, "template<>");
+        wl_tab(1, "constexpr auto& flags<{0}>()", e.name);
+        wl_tab(1, "{{");
+        wl_tab(2, "return detail::{0}::flags_arr;", e.name);
+        wl_tab(1, "}}");
         write_linefeed();
 
         //// Functions
-        write_line_tabbed(1, "constexpr void zero({0}& value) {{ value = static_cast<{0}>(0); }}", e.name);
-        write_line_tabbed(1,
-                          "constexpr bool test({0} value, {0} flags) {{ return (static_cast<{1}>(flags) & static_cast<{1}>(value)) == static_cast<{1}>(flags); }}",
-                          e.name, size_type);
-        write_line_tabbed(1,
-                          "constexpr void set({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) | static_cast<{1}>(flags)); }}",
-                          e.name, size_type);
-        write_line_tabbed(1,
-                          "constexpr void unset({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) & (~static_cast<{1}>(flags))); }}",
-                          e.name, size_type);
-        write_line_tabbed(1,
-                          "constexpr void toggle({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}",
-                          e.name, size_type);
-        write_line_tabbed(1, "constexpr bool is_all({0} value) {{ return static_cast<{1}>(value) >= {2:#x}; }}", e.name,
-                          size_type, max_value);
-        write_line_tabbed(1, "constexpr bool is_any({0} value) {{ return static_cast<{1}>(value) > 0; }}", e.name,
-                          size_type);
-        write_line_tabbed(1, "constexpr bool is_none({0} value) {{ return static_cast<{1}>(value) == 0; }}", e.name,
-                          size_type);
-        write_line_tabbed(1,
-                          "constexpr bool is_single({0} value) {{ {1} n = static_cast<{1}>(value); return n && !(n & (n - 1)); }}",
-                          e.name, size_type);
+        wl_tab(1, "constexpr void zero({0}& value) {{ value = static_cast<{0}>(0); }}", e.name);
+        wl_tab(1,
+               "constexpr bool test({0} value, {0} flags) {{ return (static_cast<{1}>(flags) & static_cast<{1}>(value)) == static_cast<{1}>(flags); }}",
+               e.name, size_type);
+        wl_tab(1,
+               "constexpr void set({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) | static_cast<{1}>(flags)); }}",
+               e.name, size_type);
+        wl_tab(1,
+               "constexpr void unset({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) & (~static_cast<{1}>(flags))); }}",
+               e.name, size_type);
+        wl_tab(1,
+               "constexpr void toggle({0}& value, {0} flags) {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}",
+               e.name, size_type);
+        wl_tab(1, "constexpr bool is_all({0} value) {{ return static_cast<{1}>(value) >= {2:#x}; }}", e.name,
+               size_type, max_value);
+        wl_tab(1, "constexpr bool is_any({0} value) {{ return static_cast<{1}>(value) > 0; }}", e.name,
+               size_type);
+        wl_tab(1, "constexpr bool is_none({0} value) {{ return static_cast<{1}>(value) == 0; }}", e.name,
+               size_type);
+        wl_tab(1,
+               "constexpr bool is_single({0} value) {{ {1} n = static_cast<{1}>(value); return n && !(n & (n - 1)); }}",
+               e.name, size_type);
         write_linefeed();
 
         //// is_valid variations
@@ -1006,19 +1004,19 @@ namespace enumbra {{
         //{
         //	if (min_value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
         //	{
-        //		write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
-        //		write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
+        //		wl_tab(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
+        //		wl_tab(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
         //	}
         //	else
         //	{
-        //		write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
-        //		write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
+        //		wl_tab(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
+        //		wl_tab(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
         //	}
         //}
         //else
         //{
-        //	write_line_tabbed(1, "static constexpr bool _is_valid({0} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
-        //	write_line_tabbed(1, "static constexpr bool _is_valid({1} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
+        //	wl_tab(1, "static constexpr bool _is_valid({0} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
+        //	wl_tab(1, "static constexpr bool _is_valid({1} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
         //}
         //write_linefeed();
 
@@ -1035,7 +1033,7 @@ namespace enumbra {{
                 "constexpr {0}& operator^=({0}& a, const {0} b) {{ return a = a ^ b; }}",
         };
         for (auto &str: operator_strings) {
-            write_line_tabbed(1, str, e.name, size_type);
+            wl_tab(1, str, e.name, size_type);
         }
 
         // Helper specializations

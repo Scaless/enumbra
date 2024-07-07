@@ -84,7 +84,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 10
+#define ENUMBRA_BASE_TEMPLATES_VERSION 11
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -141,25 +141,14 @@ namespace enumbra {
 
         // Constexpr string compare
         template<class T> constexpr bool streq_s(T* a, ::std::uint32_t a_len, T* b, ::std::uint32_t b_len) {
-            if(a == nullptr) { return false; }
-            if(b == nullptr) { return false; }
             if(a_len != b_len) { return false; }
             for(::std::uint32_t i = 0; i < a_len; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
         }
         template<class T> constexpr bool streq_known_size(T* a, T* b, ::std::uint32_t len) {
-            if(a == nullptr) { return false; }
-            if(b == nullptr) { return false; }
             for(::std::uint32_t i = 0; i < len; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
         }
-
-        struct string_table_entry
-        {
-            ::std::uint32_t offset = 0;
-            ::std::uint16_t count = 0;
-            ::std::uint16_t size = 0;
-        };
     } // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() { return detail::base_helper<T>::enumbra_type; }
     template<class T> constexpr bool is_enumbra_enum(T) { return detail::base_helper<T>::enumbra_type; }
@@ -247,9 +236,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 10
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 11
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 10
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 11
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -288,15 +277,12 @@ namespace enums {
             ::enums::test_string_parse::E,
             ::enums::test_string_parse::F,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 5, 1},
-        };
-        constexpr const char* enum_strings[5] = {
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
+        constexpr const char enum_strings[11] = {
+            "B\0"
+            "C\0"
+            "D\0"
+            "E\0"
+            "F\0"
         };
         constexpr ::enums::test_string_parse enum_string_values[5] = {
             ::enums::test_string_parse::B,
@@ -323,28 +309,27 @@ namespace enums {
 
     constexpr const char* to_string(const test_string_parse v) {
         switch (v) {
-            case test_string_parse::B: return "B";
-            case test_string_parse::C: return "C";
-            case test_string_parse::D: return "D";
-            case test_string_parse::E: return "E";
-            case test_string_parse::F: return "F";
+            case test_string_parse::B: return &detail::test_string_parse::enum_strings[0];
+            case test_string_parse::C: return &detail::test_string_parse::enum_strings[2];
+            case test_string_parse::D: return &detail::test_string_parse::enum_strings[4];
+            case test_string_parse::E: return &detail::test_string_parse::enum_strings[6];
+            case test_string_parse::F: return &detail::test_string_parse::enum_strings[8];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<test_string_parse> from_string<test_string_parse>(const char* str, ::std::uint16_t len) {
-        if(detail::test_string_parse::string_table_meta[0].size != len) {
-            return {false, test_string_parse()};
-        }
-
-        const ::std::uint32_t offset = detail::test_string_parse::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::test_string_parse::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::test_string_parse::enum_strings[offset + i], str, len)) {
-                return {true, detail::test_string_parse::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, test_string_parse()}; }
+        if(len != 1) { return {false, test_string_parse()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 5;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::test_string_parse::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::test_string_parse::enum_string_values[offset_enum]};
             }
         }
-
         return {false, test_string_parse()};
     }
 
@@ -364,15 +349,11 @@ namespace enums {
             ::enums::Unsigned64Test::V_UINT16_MAX,
             ::enums::Unsigned64Test::V_UINT32_MAX,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[2] = {
-            {0, 2, 3},
-            {2, 2, 12},
-        };
-        constexpr const char* enum_strings[4] = {
-            "MAX",
-            "MIN",
-            "V_UINT16_MAX",
-            "V_UINT32_MAX",
+        constexpr const char enum_strings[35] = {
+            "MAX\0"
+            "MIN\0"
+            "V_UINT16_MAX\0"
+            "V_UINT32_MAX\0"
         };
         constexpr ::enums::Unsigned64Test enum_string_values[4] = {
             ::enums::Unsigned64Test::MAX,
@@ -398,26 +379,29 @@ namespace enums {
 
     constexpr const char* to_string(const Unsigned64Test v) {
         switch (v) {
-            case Unsigned64Test::MAX: return "MAX";
-            case Unsigned64Test::MIN: return "MIN";
-            case Unsigned64Test::V_UINT16_MAX: return "V_UINT16_MAX";
-            case Unsigned64Test::V_UINT32_MAX: return "V_UINT32_MAX";
+            case Unsigned64Test::MAX: return &detail::Unsigned64Test::enum_strings[0];
+            case Unsigned64Test::MIN: return &detail::Unsigned64Test::enum_strings[4];
+            case Unsigned64Test::V_UINT16_MAX: return &detail::Unsigned64Test::enum_strings[8];
+            case Unsigned64Test::V_UINT32_MAX: return &detail::Unsigned64Test::enum_strings[21];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<Unsigned64Test> from_string<Unsigned64Test>(const char* str, ::std::uint16_t len) {
-        for (auto meta_entry : detail::Unsigned64Test::string_table_meta) {
-            if (meta_entry.size > len) { break; }
-            if (meta_entry.size == len) {
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {
-                    const auto& e_str = detail::Unsigned64Test::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {
-                        return {true, detail::Unsigned64Test::enum_string_values[meta_entry.offset + i]};
-                    }
-                }
-                break;
+        if(str == nullptr) { return {false, Unsigned64Test()}; }
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+            case 12: offset_str = 8; offset_enum = 1; count = 2; break;
+            default: return {false, Unsigned64Test()};
+        }
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::Unsigned64Test::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::Unsigned64Test::enum_string_values[offset_enum]};
             }
         }
         return {false, Unsigned64Test()};
@@ -437,14 +421,10 @@ namespace enums {
             ::enums::Signed64Test::MAX,
             ::enums::Signed64Test::NEG_ONE,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[2] = {
-            {0, 2, 3},
-            {2, 1, 7},
-        };
-        constexpr const char* enum_strings[3] = {
-            "MIN",
-            "MAX",
-            "NEG_ONE",
+        constexpr const char enum_strings[17] = {
+            "MIN\0"
+            "MAX\0"
+            "NEG_ONE\0"
         };
         constexpr ::enums::Signed64Test enum_string_values[3] = {
             ::enums::Signed64Test::MIN,
@@ -469,25 +449,28 @@ namespace enums {
 
     constexpr const char* to_string(const Signed64Test v) {
         switch (v) {
-            case Signed64Test::MIN: return "MIN";
-            case Signed64Test::MAX: return "MAX";
-            case Signed64Test::NEG_ONE: return "NEG_ONE";
+            case Signed64Test::MIN: return &detail::Signed64Test::enum_strings[0];
+            case Signed64Test::MAX: return &detail::Signed64Test::enum_strings[4];
+            case Signed64Test::NEG_ONE: return &detail::Signed64Test::enum_strings[8];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<Signed64Test> from_string<Signed64Test>(const char* str, ::std::uint16_t len) {
-        for (auto meta_entry : detail::Signed64Test::string_table_meta) {
-            if (meta_entry.size > len) { break; }
-            if (meta_entry.size == len) {
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {
-                    const auto& e_str = detail::Signed64Test::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {
-                        return {true, detail::Signed64Test::enum_string_values[meta_entry.offset + i]};
-                    }
-                }
-                break;
+        if(str == nullptr) { return {false, Signed64Test()}; }
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            default: return {false, Signed64Test()};
+        }
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::Signed64Test::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::Signed64Test::enum_string_values[offset_enum]};
             }
         }
         return {false, Signed64Test()};
@@ -507,14 +490,10 @@ namespace enums {
             ::enums::Signed32Test::MAX,
             ::enums::Signed32Test::NEG_ONE,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[2] = {
-            {0, 2, 3},
-            {2, 1, 7},
-        };
-        constexpr const char* enum_strings[3] = {
-            "MIN",
-            "MAX",
-            "NEG_ONE",
+        constexpr const char enum_strings[17] = {
+            "MIN\0"
+            "MAX\0"
+            "NEG_ONE\0"
         };
         constexpr ::enums::Signed32Test enum_string_values[3] = {
             ::enums::Signed32Test::MIN,
@@ -539,25 +518,28 @@ namespace enums {
 
     constexpr const char* to_string(const Signed32Test v) {
         switch (v) {
-            case Signed32Test::MIN: return "MIN";
-            case Signed32Test::MAX: return "MAX";
-            case Signed32Test::NEG_ONE: return "NEG_ONE";
+            case Signed32Test::MIN: return &detail::Signed32Test::enum_strings[0];
+            case Signed32Test::MAX: return &detail::Signed32Test::enum_strings[4];
+            case Signed32Test::NEG_ONE: return &detail::Signed32Test::enum_strings[8];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<Signed32Test> from_string<Signed32Test>(const char* str, ::std::uint16_t len) {
-        for (auto meta_entry : detail::Signed32Test::string_table_meta) {
-            if (meta_entry.size > len) { break; }
-            if (meta_entry.size == len) {
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {
-                    const auto& e_str = detail::Signed32Test::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {
-                        return {true, detail::Signed32Test::enum_string_values[meta_entry.offset + i]};
-                    }
-                }
-                break;
+        if(str == nullptr) { return {false, Signed32Test()}; }
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            default: return {false, Signed32Test()};
+        }
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::Signed32Test::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::Signed32Test::enum_string_values[offset_enum]};
             }
         }
         return {false, Signed32Test()};
@@ -577,14 +559,10 @@ namespace enums {
             ::enums::Signed16Test::MIN,
             ::enums::Signed16Test::MAX,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[2] = {
-            {0, 2, 3},
-            {2, 1, 7},
-        };
-        constexpr const char* enum_strings[3] = {
-            "MIN",
-            "MAX",
-            "NEG_ONE",
+        constexpr const char enum_strings[17] = {
+            "MIN\0"
+            "MAX\0"
+            "NEG_ONE\0"
         };
         constexpr ::enums::Signed16Test enum_string_values[3] = {
             ::enums::Signed16Test::MIN,
@@ -609,25 +587,28 @@ namespace enums {
 
     constexpr const char* to_string(const Signed16Test v) {
         switch (v) {
-            case Signed16Test::NEG_ONE: return "NEG_ONE";
-            case Signed16Test::MIN: return "MIN";
-            case Signed16Test::MAX: return "MAX";
+            case Signed16Test::MIN: return &detail::Signed16Test::enum_strings[0];
+            case Signed16Test::MAX: return &detail::Signed16Test::enum_strings[4];
+            case Signed16Test::NEG_ONE: return &detail::Signed16Test::enum_strings[8];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<Signed16Test> from_string<Signed16Test>(const char* str, ::std::uint16_t len) {
-        for (auto meta_entry : detail::Signed16Test::string_table_meta) {
-            if (meta_entry.size > len) { break; }
-            if (meta_entry.size == len) {
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {
-                    const auto& e_str = detail::Signed16Test::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {
-                        return {true, detail::Signed16Test::enum_string_values[meta_entry.offset + i]};
-                    }
-                }
-                break;
+        if(str == nullptr) { return {false, Signed16Test()}; }
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            default: return {false, Signed16Test()};
+        }
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::Signed16Test::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::Signed16Test::enum_string_values[offset_enum]};
             }
         }
         return {false, Signed16Test()};
@@ -647,13 +628,10 @@ namespace enums {
             ::enums::Signed8Test::V_INT_MAX,
             ::enums::Signed8Test::V_NEG_ONE,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 3, 9},
-        };
-        constexpr const char* enum_strings[3] = {
-            "V_INT_MIN",
-            "V_INT_MAX",
-            "V_NEG_ONE",
+        constexpr const char enum_strings[31] = {
+            "V_INT_MIN\0"
+            "V_INT_MAX\0"
+            "V_NEG_ONE\0"
         };
         constexpr ::enums::Signed8Test enum_string_values[3] = {
             ::enums::Signed8Test::V_INT_MIN,
@@ -678,26 +656,25 @@ namespace enums {
 
     constexpr const char* to_string(const Signed8Test v) {
         switch (v) {
-            case Signed8Test::V_INT_MIN: return "V_INT_MIN";
-            case Signed8Test::V_INT_MAX: return "V_INT_MAX";
-            case Signed8Test::V_NEG_ONE: return "V_NEG_ONE";
+            case Signed8Test::V_INT_MIN: return &detail::Signed8Test::enum_strings[0];
+            case Signed8Test::V_INT_MAX: return &detail::Signed8Test::enum_strings[10];
+            case Signed8Test::V_NEG_ONE: return &detail::Signed8Test::enum_strings[20];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<Signed8Test> from_string<Signed8Test>(const char* str, ::std::uint16_t len) {
-        if(detail::Signed8Test::string_table_meta[0].size != len) {
-            return {false, Signed8Test()};
-        }
-
-        const ::std::uint32_t offset = detail::Signed8Test::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::Signed8Test::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::Signed8Test::enum_strings[offset + i], str, len)) {
-                return {true, detail::Signed8Test::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, Signed8Test()}; }
+        if(len != 9) { return {false, Signed8Test()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 3;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::Signed8Test::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::Signed8Test::enum_string_values[offset_enum]};
             }
         }
-
         return {false, Signed8Test()};
     }
 
@@ -715,13 +692,10 @@ namespace enums {
             ::enums::test_value::B,
             ::enums::test_value::C,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 3, 1},
-        };
-        constexpr const char* enum_strings[3] = {
-            "A",
-            "B",
-            "C",
+        constexpr const char enum_strings[7] = {
+            "A\0"
+            "B\0"
+            "C\0"
         };
         constexpr ::enums::test_value enum_string_values[3] = {
             ::enums::test_value::A,
@@ -741,26 +715,25 @@ namespace enums {
 
     constexpr const char* to_string(const test_value v) {
         switch (v) {
-            case test_value::A: return "A";
-            case test_value::B: return "B";
-            case test_value::C: return "C";
+            case test_value::A: return &detail::test_value::enum_strings[0];
+            case test_value::B: return &detail::test_value::enum_strings[2];
+            case test_value::C: return &detail::test_value::enum_strings[4];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<test_value> from_string<test_value>(const char* str, ::std::uint16_t len) {
-        if(detail::test_value::string_table_meta[0].size != len) {
-            return {false, test_value()};
-        }
-
-        const ::std::uint32_t offset = detail::test_value::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::test_value::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::test_value::enum_strings[offset + i], str, len)) {
-                return {true, detail::test_value::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, test_value()}; }
+        if(len != 1) { return {false, test_value()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 3;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::test_value::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::test_value::enum_string_values[offset_enum]};
             }
         }
-
         return {false, test_value()};
     }
 
@@ -784,17 +757,13 @@ namespace enums {
             ::enums::HexDiagonal::SOUTH_WEST,
             ::enums::HexDiagonal::NORTH_WEST,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[2] = {
-            {0, 2, 5},
-            {2, 4, 10},
-        };
-        constexpr const char* enum_strings[6] = {
-            "NORTH",
-            "SOUTH",
-            "NORTH_EAST",
-            "SOUTH_EAST",
-            "SOUTH_WEST",
-            "NORTH_WEST",
+        constexpr const char enum_strings[57] = {
+            "NORTH\0"
+            "SOUTH\0"
+            "NORTH_EAST\0"
+            "SOUTH_EAST\0"
+            "SOUTH_WEST\0"
+            "NORTH_WEST\0"
         };
         constexpr ::enums::HexDiagonal enum_string_values[6] = {
             ::enums::HexDiagonal::NORTH,
@@ -817,28 +786,31 @@ namespace enums {
 
     constexpr const char* to_string(const HexDiagonal v) {
         switch (v) {
-            case HexDiagonal::NORTH: return "NORTH";
-            case HexDiagonal::NORTH_EAST: return "NORTH_EAST";
-            case HexDiagonal::SOUTH_EAST: return "SOUTH_EAST";
-            case HexDiagonal::SOUTH: return "SOUTH";
-            case HexDiagonal::SOUTH_WEST: return "SOUTH_WEST";
-            case HexDiagonal::NORTH_WEST: return "NORTH_WEST";
+            case HexDiagonal::NORTH: return &detail::HexDiagonal::enum_strings[0];
+            case HexDiagonal::SOUTH: return &detail::HexDiagonal::enum_strings[6];
+            case HexDiagonal::NORTH_EAST: return &detail::HexDiagonal::enum_strings[12];
+            case HexDiagonal::SOUTH_EAST: return &detail::HexDiagonal::enum_strings[23];
+            case HexDiagonal::SOUTH_WEST: return &detail::HexDiagonal::enum_strings[34];
+            case HexDiagonal::NORTH_WEST: return &detail::HexDiagonal::enum_strings[45];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<HexDiagonal> from_string<HexDiagonal>(const char* str, ::std::uint16_t len) {
-        for (auto meta_entry : detail::HexDiagonal::string_table_meta) {
-            if (meta_entry.size > len) { break; }
-            if (meta_entry.size == len) {
-                for (::std::uint32_t i = 0; i < meta_entry.count; ++i) {
-                    const auto& e_str = detail::HexDiagonal::enum_strings[meta_entry.offset + i];
-                    if (enumbra::detail::streq_known_size(e_str, str, len)) {
-                        return {true, detail::HexDiagonal::enum_string_values[meta_entry.offset + i]};
-                    }
-                }
-                break;
+        if(str == nullptr) { return {false, HexDiagonal()}; }
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 5: offset_str = 0; offset_enum = 0; count = 2; break;
+            case 10: offset_str = 12; offset_enum = 1; count = 4; break;
+            default: return {false, HexDiagonal()};
+        }
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::HexDiagonal::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::HexDiagonal::enum_string_values[offset_enum]};
             }
         }
         return {false, HexDiagonal()};
@@ -860,14 +832,11 @@ namespace enums {
             ::enums::NegativeTest1::C,
             ::enums::NegativeTest1::D,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 4, 1},
-        };
-        constexpr const char* enum_strings[4] = {
-            "A",
-            "B",
-            "C",
-            "D",
+        constexpr const char enum_strings[9] = {
+            "A\0"
+            "B\0"
+            "C\0"
+            "D\0"
         };
         constexpr ::enums::NegativeTest1 enum_string_values[4] = {
             ::enums::NegativeTest1::A,
@@ -888,27 +857,26 @@ namespace enums {
 
     constexpr const char* to_string(const NegativeTest1 v) {
         switch (v) {
-            case NegativeTest1::A: return "A";
-            case NegativeTest1::B: return "B";
-            case NegativeTest1::C: return "C";
-            case NegativeTest1::D: return "D";
+            case NegativeTest1::A: return &detail::NegativeTest1::enum_strings[0];
+            case NegativeTest1::B: return &detail::NegativeTest1::enum_strings[2];
+            case NegativeTest1::C: return &detail::NegativeTest1::enum_strings[4];
+            case NegativeTest1::D: return &detail::NegativeTest1::enum_strings[6];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<NegativeTest1> from_string<NegativeTest1>(const char* str, ::std::uint16_t len) {
-        if(detail::NegativeTest1::string_table_meta[0].size != len) {
-            return {false, NegativeTest1()};
-        }
-
-        const ::std::uint32_t offset = detail::NegativeTest1::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::NegativeTest1::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::NegativeTest1::enum_strings[offset + i], str, len)) {
-                return {true, detail::NegativeTest1::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, NegativeTest1()}; }
+        if(len != 1) { return {false, NegativeTest1()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 4;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::NegativeTest1::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::NegativeTest1::enum_string_values[offset_enum]};
             }
         }
-
         return {false, NegativeTest1()};
     }
 
@@ -928,14 +896,11 @@ namespace enums {
             ::enums::NegativeTest2::C,
             ::enums::NegativeTest2::D,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 4, 1},
-        };
-        constexpr const char* enum_strings[4] = {
-            "A",
-            "B",
-            "C",
-            "D",
+        constexpr const char enum_strings[9] = {
+            "A\0"
+            "B\0"
+            "C\0"
+            "D\0"
         };
         constexpr ::enums::NegativeTest2 enum_string_values[4] = {
             ::enums::NegativeTest2::A,
@@ -956,27 +921,26 @@ namespace enums {
 
     constexpr const char* to_string(const NegativeTest2 v) {
         switch (v) {
-            case NegativeTest2::A: return "A";
-            case NegativeTest2::B: return "B";
-            case NegativeTest2::C: return "C";
-            case NegativeTest2::D: return "D";
+            case NegativeTest2::A: return &detail::NegativeTest2::enum_strings[0];
+            case NegativeTest2::B: return &detail::NegativeTest2::enum_strings[2];
+            case NegativeTest2::C: return &detail::NegativeTest2::enum_strings[4];
+            case NegativeTest2::D: return &detail::NegativeTest2::enum_strings[6];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<NegativeTest2> from_string<NegativeTest2>(const char* str, ::std::uint16_t len) {
-        if(detail::NegativeTest2::string_table_meta[0].size != len) {
-            return {false, NegativeTest2()};
-        }
-
-        const ::std::uint32_t offset = detail::NegativeTest2::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::NegativeTest2::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::NegativeTest2::enum_strings[offset + i], str, len)) {
-                return {true, detail::NegativeTest2::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, NegativeTest2()}; }
+        if(len != 1) { return {false, NegativeTest2()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 4;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::NegativeTest2::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::NegativeTest2::enum_string_values[offset_enum]};
             }
         }
-
         return {false, NegativeTest2()};
     }
 
@@ -992,12 +956,9 @@ namespace enums {
             ::enums::NegativeTest3::A,
             ::enums::NegativeTest3::B,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 2, 1},
-        };
-        constexpr const char* enum_strings[2] = {
-            "A",
-            "B",
+        constexpr const char enum_strings[5] = {
+            "A\0"
+            "B\0"
         };
         constexpr ::enums::NegativeTest3 enum_string_values[2] = {
             ::enums::NegativeTest3::A,
@@ -1021,25 +982,24 @@ namespace enums {
 
     constexpr const char* to_string(const NegativeTest3 v) {
         switch (v) {
-            case NegativeTest3::A: return "A";
-            case NegativeTest3::B: return "B";
+            case NegativeTest3::A: return &detail::NegativeTest3::enum_strings[0];
+            case NegativeTest3::B: return &detail::NegativeTest3::enum_strings[2];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<NegativeTest3> from_string<NegativeTest3>(const char* str, ::std::uint16_t len) {
-        if(detail::NegativeTest3::string_table_meta[0].size != len) {
-            return {false, NegativeTest3()};
-        }
-
-        const ::std::uint32_t offset = detail::NegativeTest3::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::NegativeTest3::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::NegativeTest3::enum_strings[offset + i], str, len)) {
-                return {true, detail::NegativeTest3::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, NegativeTest3()}; }
+        if(len != 1) { return {false, NegativeTest3()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 2;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::NegativeTest3::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::NegativeTest3::enum_string_values[offset_enum]};
             }
         }
-
         return {false, NegativeTest3()};
     }
 
@@ -1055,12 +1015,9 @@ namespace enums {
             ::enums::NegativeTest4::A,
             ::enums::NegativeTest4::B,
         };
-        constexpr ::enumbra::detail::string_table_entry string_table_meta[1] = {
-            {0, 2, 1},
-        };
-        constexpr const char* enum_strings[2] = {
-            "A",
-            "B",
+        constexpr const char enum_strings[5] = {
+            "A\0"
+            "B\0"
         };
         constexpr ::enums::NegativeTest4 enum_string_values[2] = {
             ::enums::NegativeTest4::A,
@@ -1084,25 +1041,24 @@ namespace enums {
 
     constexpr const char* to_string(const NegativeTest4 v) {
         switch (v) {
-            case NegativeTest4::A: return "A";
-            case NegativeTest4::B: return "B";
+            case NegativeTest4::A: return &detail::NegativeTest4::enum_strings[0];
+            case NegativeTest4::B: return &detail::NegativeTest4::enum_strings[2];
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<NegativeTest4> from_string<NegativeTest4>(const char* str, ::std::uint16_t len) {
-        if(detail::NegativeTest4::string_table_meta[0].size != len) {
-            return {false, NegativeTest4()};
-        }
-
-        const ::std::uint32_t offset = detail::NegativeTest4::string_table_meta[0].offset;
-        for (::std::uint32_t i = 0; i < detail::NegativeTest4::string_table_meta[0].count; ++i) {
-            if (enumbra::detail::streq_known_size(detail::NegativeTest4::enum_strings[offset + i], str, len)) {
-                return {true, detail::NegativeTest4::enum_string_values[offset + i]};
+        if(str == nullptr) { return {false, NegativeTest4()}; }
+        if(len != 1) { return {false, NegativeTest4()}; }
+        constexpr ::std::uint32_t offset_str = 0;
+        constexpr ::std::uint32_t offset_enum = 0;
+        constexpr ::std::uint32_t count = 2;
+        for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
+            if (enumbra::detail::streq_known_size(detail::NegativeTest4::enum_strings + offset_str + i, str, len)) {
+                return {true, detail::NegativeTest4::enum_string_values[offset_enum]};
             }
         }
-
         return {false, NegativeTest4()};
     }
 
@@ -1131,12 +1087,12 @@ namespace enums {
         switch (v) {
             case EmptyTest1Unsigned::A: return "A";
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str, ::std::uint16_t len) {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
+        if ((str != nullptr) && enumbra::detail::streq_s("A", 1, str, len)) {
             return {true, EmptyTest1Unsigned::A};
         }
         return {false, EmptyTest1Unsigned()};
@@ -1167,12 +1123,12 @@ namespace enums {
         switch (v) {
             case EmptyTest1Signed::A: return "A";
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str, ::std::uint16_t len) {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
+        if ((str != nullptr) && enumbra::detail::streq_s("A", 1, str, len)) {
             return {true, EmptyTest1Signed::A};
         }
         return {false, EmptyTest1Signed()};
@@ -1203,12 +1159,12 @@ namespace enums {
         switch (v) {
             case SingleTest1Unsigned::A: return "A";
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str, ::std::uint16_t len) {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
+        if ((str != nullptr) && enumbra::detail::streq_s("A", 1, str, len)) {
             return {true, SingleTest1Unsigned::A};
         }
         return {false, SingleTest1Unsigned()};
@@ -1239,12 +1195,12 @@ namespace enums {
         switch (v) {
             case SingleTest1Signed::A: return "A";
         }
-        return "";
+        return nullptr;
     }
 
     template<>
     constexpr ::enumbra::from_string_result<SingleTest1Signed> from_string<SingleTest1Signed>(const char* str, ::std::uint16_t len) {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
+        if ((str != nullptr) && enumbra::detail::streq_s("A", 1, str, len)) {
             return {true, SingleTest1Signed::A};
         }
         return {false, SingleTest1Signed()};
