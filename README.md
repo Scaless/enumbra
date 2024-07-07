@@ -7,7 +7,7 @@ If you need stability, wait until the 1.0 release.**
 
 Please refer to the [wiki](https://github.com/Scaless/enumbra/wiki) for full documentation.  
 
-Annotated starter config files are provided in the [examples](/examples/) directory.  
+Annotated starter config files are provided in the [examples](/examples) directory.  
 Running the following command will parse the given config files and generate [enumbra_test.hpp](/examples/enumbra_test.hpp).  
 ```
 ./enumbra.exe -c enumbra_config.json -s enum.json --cppout enumbra_test.hpp
@@ -20,10 +20,10 @@ A Value Enum always represents one singular state.
 
 A Flags enum may represent no state, one state, or multiple states.
 
-| Enum Type | State | Bitwise Ops | Bit Packing (C++) |
-| --- | --- | --- | --- |
-| Value | Single Value | No | Yes |
-| Flags | None / Single / Multiple | Yes | Yes |
+| Enum Type | State                    | Bitwise Ops | Bit Packing (C++) |
+|-----------|--------------------------|-------------|-------------------|
+| Value     | Single Value             | No          | Yes               |
+| Flags     | None / Single / Multiple | Yes         | Yes               |
 
 
 # Generators
@@ -134,7 +134,7 @@ enumbra uses vcpkg manifests for a couple of dependencies and should be automati
 
 # Known Limitations
 1. Flags Enums are required to have an unsigned underlying type.
-2. Values within Flags Enums may not span multiple bits. A single value must control a single bit. (TODO: A separate mechanism for definining multi-bit flags should be added.)
+2. Values within Flags Enums may not span multiple bits. A single value must control a single bit. (TODO: A separate mechanism for defining multi-bit flags should be added.)
 3. Values and names within an enum must be unique.
 
 # Q&A
@@ -143,15 +143,21 @@ enumbra uses vcpkg manifests for a couple of dependencies and should be automati
 
 * magic_enum and Better Enums are compile-time generators that work directly on C++ source. All they require is placing a header in your sources.
   * enumbra is a standalone code generator with its own configuration syntax that requires an additional build step.
-* Constexpr generation slows down compile times / bloats memory. This cost is paid on every compile.
-  * enumbra generates all of the code before compilation, which can be compiled once. Functions still benefit from constexpr where possible. enumbra can analyze enums to provide extra functionality that is not possible with compile-time libraries.
-* The number of constants within a compile-time evaluated enum is usually limited to around 128 due to compiler limits for macros/templates.
-  * enumbra has no limits on the number of entries within an enum.
+* enum code generation at compile time significantly slows down compile times / bloats memory. This cost is paid on every compile.
+  * enumbra generates all code before compilation, which can then be compiled once.
+  * Functions still benefit from constexpr where possible.
+  * enumbra can analyze enums to provide extra functionality that is not possible with compile-time libraries.
+* The number of entries within a compile-time evaluated enum is usually limited to around 64-128 due to compiler limits for macros/templates.
+  * enumbra has a default limit of 65536 entries within an enum. The limit can be easily increased through configuration. 
 * Lack of configuration options.
-  * enumbra has a few more knobs and optional validation steps.
+  * enumbra has a few more knobs and optional validation steps. Reasonable defaults are set to work out of the box.
 * Limited to one programming language (C++).
   * enumbra can potentially generate to any language ... but currently only C++.
-* In magic_enum, the provided `bitwise_operators` namespace lets you use bitwise operators on ALL enums regardless of if they are intended to be flags or not.
-  * enumbra defines operators for each enum individually, reducing the chance for mistake.
 * Better Enums are limited to enums that you control and define.
-  * enumbra can be used to manually re-define third-party enums, though this is a bit dangerous as you get out of sync. Some more investigation is needed here. magic_enum is the safer option here as it works directly on the original enum.
+  * enumbra can be used to manually re-define third-party enums, though this is a bit dangerous as you get out of sync.
+  * Some more investigation for enumbra is needed here.
+  * magic_enum is the safer option here as it works directly on the original enum.
+* Minimum C++ Standard version
+  * enumbra: C++17 
+  * magic_enum: C++17
+  * Better Enums: C++11

@@ -153,16 +153,16 @@
         "size_type": "signed16",
         "entries": [
           {
+            "name": "NEG_ONE",
+            "value": -1
+          },
+          {
             "name": "MIN",
             "value": -32768
           },
           {
             "name": "MAX",
             "value": 32767
-          },
-          {
-            "name": "NEG_ONE",
-            "value": -1
           }
         ]
       },

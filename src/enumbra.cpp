@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
 		auto result = options.parse(argc, argv);
 
-		if (result.count("h") || result.arguments().size() == 0) {
+		if (result.count("h") || result.arguments().empty()) {
 			print_help(options);
 			return 0;
 		}
@@ -198,7 +198,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config& enumbra_config, json& cpp_cfg)
 
 			c.size_types.push_back(t);
 		}
-		if (c.size_types.size() == 0) {
+		if (c.size_types.empty()) {
 			throw std::logic_error("size_types array is required. See the enumbra documentation for details.");
 		}
 
@@ -349,7 +349,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 		def.name = value_enum["name"].get<std::string>();
 
 		std::string size_type_string = value_enum.value("size_type", "");
-		if (size_type_string != "")
+		if (!size_type_string.empty())
 		{
 			def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
 			if (def.size_type_index == SIZE_MAX) {
@@ -408,7 +408,7 @@ void parse_enum_meta(enumbra::enumbra_config& enumbra_config, enumbra::enum_meta
 		enum_definition def;
 		def.name = flags_enum["name"].get<std::string>();
 		std::string size_type_string = flags_enum.value("size_type", "");
-		if (size_type_string != "")
+		if (!size_type_string.empty())
 		{
 			def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
 			if (def.size_type_index == SIZE_MAX) {

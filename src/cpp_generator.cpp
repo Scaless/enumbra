@@ -489,7 +489,8 @@ namespace enumbra {{
         struct string_table_entry
         {{
             ::std::uint32_t offset = 0;
-            ::std::uint32_t count = 0;
+            ::std::uint16_t count = 0;
+            ::std::uint16_t size = 0;
         }};
     }} // end namespace enumbra::detail
     template<class T> constexpr bool is_enumbra_enum() {{ return detail::base_helper<T>::enumbra_type; }}
@@ -694,10 +695,15 @@ namespace enumbra {{
 		}
 
         // Generate string lookup tables
+        struct StringLookupTable
+        {
+            size_t offset = 0;
+            size_t count = 0;
+            size_t size = 0;
+        };
         struct StringLookupTables
         {
-            std::vector<size_t> sizes;
-            std::vector<std::pair<size_t, size_t>> offset_and_count;
+            std::vector<StringLookupTable> tables;
             std::vector<enum_entry> entries;
         };
 
@@ -712,14 +718,13 @@ namespace enumbra {{
                 buckets_by_size[ed.name.length()].push_back(ed);
             }
 
-            size_t offset = 0;
+            size_t current_offset = 0;
             for (auto& bucket : buckets_by_size)
             {
-                output.sizes.push_back(bucket.first);
-
                 const size_t count = bucket.second.size();
-                output.offset_and_count.emplace_back(offset, count);
-                offset += count;
+
+                output.tables.emplace_back(StringLookupTable{current_offset, count, bucket.first});
+                current_offset += count;
 
                 for (auto& entry : bucket.second)
                 {
@@ -767,17 +772,11 @@ namespace enumbra {{
 
 		if (e.values.size() > 1)
 		{
-			// string_sizes
-			write_line_tabbed(2, "constexpr ::std::uint8_t string_sizes[{0}] = {{", string_tables.sizes.size());
-			for (auto& s : string_tables.sizes) {
-				write_line_tabbed(3, "{0},", s);
-			}
-			write_line_tabbed(2, "}};");
-
-			// offset_and_count
-			write_line_tabbed(2, "constexpr ::enumbra::detail::string_table_entry string_table_meta[{0}] = {{", string_tables.offset_and_count.size());
-			for (auto& s : string_tables.offset_and_count) {
-				write_line_tabbed(3, "{{{0}, {1}}},", s.first, s.second);
+			// string_table_meta
+			write_line_tabbed(2, "constexpr ::enumbra::detail::string_table_entry string_table_meta[{0}] = {{",
+                              string_tables.tables.size());
+			for (auto& s : string_tables.tables) {
+				write_line_tabbed(3, "{{{0}, {1}, {2}}},", s.offset, s.count, s.size);
 			}
 			write_line_tabbed(2, "}};");
 
@@ -876,14 +875,14 @@ namespace enumbra {{
 			write_line_tabbed(2, "return {{false, {0}()}};", e.name);
 			write_line_tabbed(1, "}}");
 		}
-		else if(string_tables.sizes.size() == 1)
+		else if(string_tables.tables.size() == 1)
 		{
             write_line_tabbed(1, "template<>");
             write_line_tabbed(1, "constexpr ::enumbra::from_{0}string_result<{2}> from_{0}string<{2}>({1} str, ::std::uint32_t len) {{", string_function_prefix, char_type, e.name);
 
             // Value String Table
             const std::string from_string_complex = R"(        constexpr ::enumbra::from_{1}string_result<{0}> empty_val = {{false, {0}()}};
-        if(detail::{0}::string_sizes[0] != len) {{ return empty_val; }}
+        if(detail::{0}::string_table_meta[0].size != len) {{ return empty_val; }}
 
         ::std::uint32_t offset = detail::{0}::string_table_meta[0].offset;
         ::std::uint32_t count = detail::{0}::string_table_meta[0].count;
@@ -911,14 +910,14 @@ namespace enumbra {{
 
             // Value String Table
             const std::string from_string_complex = R"(        constexpr ::enumbra::from_{1}string_result<{0}> empty_val = {{false, {0}()}};
-        ::std::uint32_t offset = 0;
+        ::std::uint32_t offset;
         ::std::uint32_t count = 0;
-        for (::std::uint32_t i = 0; i < static_cast<::std::uint32_t>({2}); ++i) {{
-            const auto current = detail::{0}::string_sizes[i];
+        for (auto entry : detail::{0}::string_table_meta) {{
+            const auto current = entry.size;
             if (current > len) {{ return empty_val; }}
             if (current == len) {{
-                offset = detail::{0}::string_table_meta[i].offset;
-                count = detail::{0}::string_table_meta[i].count;
+                offset = entry.offset;
+                count = entry.count;
                 break;
             }}
         }}
@@ -938,7 +937,7 @@ namespace enumbra {{
             write(from_string_complex,
                   e.name,
                   string_function_prefix,
-                  string_tables.sizes.size()
+                  string_tables.tables.size()
             );
         }
 
