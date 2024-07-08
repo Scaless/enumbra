@@ -659,7 +659,7 @@ namespace enumbra {{
 
                 // TODO: Handle Padding
                 offset_str += (bucket.second.front().name.length() * count) + (1 * count);
-                offset_enum++;
+                offset_enum += bucket.second.size();
             }
 
             return output;
@@ -843,9 +843,9 @@ namespace enumbra {{
             wl_tab(3, "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + i, str, len)) {{",
                    e.name);
             if(bStringTableSameAsValuesArray) {
-                wl_tab(4, "return {{true, detail::{0}::values_arr[offset_enum]}};", e.name);
+                wl_tab(4, "return {{true, detail::{0}::values_arr[offset_enum + i]}};", e.name);
             } else {
-                wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum]}};", e.name);
+                wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum + i]}};", e.name);
             }
             wl_tab(3, "}}");
             wl_tab(2, "}}");

@@ -308,7 +308,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 5;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::test_string_parse::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::test_string_parse::values_arr[offset_enum]};
+                return {true, detail::test_string_parse::values_arr[offset_enum + i]};
             }
         }
         return {false, test_string_parse()};
@@ -377,12 +377,12 @@ namespace enums {
         switch(len)
         {
             case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 12: offset_str = 8; offset_enum = 1; count = 2; break;
+            case 12: offset_str = 8; offset_enum = 2; count = 2; break;
             default: return {false, Unsigned64Test()};
         }
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::Unsigned64Test::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::Unsigned64Test::enum_string_values[offset_enum]};
+                return {true, detail::Unsigned64Test::enum_string_values[offset_enum + i]};
             }
         }
         return {false, Unsigned64Test()};
@@ -446,12 +446,12 @@ namespace enums {
         switch(len)
         {
             case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
             default: return {false, Signed64Test()};
         }
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::Signed64Test::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::Signed64Test::enum_string_values[offset_enum]};
+                return {true, detail::Signed64Test::enum_string_values[offset_enum + i]};
             }
         }
         return {false, Signed64Test()};
@@ -515,12 +515,12 @@ namespace enums {
         switch(len)
         {
             case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
             default: return {false, Signed32Test()};
         }
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::Signed32Test::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::Signed32Test::enum_string_values[offset_enum]};
+                return {true, detail::Signed32Test::enum_string_values[offset_enum + i]};
             }
         }
         return {false, Signed32Test()};
@@ -584,12 +584,12 @@ namespace enums {
         switch(len)
         {
             case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 1; count = 1; break;
+            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
             default: return {false, Signed16Test()};
         }
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::Signed16Test::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::Signed16Test::enum_string_values[offset_enum]};
+                return {true, detail::Signed16Test::enum_string_values[offset_enum + i]};
             }
         }
         return {false, Signed16Test()};
@@ -648,7 +648,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 3;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::Signed8Test::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::Signed8Test::values_arr[offset_enum]};
+                return {true, detail::Signed8Test::values_arr[offset_enum + i]};
             }
         }
         return {false, Signed8Test()};
@@ -702,7 +702,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 3;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::test_value::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::test_value::values_arr[offset_enum]};
+                return {true, detail::test_value::values_arr[offset_enum + i]};
             }
         }
         return {false, test_value()};
@@ -776,12 +776,12 @@ namespace enums {
         switch(len)
         {
             case 5: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 10: offset_str = 12; offset_enum = 1; count = 4; break;
+            case 10: offset_str = 12; offset_enum = 2; count = 4; break;
             default: return {false, HexDiagonal()};
         }
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::HexDiagonal::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::HexDiagonal::enum_string_values[offset_enum]};
+                return {true, detail::HexDiagonal::enum_string_values[offset_enum + i]};
             }
         }
         return {false, HexDiagonal()};
@@ -839,7 +839,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 4;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::NegativeTest1::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::NegativeTest1::values_arr[offset_enum]};
+                return {true, detail::NegativeTest1::values_arr[offset_enum + i]};
             }
         }
         return {false, NegativeTest1()};
@@ -897,7 +897,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 4;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::NegativeTest2::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::NegativeTest2::values_arr[offset_enum]};
+                return {true, detail::NegativeTest2::values_arr[offset_enum + i]};
             }
         }
         return {false, NegativeTest2()};
@@ -952,7 +952,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 2;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::NegativeTest3::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::NegativeTest3::values_arr[offset_enum]};
+                return {true, detail::NegativeTest3::values_arr[offset_enum + i]};
             }
         }
         return {false, NegativeTest3()};
@@ -1007,7 +1007,7 @@ namespace enums {
         constexpr ::std::uint32_t count = 2;
         for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {
             if (enumbra::detail::streq_known_size(detail::NegativeTest4::enum_strings + offset_str + i, str, len)) {
-                return {true, detail::NegativeTest4::values_arr[offset_enum]};
+                return {true, detail::NegativeTest4::values_arr[offset_enum + i]};
             }
         }
         return {false, NegativeTest4()};
