@@ -5,14 +5,6 @@
 using namespace enumbra;
 using namespace enums;
 
-#if ENUMBRA_CPP_VERSION >= 17
-#define STATIC_ASSERT(x) static_assert(x)
-#define STATIC_ASSERT_MSG(x,y) static_assert(x,y)
-#else
-#define STATIC_ASSERT(x)
-#define STATIC_ASSERT_MSG(x,y)
-#endif
-
 #define UNUSED(x) (void)x
 
 struct V
@@ -29,7 +21,8 @@ struct V
 		Z(test_nodefault())
 	{ }
 };
-STATIC_ASSERT(sizeof(V) == 2);
+
+static_assert(sizeof(V) == 2);
 
 #if ENUMBRA_CPP_VERSION >= 17
 template<typename T>
@@ -43,7 +36,7 @@ void test_value_vs_flags()
 
 	}
 	else {
-		STATIC_ASSERT_MSG(false, "T is not an enumbra type.");
+        static_assert(false, "T is not an enumbra type.");
 	}
 }
 
@@ -66,7 +59,7 @@ void test_is_enumbra_type(const T&)
 	}
 	else
 	{
-		STATIC_ASSERT_MSG(false, "T is not an enum class or enumbra type.");
+        static_assert(false, "T is not an enum class or enumbra type.");
 	}
 }
 #endif
@@ -144,7 +137,7 @@ int main()
 	b = (f != HexDiagonal::NORTH);
 	b = (HexDiagonal::NORTH == f);
 	b = (HexDiagonal::NORTH != f);
-	f = b ? f : f;
+	f = b ? f : g;
 
 	// Test packed bitfields
 	V v;
@@ -166,7 +159,7 @@ int main()
 	NegativeTest3::to_string(t3.value());
 
 	constexpr auto res1 = NegativeTest3::from_string(NegativeTest3::to_string(t3));
-	STATIC_ASSERT(res1.first);
+	static_assert(res1.first);
 
 	constexpr auto res2 = NegativeTest3::from_string("");
 	bigD.dd = res2.second;
@@ -195,18 +188,18 @@ int main()
 	// Large integers
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-		STATIC_ASSERT(to_underlying(Max) == UINT64_MAX);
+        static_assert(to_underlying(Max) == UINT64_MAX);
 		UNUSED(Max);
 
 		constexpr auto m = enumbra::min<HexDiagonal>();
 		UNUSED(m);
 
 		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
-		STATIC_ASSERT(NANFail.success == false);
+        static_assert(NANFail.success == false);
         UNUSED(NANFail);
 
 		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
-		STATIC_ASSERT(MAXSuccess.success == true);
+        static_assert(MAXSuccess.success == true);
         UNUSED(MAXSuccess);
 	}
 
@@ -228,23 +221,23 @@ int main()
 	{
 		constexpr int64_t raw = 1;
 		constexpr bool valid = is_valid<test_string_parse>(raw);
-		STATIC_ASSERT(valid);
+        static_assert(valid);
 		UNUSED(valid);
 
 		constexpr int64_t raw2 = 0;
 		constexpr bool valid2 = is_valid<test_string_parse>(raw2);
-		STATIC_ASSERT(valid2 == false);
+        static_assert(valid2 == false);
 		UNUSED(valid2);
 	}
 	{
 		constexpr uint8_t raw = 0;
 		constexpr bool valid = is_valid<HexDiagonal>(raw);
-		STATIC_ASSERT(valid);
+        static_assert(valid);
 		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
 		constexpr bool valid2 = is_valid<HexDiagonal>(raw2);
-		STATIC_ASSERT(valid2 == false);
+        static_assert(valid2 == false);
 		UNUSED(valid2);
 
 		HexDiagonal hd = from_underlying_unsafe<HexDiagonal>(raw2);
