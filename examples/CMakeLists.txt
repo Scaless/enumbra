@@ -1,19 +1,20 @@
 cmake_minimum_required (VERSION 3.20)
 
-# C++ 20 Project
-add_executable (enumbra_cpp23_test "cpp_test.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	# cmake sets /W3 by default and there's no way to override except regex replacing it
 	string(REGEX REPLACE "/W3" "/Wall" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	# As of Visual Studio 16.11, cmake infers cxx_std_20 to be c++latest instead of c++20, so we need to pass it as a flag instead
+endif()
+
+# C++ 23 Project
+add_executable (enumbra_cpp23_test "cpp_test.cpp")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(enumbra_cpp23_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++latest)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
 		target_compile_options(enumbra_cpp23_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++latest)
 		target_compile_options(enumbra_cpp23_test PRIVATE -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage)
 	elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-		target_compile_features(enumbra_cpp17_test PRIVATE cxx_std_23)
-		target_compile_options(enumbra_cpp23_test PRIVATE -Wall -Wextra -Wpedantic)
+		target_compile_options(enumbra_cpp23_test PRIVATE -std=c++23 -Wall -Wextra -Wpedantic)
 	endif()
 else()
 	message( FATAL_ERROR "Compiler Not Configured" )
@@ -22,17 +23,13 @@ endif()
 # C++ 20 Project
 add_executable (enumbra_cpp20_test "cpp_test.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	# cmake sets /W3 by default and there's no way to override except regex replacing it
-	string(REGEX REPLACE "/W3" "/Wall" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	# As of Visual Studio 16.11, cmake infers cxx_std_20 to be c++latest instead of c++20, so we need to pass it as a flag instead
 	target_compile_options(enumbra_cpp20_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++20)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
 		target_compile_options(enumbra_cpp20_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++20)
 		target_compile_options(enumbra_cpp20_test PRIVATE -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage)
 	elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-		target_compile_features(enumbra_cpp17_test PRIVATE cxx_std_20)
-		target_compile_options(enumbra_cpp20_test PRIVATE -Wall -Wextra -Wpedantic)
+		target_compile_options(enumbra_cpp20_test PRIVATE -std=c++20 -Wall -Wextra -Wpedantic)
 	endif()
 else()
 	message( FATAL_ERROR "Compiler Not Configured" )
@@ -41,17 +38,13 @@ endif()
 # C++ 17 Project
 add_executable (enumbra_cpp17_test "cpp_test.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	# cmake sets /W3 by default and there's no way to override except regex replacing it
-	string(REGEX REPLACE "/W3" "/Wall" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	# As of Visual Studio 16.11, cmake infers cxx_std_20 to be c++latest instead of c++20, so we need to pass it as a flag instead
 	target_compile_options(enumbra_cpp17_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++17)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
 		target_compile_options(enumbra_cpp17_test PRIVATE /WX /Wall /wd4514 /wd5045 /std:c++17)
 		target_compile_options(enumbra_cpp17_test PRIVATE -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage)
 	elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-		target_compile_features(enumbra_cpp17_test PRIVATE cxx_std_17)
-		target_compile_options(enumbra_cpp17_test PRIVATE -Wall -Wextra -Wpedantic)
+		target_compile_options(enumbra_cpp17_test PRIVATE -std=c++17 -Wall -Wextra -Wpedantic)
 	endif()
 else()
 	message( FATAL_ERROR "Compiler Not Configured" )

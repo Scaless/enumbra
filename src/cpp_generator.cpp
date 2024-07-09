@@ -277,7 +277,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // REQUIRED MACROS
     {
         // Increment this if macros below are modified.
-        const int enumbra_required_macros_version = 8;
+        const int enumbra_required_macros_version = 9;
         const std::string macro_strings = R"(
 #if !defined(ENUMBRA_REQUIRED_MACROS_VERSION) 
 #define ENUMBRA_REQUIRED_MACROS_VERSION {0}
@@ -302,12 +302,6 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
 #define ENUMBRA_COMPILER_MSVC
 #else
 #define ENUMBRA_COMPILER_UNKNOWN
-#endif
-
-#if defined(ENUMBRA_USER_UNREACHABLE)
-#define ENUMBRA_UNREACHABLE ENUMBRA_USER_UNREACHABLE
-#else
-#define ENUMBRA_UNREACHABLE
 #endif
 
 #else // check existing version supported
@@ -367,7 +361,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 13;
+        const int enumbra_templates_version = 14;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -433,6 +427,12 @@ namespace enumbra {{
         }}
         constexpr bool streq_known_size(const char* a, const char* b, ::std::uint32_t len) noexcept {{
             for(::std::uint32_t i = 0; i < len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
+            return true;
+        }}
+        template<uint32_t length>
+        constexpr bool streq_fixed_size(const char* a, const char* b) noexcept {{
+            static_assert(length > 0);
+            for(::std::uint32_t i = 0; i < length; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
     }} // end namespace enumbra::detail
@@ -717,8 +717,7 @@ namespace enumbra {{
             }
             wl_tab(2, "}};");
 
-            if(!bStringTableSameAsValuesArray)
-            {
+            if (!bStringTableSameAsValuesArray) {
                 // enum_string_values
                 wl_tab(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
                 for (auto &v: string_tables.entries) {
@@ -805,7 +804,7 @@ namespace enumbra {{
             wl_tab(1,
                    "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) noexcept {{",
                    e.name);
-            wl_tab(2, "if ((str != nullptr) && enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
+            wl_tab(2, "if (enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
                    v.name, v.name.length());
             wl_tab(3, "return {{true, {0}::{1}}};", e.name, v.name);
             wl_tab(2, "}}");
@@ -816,7 +815,6 @@ namespace enumbra {{
             wl_tab(1,
                    "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) noexcept {{",
                    e.name);
-            wl_tab(2, "if(str == nullptr) {{ return {{false, {0}()}}; }}", e.name);
 
             if (string_tables.tables.size() == 1) {
                 auto &first = string_tables.tables.front();
@@ -825,6 +823,10 @@ namespace enumbra {{
                 wl_tab(2, "constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
                 wl_tab(2, "constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
                 wl_tab(2, "constexpr ::std::uint32_t count = {0};", first.count);
+                wl_tab(2, "for (::std::uint32_t i = 0; i < count; i++) {{");
+                wl_tab(3,
+                       "if (enumbra::detail::streq_fixed_size<{0}>(detail::{1}::enum_strings + offset_str + (i * (len + 1)), str)) {{",
+                       first.size, e.name);
             } else {
                 wl_tab(2, "::std::uint32_t offset_str = 0;");
                 wl_tab(2, "::std::uint32_t offset_enum = 0;");
@@ -837,12 +839,13 @@ namespace enumbra {{
                 }
                 wl_tab(3, "default: return {{false, {0}()}};", e.name);
                 wl_tab(2, "}}");
+                wl_tab(2, "for (::std::uint32_t i = 0; i < count; i++) {{");
+                wl_tab(3,
+                       "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + (i * (len + 1)), str, len)) {{",
+                       e.name);
             }
 
-            wl_tab(2, "for (::std::uint32_t i = 0; i < (count * len); i += (len + 1)) {{");
-            wl_tab(3, "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + i, str, len)) {{",
-                   e.name);
-            if(bStringTableSameAsValuesArray) {
+            if (bStringTableSameAsValuesArray) {
                 wl_tab(4, "return {{true, detail::{0}::values_arr[offset_enum + i]}};", e.name);
             } else {
                 wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum + i]}};", e.name);
