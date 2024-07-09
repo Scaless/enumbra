@@ -74,7 +74,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 15
+#define ENUMBRA_BASE_TEMPLATES_VERSION 16
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -94,7 +94,7 @@ namespace enumbra {
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
             underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
+            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
         struct value_enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
@@ -102,14 +102,14 @@ namespace enumbra {
             static constexpr underlying_type def = default_v;
             static constexpr ::std::int32_t count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr int bits_required_storage = bits_required_storage_v;
-            static constexpr int bits_required_transmission = bits_required_transmission_v;
+            static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
+            static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
         };
 
         // Flags enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v, 
             underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
+            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
         struct flags_enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
@@ -117,8 +117,8 @@ namespace enumbra {
             static constexpr underlying_type default_value = default_v;
             static constexpr ::std::int32_t count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr int bits_required_storage = bits_required_storage_v;
-            static constexpr int bits_required_transmission = bits_required_transmission_v;
+            static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
+            static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
         };
         
         // Default template for non-enumbra types
@@ -175,11 +175,11 @@ namespace enumbra {
     constexpr T default_value() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
-    constexpr int count() noexcept { return detail::value_enum_helper<T>::count; }
+    constexpr ::std::int32_t count() noexcept { return detail::value_enum_helper<T>::count; }
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
-    constexpr int count() noexcept { return detail::flags_enum_helper<T>::count; }
+    constexpr ::std::int32_t count() noexcept { return detail::flags_enum_helper<T>::count; }
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr int count() noexcept = delete;
+    constexpr ::std::int32_t count() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
     constexpr bool is_contiguous() noexcept { return detail::value_enum_helper<T>::is_contiguous; }
@@ -189,18 +189,18 @@ namespace enumbra {
     constexpr bool is_contiguous() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_storage() noexcept { return detail::value_enum_helper<T>::bits_required_storage; }
+    constexpr ::std::int32_t bits_required_storage() noexcept { return detail::value_enum_helper<T>::bits_required_storage; }
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_storage() noexcept { return detail::flags_enum_helper<T>::bits_required_storage; }
+    constexpr ::std::int32_t bits_required_storage() noexcept { return detail::flags_enum_helper<T>::bits_required_storage; }
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_storage() noexcept = delete;
+    constexpr ::std::int32_t bits_required_storage() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_transmission() noexcept { return detail::value_enum_helper<T>::bits_required_transmission; }
+    constexpr ::std::int32_t bits_required_transmission() noexcept { return detail::value_enum_helper<T>::bits_required_transmission; }
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_transmission() noexcept { return detail::flags_enum_helper<T>::bits_required_transmission; }
+    constexpr ::std::int32_t bits_required_transmission() noexcept { return detail::flags_enum_helper<T>::bits_required_transmission; }
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr int bits_required_transmission() noexcept = delete;
+    constexpr ::std::int32_t bits_required_transmission() noexcept = delete;
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<is_enumbra_enum<T>(), T>::type* = nullptr>
     constexpr T from_underlying_unsafe(underlying_type e) noexcept { return static_cast<T>(e); }
@@ -224,9 +224,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 15
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 16
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 15
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 16
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
