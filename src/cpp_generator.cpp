@@ -361,7 +361,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 14;
+        const int enumbra_templates_version = 15;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -508,7 +508,7 @@ namespace enumbra {{
     struct from_string_result
     {{
         bool success;
-        T result;
+        T value;
     }};
 }} // end namespace enumbra
 #else // check existing version supported
