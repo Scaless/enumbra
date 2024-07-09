@@ -768,8 +768,8 @@ namespace enumbra {{
         } else {
             wl_tab(1, "template<>", e.name);
             wl_tab(1, "constexpr bool is_valid<{0}>({1} v) noexcept {{", e.name, size_type);
-            wl_tab(2, "for(::std::uint32_t i = 0; i < {1}; i++) {{", e.name, e.values.size());
-            wl_tab(3, "if(values<{0}>()[i] == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
+            wl_tab(2, "for(auto value : values<{0}>()) {{", e.name);
+            wl_tab(3, "if(value == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
             wl_tab(2, "}}");
             wl_tab(2, "return false;");
             wl_tab(1, "}}");
@@ -994,27 +994,6 @@ namespace enumbra {{
                "constexpr bool is_single({0} value) noexcept {{ {1} n = static_cast<{1}>(value); return n && !(n & (n - 1)); }}",
                e.name, size_type);
         write_linefeed();
-
-        //// is_valid variations
-        //if (is_contiguous)
-        //{
-        //	if (min_value == 0 && !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
-        //	{
-        //		wl_tab(1, "static constexpr bool _is_valid({0} v) {{ return static_cast<{1}>(v.value_) <= {2}; }}", e.name, size_type, max_value);
-        //		wl_tab(1, "static constexpr bool _is_valid({1} v) {{ return v <= {2}; }}", e.name, size_type, max_value);
-        //	}
-        //	else
-        //	{
-        //		wl_tab(1, "static constexpr bool _is_valid({0} v) {{ return ({2} <= static_cast<{1}>(v.value_)) && (static_cast<{1}>(v.value_) <= {3}); }}", e.name, size_type, min_value, max_value);
-        //		wl_tab(1, "static constexpr bool _is_valid({1} v) {{ return ({2} <= v) && (v <= {3}); }}", e.name, size_type, min_value, max_value);
-        //	}
-        //}
-        //else
-        //{
-        //	wl_tab(1, "static constexpr bool _is_valid({0} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == v._value()) return true; }} return false; }}", e.name);
-        //	wl_tab(1, "static constexpr bool _is_valid({1} v) {{ for(::std::uint32_t i = 0; i < _values.size(); i++) {{ auto& val = _values[i]; if(val == _enum(v)) return true; }} return false; }}", e.name, size_type);
-        //}
-        //write_linefeed();
 
         std::vector<const char *> operator_strings = {
                 "// {} Operator Overloads",

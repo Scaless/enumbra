@@ -282,8 +282,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<test_string_parse>(int64_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 5; i++) {
-            if(values<test_string_parse>()[i] == static_cast<test_string_parse>(v)) { return true; }
+        for(auto value : values<test_string_parse>()) {
+            if(value == static_cast<test_string_parse>(v)) { return true; }
         }
         return false;
     }
@@ -351,8 +351,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<Unsigned64Test>(uint64_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 4; i++) {
-            if(values<Unsigned64Test>()[i] == static_cast<Unsigned64Test>(v)) { return true; }
+        for(auto value : values<Unsigned64Test>()) {
+            if(value == static_cast<Unsigned64Test>(v)) { return true; }
         }
         return false;
     }
@@ -420,8 +420,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<Signed64Test>(int64_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 3; i++) {
-            if(values<Signed64Test>()[i] == static_cast<Signed64Test>(v)) { return true; }
+        for(auto value : values<Signed64Test>()) {
+            if(value == static_cast<Signed64Test>(v)) { return true; }
         }
         return false;
     }
@@ -488,8 +488,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<Signed32Test>(int32_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 3; i++) {
-            if(values<Signed32Test>()[i] == static_cast<Signed32Test>(v)) { return true; }
+        for(auto value : values<Signed32Test>()) {
+            if(value == static_cast<Signed32Test>(v)) { return true; }
         }
         return false;
     }
@@ -556,8 +556,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<Signed16Test>(int16_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 3; i++) {
-            if(values<Signed16Test>()[i] == static_cast<Signed16Test>(v)) { return true; }
+        for(auto value : values<Signed16Test>()) {
+            if(value == static_cast<Signed16Test>(v)) { return true; }
         }
         return false;
     }
@@ -619,8 +619,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<Signed8Test>(int8_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 3; i++) {
-            if(values<Signed8Test>()[i] == static_cast<Signed8Test>(v)) { return true; }
+        for(auto value : values<Signed8Test>()) {
+            if(value == static_cast<Signed8Test>(v)) { return true; }
         }
         return false;
     }
@@ -919,8 +919,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<NegativeTest3>(int8_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 2; i++) {
-            if(values<NegativeTest3>()[i] == static_cast<NegativeTest3>(v)) { return true; }
+        for(auto value : values<NegativeTest3>()) {
+            if(value == static_cast<NegativeTest3>(v)) { return true; }
         }
         return false;
     }
@@ -973,8 +973,8 @@ namespace enums {
 
     template<>
     constexpr bool is_valid<NegativeTest4>(int8_t v) noexcept {
-        for(::std::uint32_t i = 0; i < 2; i++) {
-            if(values<NegativeTest4>()[i] == static_cast<NegativeTest4>(v)) { return true; }
+        for(auto value : values<NegativeTest4>()) {
+            if(value == static_cast<NegativeTest4>(v)) { return true; }
         }
         return false;
     }
