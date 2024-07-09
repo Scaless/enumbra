@@ -383,14 +383,14 @@ namespace enumbra {{
 
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, typename count_type, count_type count_v,
+            underlying_type default_v, ::std::int32_t count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct value_enum_info {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
-            static constexpr count_type count = count_v;
+            static constexpr ::std::int32_t count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
             static constexpr int bits_required_transmission = bits_required_transmission_v;
@@ -398,14 +398,14 @@ namespace enumbra {{
 
         // Flags enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v, 
-            underlying_type default_v, typename count_type, count_type count_v,
+            underlying_type default_v, ::std::int32_t count_v,
             bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct flags_enum_info {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type default_value = default_v;
-            static constexpr count_type count = count_v;
+            static constexpr ::std::int32_t count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
             static constexpr int bits_required_transmission = bits_required_transmission_v;
@@ -860,7 +860,7 @@ namespace enumbra {{
         // Helper specializations
         template_specializations.emplace_back(
                 fmt::format(
-                        "template<> struct enumbra::detail::value_enum_helper<{0}{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, int, {6}, {7}, {8}, {9}> {{{{ }}}};",
+                        "template<> struct enumbra::detail::value_enum_helper<{0}{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{{{ }}}};",
                         full_ns,
                         e.name,
                         size_type,
@@ -1035,7 +1035,7 @@ namespace enumbra {{
         // Helper specializations
         template_specializations.emplace_back(
                 fmt::format(
-                        "template<> struct enumbra::detail::flags_enum_helper<{0}{1}> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, {5}, int, {6}, {7}, {8}, {9}> {{{{ }}}};",
+                        "template<> struct enumbra::detail::flags_enum_helper<{0}{1}> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{{{ }}}};",
                         full_ns,
                         e.name,
                         size_type,
