@@ -361,7 +361,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 16;
+        const int enumbra_templates_version = 17;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -493,9 +493,9 @@ namespace enumbra {{
     constexpr ::std::int32_t bits_required_transmission() noexcept = delete;
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr T from_underlying_unsafe(underlying_type e) noexcept {{ return static_cast<T>(e); }}
+    constexpr T from_integer_unsafe(underlying_type e) noexcept {{ return static_cast<T>(e); }}
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr T from_underlying_unsafe(underlying_type e) noexcept = delete;
+    constexpr T from_integer_unsafe(underlying_type e) noexcept = delete;
 
     template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) noexcept {{ return static_cast<underlying_type>(e); }}
@@ -506,6 +506,13 @@ namespace enumbra {{
 
     template<class T>
     struct from_string_result
+    {{
+        bool success;
+        T value;
+    }};
+
+    template <class T>
+    struct from_integer_result
     {{
         bool success;
         T value;
@@ -540,14 +547,15 @@ namespace enumbra {{
     write_linefeed();
 
     // Default Templates
-    wl_tab(1, "// Begin Default Templates");
-
-    wl_tab(1, "template<class T>");
-
-    wl_tab(1,
-           "constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;");
+    wl_tab(1, "");
+    wl_tab(1, "");
+    wl_tab(1, "");
 
     const std::string default_templates = R"(
+    // Begin Default Templates
+    template<class T>
+    constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
+
     template<class T>
     constexpr auto& values() noexcept = delete;
 
@@ -555,7 +563,7 @@ namespace enumbra {{
     constexpr auto& flags() noexcept = delete;
 
     template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>
-    constexpr bool is_valid(underlying_type value) noexcept = delete;
+    constexpr ::enumbra::from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
     // End Default Templates
 
 )";
@@ -738,40 +746,41 @@ namespace enumbra {{
         wl_tab(1, "}}");
         write_linefeed();
 
-        // is_valid variations
+        // from_integer variations
+        wl_tab(1, "template<>", e.name);
+        wl_tab(1, "constexpr ::enumbra::from_integer_result<{0}> from_integer<{0}>({1} v) noexcept {{ ", e.name, size_type);
         if (e.values.size() == 1) {
-            wl_tab(1, "template<>", e.name);
-            wl_tab(1, "constexpr bool is_valid<{0}>({1} v) noexcept {{ return {2} == v; }}",
+
+            wl_tab(2, "if({1} == v) {{ return {{ true, static_cast<{0}>(v) }}; }}",
                    e.name,
-                   size_type,
                    Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
             );
+            wl_tab(2, "return {{ false, {0}() }};", e.name);
+            wl_tab(1, "}}");
         } else if (is_contiguous) {
             if ((min_entry.p_value == 0) &&
                 !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
             {
-                wl_tab(1, "template<>", e.name);
-                wl_tab(1, "constexpr bool is_valid<{0}>({1} v) noexcept {{ return v <= {2}; }}",
+                wl_tab(2, "if(v <= {1}) {{ return {{ true, static_cast<{0}>(v) }}; }}",
                        e.name,
-                       size_type,
                        Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
                 );
+                wl_tab(2, "return {{ false, {0}() }};", e.name);
+                wl_tab(1, "}}");
             } else {
-                wl_tab(1, "template<>", e.name);
-                wl_tab(1, "constexpr bool is_valid<{0}>({1} v) noexcept {{ return ({2} <= v) && (v <= {3}); }}",
+                wl_tab(2, "if(({1} <= v) && (v <= {2})) {{ return {{ true, static_cast<{0}>(v) }}; }}",
                        e.name,
-                       size_type,
                        Int128FormatValue{min_entry.p_value, type_bits, is_size_type_signed},
                        Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
                 );
+                wl_tab(2, "return {{ false, {0}() }};", e.name);
+                wl_tab(1, "}}");
             }
         } else {
-            wl_tab(1, "template<>", e.name);
-            wl_tab(1, "constexpr bool is_valid<{0}>({1} v) noexcept {{", e.name, size_type);
             wl_tab(2, "for(auto value : values<{0}>()) {{", e.name);
-            wl_tab(3, "if(value == static_cast<{0}>(v)) {{ return true; }}", e.name, size_type);
+            wl_tab(3, "if(value == static_cast<{0}>(v)) {{ return {{ true, static_cast<{0}>(v) }}; }}", e.name);
             wl_tab(2, "}}");
-            wl_tab(2, "return false;");
+            wl_tab(2, "return {{ false, {0}() }};", e.name);
             wl_tab(1, "}}");
         }
         write_linefeed();

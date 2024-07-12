@@ -74,7 +74,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 16
+#define ENUMBRA_BASE_TEMPLATES_VERSION 17
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -203,9 +203,9 @@ namespace enumbra {
     constexpr ::std::int32_t bits_required_transmission() noexcept = delete;
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr T from_underlying_unsafe(underlying_type e) noexcept { return static_cast<T>(e); }
+    constexpr T from_integer_unsafe(underlying_type e) noexcept { return static_cast<T>(e); }
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>(), T>::type* = nullptr>
-    constexpr T from_underlying_unsafe(underlying_type e) noexcept = delete;
+    constexpr T from_integer_unsafe(underlying_type e) noexcept = delete;
 
     template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>(), T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) noexcept { return static_cast<underlying_type>(e); }
@@ -220,18 +220,29 @@ namespace enumbra {
         bool success;
         T value;
     };
+
+    template <class T>
+    struct from_integer_result
+    {
+        bool success;
+        T value;
+    };
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 16
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 17
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 16
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 17
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
 
 namespace enums {
+
+    
+    
+    
 
     // Begin Default Templates
     template<class T>
@@ -244,7 +255,7 @@ namespace enums {
     constexpr auto& flags() noexcept = delete;
 
     template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>
-    constexpr bool is_valid(underlying_type value) noexcept = delete;
+    constexpr ::enumbra::from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
     // End Default Templates
 
     // test_string_parse Definition
@@ -281,11 +292,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<test_string_parse>(int64_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<test_string_parse> from_integer<test_string_parse>(int64_t v) noexcept { 
         for(auto value : values<test_string_parse>()) {
-            if(value == static_cast<test_string_parse>(v)) { return true; }
+            if(value == static_cast<test_string_parse>(v)) { return { true, static_cast<test_string_parse>(v) }; }
         }
-        return false;
+        return { false, test_string_parse() };
     }
 
     constexpr const char* to_string(const test_string_parse v) noexcept {
@@ -350,11 +361,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<Unsigned64Test>(uint64_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<Unsigned64Test> from_integer<Unsigned64Test>(uint64_t v) noexcept { 
         for(auto value : values<Unsigned64Test>()) {
-            if(value == static_cast<Unsigned64Test>(v)) { return true; }
+            if(value == static_cast<Unsigned64Test>(v)) { return { true, static_cast<Unsigned64Test>(v) }; }
         }
-        return false;
+        return { false, Unsigned64Test() };
     }
 
     constexpr const char* to_string(const Unsigned64Test v) noexcept {
@@ -419,11 +430,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<Signed64Test>(int64_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<Signed64Test> from_integer<Signed64Test>(int64_t v) noexcept { 
         for(auto value : values<Signed64Test>()) {
-            if(value == static_cast<Signed64Test>(v)) { return true; }
+            if(value == static_cast<Signed64Test>(v)) { return { true, static_cast<Signed64Test>(v) }; }
         }
-        return false;
+        return { false, Signed64Test() };
     }
 
     constexpr const char* to_string(const Signed64Test v) noexcept {
@@ -487,11 +498,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<Signed32Test>(int32_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<Signed32Test> from_integer<Signed32Test>(int32_t v) noexcept { 
         for(auto value : values<Signed32Test>()) {
-            if(value == static_cast<Signed32Test>(v)) { return true; }
+            if(value == static_cast<Signed32Test>(v)) { return { true, static_cast<Signed32Test>(v) }; }
         }
-        return false;
+        return { false, Signed32Test() };
     }
 
     constexpr const char* to_string(const Signed32Test v) noexcept {
@@ -555,11 +566,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<Signed16Test>(int16_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<Signed16Test> from_integer<Signed16Test>(int16_t v) noexcept { 
         for(auto value : values<Signed16Test>()) {
-            if(value == static_cast<Signed16Test>(v)) { return true; }
+            if(value == static_cast<Signed16Test>(v)) { return { true, static_cast<Signed16Test>(v) }; }
         }
-        return false;
+        return { false, Signed16Test() };
     }
 
     constexpr const char* to_string(const Signed16Test v) noexcept {
@@ -618,11 +629,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<Signed8Test>(int8_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<Signed8Test> from_integer<Signed8Test>(int8_t v) noexcept { 
         for(auto value : values<Signed8Test>()) {
-            if(value == static_cast<Signed8Test>(v)) { return true; }
+            if(value == static_cast<Signed8Test>(v)) { return { true, static_cast<Signed8Test>(v) }; }
         }
-        return false;
+        return { false, Signed8Test() };
     }
 
     constexpr const char* to_string(const Signed8Test v) noexcept {
@@ -676,7 +687,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<test_value>(int32_t v) noexcept { return (0 <= v) && (v <= 2); }
+    constexpr ::enumbra::from_integer_result<test_value> from_integer<test_value>(int32_t v) noexcept { 
+        if((0 <= v) && (v <= 2)) { return { true, static_cast<test_value>(v) }; }
+        return { false, test_value() };
+    }
 
     constexpr const char* to_string(const test_value v) noexcept {
         switch (v) {
@@ -746,7 +760,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<HexDiagonal>(uint8_t v) noexcept { return v <= 5; }
+    constexpr ::enumbra::from_integer_result<HexDiagonal> from_integer<HexDiagonal>(uint8_t v) noexcept { 
+        if(v <= 5) { return { true, static_cast<HexDiagonal>(v) }; }
+        return { false, HexDiagonal() };
+    }
 
     constexpr const char* to_string(const HexDiagonal v) noexcept {
         switch (v) {
@@ -810,7 +827,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<NegativeTest1>(int8_t v) noexcept { return (-2 <= v) && (v <= 1); }
+    constexpr ::enumbra::from_integer_result<NegativeTest1> from_integer<NegativeTest1>(int8_t v) noexcept { 
+        if((-2 <= v) && (v <= 1)) { return { true, static_cast<NegativeTest1>(v) }; }
+        return { false, NegativeTest1() };
+    }
 
     constexpr const char* to_string(const NegativeTest1 v) noexcept {
         switch (v) {
@@ -867,7 +887,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<NegativeTest2>(int8_t v) noexcept { return (-3 <= v) && (v <= 0); }
+    constexpr ::enumbra::from_integer_result<NegativeTest2> from_integer<NegativeTest2>(int8_t v) noexcept { 
+        if((-3 <= v) && (v <= 0)) { return { true, static_cast<NegativeTest2>(v) }; }
+        return { false, NegativeTest2() };
+    }
 
     constexpr const char* to_string(const NegativeTest2 v) noexcept {
         switch (v) {
@@ -918,11 +941,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<NegativeTest3>(int8_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<NegativeTest3> from_integer<NegativeTest3>(int8_t v) noexcept { 
         for(auto value : values<NegativeTest3>()) {
-            if(value == static_cast<NegativeTest3>(v)) { return true; }
+            if(value == static_cast<NegativeTest3>(v)) { return { true, static_cast<NegativeTest3>(v) }; }
         }
-        return false;
+        return { false, NegativeTest3() };
     }
 
     constexpr const char* to_string(const NegativeTest3 v) noexcept {
@@ -972,11 +995,11 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<NegativeTest4>(int8_t v) noexcept {
+    constexpr ::enumbra::from_integer_result<NegativeTest4> from_integer<NegativeTest4>(int8_t v) noexcept { 
         for(auto value : values<NegativeTest4>()) {
-            if(value == static_cast<NegativeTest4>(v)) { return true; }
+            if(value == static_cast<NegativeTest4>(v)) { return { true, static_cast<NegativeTest4>(v) }; }
         }
-        return false;
+        return { false, NegativeTest4() };
     }
 
     constexpr const char* to_string(const NegativeTest4 v) noexcept {
@@ -1020,7 +1043,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<EmptyTest1Unsigned>(uint8_t v) noexcept { return 0 == v; }
+    constexpr ::enumbra::from_integer_result<EmptyTest1Unsigned> from_integer<EmptyTest1Unsigned>(uint8_t v) noexcept { 
+        if(0 == v) { return { true, static_cast<EmptyTest1Unsigned>(v) }; }
+        return { false, EmptyTest1Unsigned() };
+    }
 
     constexpr const char* to_string(const EmptyTest1Unsigned v) noexcept {
         switch (v) {
@@ -1056,7 +1082,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<EmptyTest1Signed>(int8_t v) noexcept { return 0 == v; }
+    constexpr ::enumbra::from_integer_result<EmptyTest1Signed> from_integer<EmptyTest1Signed>(int8_t v) noexcept { 
+        if(0 == v) { return { true, static_cast<EmptyTest1Signed>(v) }; }
+        return { false, EmptyTest1Signed() };
+    }
 
     constexpr const char* to_string(const EmptyTest1Signed v) noexcept {
         switch (v) {
@@ -1092,7 +1121,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<SingleTest1Unsigned>(uint8_t v) noexcept { return 4 == v; }
+    constexpr ::enumbra::from_integer_result<SingleTest1Unsigned> from_integer<SingleTest1Unsigned>(uint8_t v) noexcept { 
+        if(4 == v) { return { true, static_cast<SingleTest1Unsigned>(v) }; }
+        return { false, SingleTest1Unsigned() };
+    }
 
     constexpr const char* to_string(const SingleTest1Unsigned v) noexcept {
         switch (v) {
@@ -1128,7 +1160,10 @@ namespace enums {
     }
 
     template<>
-    constexpr bool is_valid<SingleTest1Signed>(int8_t v) noexcept { return 4 == v; }
+    constexpr ::enumbra::from_integer_result<SingleTest1Signed> from_integer<SingleTest1Signed>(int8_t v) noexcept { 
+        if(4 == v) { return { true, static_cast<SingleTest1Signed>(v) }; }
+        return { false, SingleTest1Signed() };
+    }
 
     constexpr const char* to_string(const SingleTest1Signed v) noexcept {
         switch (v) {

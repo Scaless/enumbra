@@ -220,27 +220,28 @@ int main()
 	// is_valid
 	{
 		constexpr int64_t raw = 1;
-		constexpr bool valid = is_valid<test_string_parse>(raw);
-        static_assert(valid);
-		UNUSED(valid);
-
 		constexpr int64_t raw2 = 0;
-		constexpr bool valid2 = is_valid<test_string_parse>(raw2);
-        static_assert(valid2 == false);
-		UNUSED(valid2);
+
+        constexpr auto result = from_integer<test_string_parse>(raw);
+        static_assert(result.success);
+        static_assert(result.value == test_string_parse::B);
+
+        constexpr auto result2 = from_integer<test_string_parse>(raw2);
+        static_assert(result2.success == false);
+        UNUSED(result2);
 	}
 	{
 		constexpr uint8_t raw = 0;
-		constexpr bool valid = is_valid<HexDiagonal>(raw);
-        static_assert(valid);
+		constexpr auto valid = from_integer<HexDiagonal>(raw);
+        static_assert(valid.success);
 		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
-		constexpr bool valid2 = is_valid<HexDiagonal>(raw2);
-        static_assert(valid2 == false);
+		constexpr auto valid2 = from_integer<HexDiagonal>(raw2);
+        static_assert(valid2.success == false);
 		UNUSED(valid2);
 
-		HexDiagonal hd = from_underlying_unsafe<HexDiagonal>(raw2);
+		HexDiagonal hd = from_integer_unsafe<HexDiagonal>(raw2);
 		UNUSED(hd);
 	}
 
@@ -267,8 +268,8 @@ int main()
 	}
 
 	{
-		test_string_parse zzz = enumbra::from_underlying_unsafe<test_string_parse>(-1);
-		test_string_parse eee = enumbra::from_underlying_unsafe<test_string_parse>(1);
+		test_string_parse zzz = enumbra::from_integer_unsafe<test_string_parse>(-1);
+		test_string_parse eee = enumbra::from_integer_unsafe<test_string_parse>(1);
 		zzz = eee;
         UNUSED(zzz);
 
