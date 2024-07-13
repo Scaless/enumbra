@@ -240,10 +240,6 @@ namespace enumbra {
 
 namespace enums {
 
-    
-    
-    
-
     // Begin Default Templates
     template<class T>
     constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;

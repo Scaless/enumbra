@@ -544,13 +544,8 @@ namespace enumbra {{
     for (const auto &ns: cpp.output_namespace) {
         write_line("namespace {} {{", ns);
     }
-    write_linefeed();
 
     // Default Templates
-    wl_tab(1, "");
-    wl_tab(1, "");
-    wl_tab(1, "");
-
     const std::string default_templates = R"(
     // Begin Default Templates
     template<class T>
