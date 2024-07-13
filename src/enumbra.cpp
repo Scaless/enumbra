@@ -7,7 +7,20 @@
 #include <charconv>
 #include <fstream>
 #include <cxxopts.hpp>
+#include <absl/strings/strip.h>
 #include "cpp_generator.h"
+
+namespace {
+    bool contains_whitespace(const std::string_view str)
+    {
+        for(auto& s : str) {
+            if(std::isspace(s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
 
 using namespace enumbra;
 
@@ -352,6 +365,13 @@ parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_conf
             enum_entry ee;
             ee.name = entry["name"].get<std::string>();
             ee.description = entry.value("description", "");
+
+            if(ee.name.empty()) {
+                throw std::logic_error("enum value name is empty");
+            }
+            if(contains_whitespace((ee.name))) {
+                throw std::logic_error("enum value name contains whitespace character");
+            }
 
             auto entry_value = entry["value"];
             if (entry_value.is_null()) {

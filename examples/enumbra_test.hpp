@@ -1176,6 +1176,469 @@ namespace enums {
         return {false, SingleTest1Signed()};
     }
 
+    // errc Definition
+    enum class errc : int32_t {
+        operation_not_permitted = 1,
+        no_such_file_or_directory = 2,
+        no_such_process = 3,
+        interrupted = 4,
+        io_error = 5,
+        no_such_device_or_address = 6,
+        argument_list_too_long = 7,
+        executable_format_error = 8,
+        bad_file_descriptor = 9,
+        no_child_process = 10,
+        resource_unavailable_try_again = 11,
+        not_enough_memory = 12,
+        permission_denied = 13,
+        bad_address = 14,
+        device_or_resource_busy = 16,
+        file_exists = 17,
+        cross_device_link = 18,
+        no_such_device = 19,
+        not_a_directory = 20,
+        is_a_directory = 21,
+        invalid_argument = 22,
+        too_many_files_open_in_system = 23,
+        too_many_files_open = 24,
+        inappropriate_io_control_operation = 25,
+        file_too_large = 27,
+        no_space_on_device = 28,
+        invalid_seek = 29,
+        read_only_file_system = 30,
+        too_many_links = 31,
+        broken_pipe = 32,
+        argument_out_of_domain = 33,
+        result_out_of_range = 34,
+        resource_deadlock_would_occur = 36,
+        filename_too_long = 38,
+        no_lock_available = 39,
+        function_not_supported = 40,
+        directory_not_empty = 41,
+        illegal_byte_sequence = 42,
+        address_in_use = 100,
+        address_not_available = 101,
+        address_family_not_supported = 102,
+        connection_already_in_progress = 103,
+        bad_message = 104,
+        operation_canceled = 105,
+        connection_aborted = 106,
+        connection_refused = 107,
+        connection_reset = 108,
+        destination_address_required = 109,
+        host_unreachable = 110,
+        identifier_removed = 111,
+        operation_in_progress = 112,
+        already_connected = 113,
+        too_many_symbolic_link_levels = 114,
+        message_size = 115,
+        network_down = 116,
+        network_reset = 117,
+        network_unreachable = 118,
+        no_buffer_space = 119,
+        no_message_available = 120,
+        no_link = 121,
+        no_message = 122,
+        no_protocol_option = 123,
+        no_stream_resources = 124,
+        not_a_stream = 125,
+        not_connected = 126,
+        state_not_recoverable = 127,
+        not_a_socket = 128,
+        not_supported = 129,
+        operation_not_supported = 130,
+        value_too_large = 132,
+        owner_dead = 133,
+        protocol_error = 134,
+        protocol_not_supported = 135,
+        wrong_protocol_type = 136,
+        stream_timeout = 137,
+        timed_out = 138,
+        text_file_busy = 139,
+        operation_would_block = 140,
+    };
+
+    namespace detail::errc {
+        constexpr ::enums::errc values_arr[78] =
+        {
+            ::enums::errc::operation_not_permitted,
+            ::enums::errc::no_such_file_or_directory,
+            ::enums::errc::no_such_process,
+            ::enums::errc::interrupted,
+            ::enums::errc::io_error,
+            ::enums::errc::no_such_device_or_address,
+            ::enums::errc::argument_list_too_long,
+            ::enums::errc::executable_format_error,
+            ::enums::errc::bad_file_descriptor,
+            ::enums::errc::no_child_process,
+            ::enums::errc::resource_unavailable_try_again,
+            ::enums::errc::not_enough_memory,
+            ::enums::errc::permission_denied,
+            ::enums::errc::bad_address,
+            ::enums::errc::device_or_resource_busy,
+            ::enums::errc::file_exists,
+            ::enums::errc::cross_device_link,
+            ::enums::errc::no_such_device,
+            ::enums::errc::not_a_directory,
+            ::enums::errc::is_a_directory,
+            ::enums::errc::invalid_argument,
+            ::enums::errc::too_many_files_open_in_system,
+            ::enums::errc::too_many_files_open,
+            ::enums::errc::inappropriate_io_control_operation,
+            ::enums::errc::file_too_large,
+            ::enums::errc::no_space_on_device,
+            ::enums::errc::invalid_seek,
+            ::enums::errc::read_only_file_system,
+            ::enums::errc::too_many_links,
+            ::enums::errc::broken_pipe,
+            ::enums::errc::argument_out_of_domain,
+            ::enums::errc::result_out_of_range,
+            ::enums::errc::resource_deadlock_would_occur,
+            ::enums::errc::filename_too_long,
+            ::enums::errc::no_lock_available,
+            ::enums::errc::function_not_supported,
+            ::enums::errc::directory_not_empty,
+            ::enums::errc::illegal_byte_sequence,
+            ::enums::errc::address_in_use,
+            ::enums::errc::address_not_available,
+            ::enums::errc::address_family_not_supported,
+            ::enums::errc::connection_already_in_progress,
+            ::enums::errc::bad_message,
+            ::enums::errc::operation_canceled,
+            ::enums::errc::connection_aborted,
+            ::enums::errc::connection_refused,
+            ::enums::errc::connection_reset,
+            ::enums::errc::destination_address_required,
+            ::enums::errc::host_unreachable,
+            ::enums::errc::identifier_removed,
+            ::enums::errc::operation_in_progress,
+            ::enums::errc::already_connected,
+            ::enums::errc::too_many_symbolic_link_levels,
+            ::enums::errc::message_size,
+            ::enums::errc::network_down,
+            ::enums::errc::network_reset,
+            ::enums::errc::network_unreachable,
+            ::enums::errc::no_buffer_space,
+            ::enums::errc::no_message_available,
+            ::enums::errc::no_link,
+            ::enums::errc::no_message,
+            ::enums::errc::no_protocol_option,
+            ::enums::errc::no_stream_resources,
+            ::enums::errc::not_a_stream,
+            ::enums::errc::not_connected,
+            ::enums::errc::state_not_recoverable,
+            ::enums::errc::not_a_socket,
+            ::enums::errc::not_supported,
+            ::enums::errc::operation_not_supported,
+            ::enums::errc::value_too_large,
+            ::enums::errc::owner_dead,
+            ::enums::errc::protocol_error,
+            ::enums::errc::protocol_not_supported,
+            ::enums::errc::wrong_protocol_type,
+            ::enums::errc::stream_timeout,
+            ::enums::errc::timed_out,
+            ::enums::errc::text_file_busy,
+            ::enums::errc::operation_would_block,
+        };
+        constexpr const char enum_strings[1469] = {
+            "no_link\0"
+            "io_error\0"
+            "timed_out\0"
+            "no_message\0"
+            "owner_dead\0"
+            "interrupted\0"
+            "bad_address\0"
+            "file_exists\0"
+            "broken_pipe\0"
+            "bad_message\0"
+            "invalid_seek\0"
+            "message_size\0"
+            "network_down\0"
+            "not_a_stream\0"
+            "not_a_socket\0"
+            "network_reset\0"
+            "not_connected\0"
+            "not_supported\0"
+            "no_such_device\0"
+            "is_a_directory\0"
+            "file_too_large\0"
+            "too_many_links\0"
+            "address_in_use\0"
+            "protocol_error\0"
+            "stream_timeout\0"
+            "text_file_busy\0"
+            "no_such_process\0"
+            "not_a_directory\0"
+            "no_buffer_space\0"
+            "value_too_large\0"
+            "no_child_process\0"
+            "invalid_argument\0"
+            "connection_reset\0"
+            "host_unreachable\0"
+            "not_enough_memory\0"
+            "permission_denied\0"
+            "cross_device_link\0"
+            "filename_too_long\0"
+            "no_lock_available\0"
+            "already_connected\0"
+            "no_space_on_device\0"
+            "operation_canceled\0"
+            "connection_aborted\0"
+            "connection_refused\0"
+            "identifier_removed\0"
+            "no_protocol_option\0"
+            "bad_file_descriptor\0"
+            "too_many_files_open\0"
+            "result_out_of_range\0"
+            "directory_not_empty\0"
+            "network_unreachable\0"
+            "no_stream_resources\0"
+            "wrong_protocol_type\0"
+            "no_message_available\0"
+            "read_only_file_system\0"
+            "illegal_byte_sequence\0"
+            "address_not_available\0"
+            "operation_in_progress\0"
+            "state_not_recoverable\0"
+            "operation_would_block\0"
+            "argument_list_too_long\0"
+            "argument_out_of_domain\0"
+            "function_not_supported\0"
+            "protocol_not_supported\0"
+            "operation_not_permitted\0"
+            "executable_format_error\0"
+            "device_or_resource_busy\0"
+            "operation_not_supported\0"
+            "no_such_file_or_directory\0"
+            "no_such_device_or_address\0"
+            "address_family_not_supported\0"
+            "destination_address_required\0"
+            "too_many_files_open_in_system\0"
+            "resource_deadlock_would_occur\0"
+            "too_many_symbolic_link_levels\0"
+            "resource_unavailable_try_again\0"
+            "connection_already_in_progress\0"
+            "inappropriate_io_control_operation\0"
+        };
+        constexpr ::enums::errc enum_string_values[78] = {
+            ::enums::errc::no_link,
+            ::enums::errc::io_error,
+            ::enums::errc::timed_out,
+            ::enums::errc::no_message,
+            ::enums::errc::owner_dead,
+            ::enums::errc::interrupted,
+            ::enums::errc::bad_address,
+            ::enums::errc::file_exists,
+            ::enums::errc::broken_pipe,
+            ::enums::errc::bad_message,
+            ::enums::errc::invalid_seek,
+            ::enums::errc::message_size,
+            ::enums::errc::network_down,
+            ::enums::errc::not_a_stream,
+            ::enums::errc::not_a_socket,
+            ::enums::errc::network_reset,
+            ::enums::errc::not_connected,
+            ::enums::errc::not_supported,
+            ::enums::errc::no_such_device,
+            ::enums::errc::is_a_directory,
+            ::enums::errc::file_too_large,
+            ::enums::errc::too_many_links,
+            ::enums::errc::address_in_use,
+            ::enums::errc::protocol_error,
+            ::enums::errc::stream_timeout,
+            ::enums::errc::text_file_busy,
+            ::enums::errc::no_such_process,
+            ::enums::errc::not_a_directory,
+            ::enums::errc::no_buffer_space,
+            ::enums::errc::value_too_large,
+            ::enums::errc::no_child_process,
+            ::enums::errc::invalid_argument,
+            ::enums::errc::connection_reset,
+            ::enums::errc::host_unreachable,
+            ::enums::errc::not_enough_memory,
+            ::enums::errc::permission_denied,
+            ::enums::errc::cross_device_link,
+            ::enums::errc::filename_too_long,
+            ::enums::errc::no_lock_available,
+            ::enums::errc::already_connected,
+            ::enums::errc::no_space_on_device,
+            ::enums::errc::operation_canceled,
+            ::enums::errc::connection_aborted,
+            ::enums::errc::connection_refused,
+            ::enums::errc::identifier_removed,
+            ::enums::errc::no_protocol_option,
+            ::enums::errc::bad_file_descriptor,
+            ::enums::errc::too_many_files_open,
+            ::enums::errc::result_out_of_range,
+            ::enums::errc::directory_not_empty,
+            ::enums::errc::network_unreachable,
+            ::enums::errc::no_stream_resources,
+            ::enums::errc::wrong_protocol_type,
+            ::enums::errc::no_message_available,
+            ::enums::errc::read_only_file_system,
+            ::enums::errc::illegal_byte_sequence,
+            ::enums::errc::address_not_available,
+            ::enums::errc::operation_in_progress,
+            ::enums::errc::state_not_recoverable,
+            ::enums::errc::operation_would_block,
+            ::enums::errc::argument_list_too_long,
+            ::enums::errc::argument_out_of_domain,
+            ::enums::errc::function_not_supported,
+            ::enums::errc::protocol_not_supported,
+            ::enums::errc::operation_not_permitted,
+            ::enums::errc::executable_format_error,
+            ::enums::errc::device_or_resource_busy,
+            ::enums::errc::operation_not_supported,
+            ::enums::errc::no_such_file_or_directory,
+            ::enums::errc::no_such_device_or_address,
+            ::enums::errc::address_family_not_supported,
+            ::enums::errc::destination_address_required,
+            ::enums::errc::too_many_files_open_in_system,
+            ::enums::errc::resource_deadlock_would_occur,
+            ::enums::errc::too_many_symbolic_link_levels,
+            ::enums::errc::resource_unavailable_try_again,
+            ::enums::errc::connection_already_in_progress,
+            ::enums::errc::inappropriate_io_control_operation,
+        };
+    }
+
+    template<>
+    constexpr auto& values<errc>() noexcept
+    {
+        return detail::errc::values_arr;
+    }
+
+    template<>
+    constexpr ::enumbra::from_integer_result<errc> from_integer<errc>(int32_t v) noexcept { 
+        for(auto value : values<errc>()) {
+            if(value == static_cast<errc>(v)) { return { true, static_cast<errc>(v) }; }
+        }
+        return { false, errc() };
+    }
+
+    constexpr const char* to_string(const errc v) noexcept {
+        switch (v) {
+            case errc::no_link: return &detail::errc::enum_strings[0];
+            case errc::io_error: return &detail::errc::enum_strings[8];
+            case errc::timed_out: return &detail::errc::enum_strings[17];
+            case errc::no_message: return &detail::errc::enum_strings[27];
+            case errc::owner_dead: return &detail::errc::enum_strings[38];
+            case errc::interrupted: return &detail::errc::enum_strings[49];
+            case errc::bad_address: return &detail::errc::enum_strings[61];
+            case errc::file_exists: return &detail::errc::enum_strings[73];
+            case errc::broken_pipe: return &detail::errc::enum_strings[85];
+            case errc::bad_message: return &detail::errc::enum_strings[97];
+            case errc::invalid_seek: return &detail::errc::enum_strings[109];
+            case errc::message_size: return &detail::errc::enum_strings[122];
+            case errc::network_down: return &detail::errc::enum_strings[135];
+            case errc::not_a_stream: return &detail::errc::enum_strings[148];
+            case errc::not_a_socket: return &detail::errc::enum_strings[161];
+            case errc::network_reset: return &detail::errc::enum_strings[174];
+            case errc::not_connected: return &detail::errc::enum_strings[188];
+            case errc::not_supported: return &detail::errc::enum_strings[202];
+            case errc::no_such_device: return &detail::errc::enum_strings[216];
+            case errc::is_a_directory: return &detail::errc::enum_strings[231];
+            case errc::file_too_large: return &detail::errc::enum_strings[246];
+            case errc::too_many_links: return &detail::errc::enum_strings[261];
+            case errc::address_in_use: return &detail::errc::enum_strings[276];
+            case errc::protocol_error: return &detail::errc::enum_strings[291];
+            case errc::stream_timeout: return &detail::errc::enum_strings[306];
+            case errc::text_file_busy: return &detail::errc::enum_strings[321];
+            case errc::no_such_process: return &detail::errc::enum_strings[336];
+            case errc::not_a_directory: return &detail::errc::enum_strings[352];
+            case errc::no_buffer_space: return &detail::errc::enum_strings[368];
+            case errc::value_too_large: return &detail::errc::enum_strings[384];
+            case errc::no_child_process: return &detail::errc::enum_strings[400];
+            case errc::invalid_argument: return &detail::errc::enum_strings[417];
+            case errc::connection_reset: return &detail::errc::enum_strings[434];
+            case errc::host_unreachable: return &detail::errc::enum_strings[451];
+            case errc::not_enough_memory: return &detail::errc::enum_strings[468];
+            case errc::permission_denied: return &detail::errc::enum_strings[486];
+            case errc::cross_device_link: return &detail::errc::enum_strings[504];
+            case errc::filename_too_long: return &detail::errc::enum_strings[522];
+            case errc::no_lock_available: return &detail::errc::enum_strings[540];
+            case errc::already_connected: return &detail::errc::enum_strings[558];
+            case errc::no_space_on_device: return &detail::errc::enum_strings[576];
+            case errc::operation_canceled: return &detail::errc::enum_strings[595];
+            case errc::connection_aborted: return &detail::errc::enum_strings[614];
+            case errc::connection_refused: return &detail::errc::enum_strings[633];
+            case errc::identifier_removed: return &detail::errc::enum_strings[652];
+            case errc::no_protocol_option: return &detail::errc::enum_strings[671];
+            case errc::bad_file_descriptor: return &detail::errc::enum_strings[690];
+            case errc::too_many_files_open: return &detail::errc::enum_strings[710];
+            case errc::result_out_of_range: return &detail::errc::enum_strings[730];
+            case errc::directory_not_empty: return &detail::errc::enum_strings[750];
+            case errc::network_unreachable: return &detail::errc::enum_strings[770];
+            case errc::no_stream_resources: return &detail::errc::enum_strings[790];
+            case errc::wrong_protocol_type: return &detail::errc::enum_strings[810];
+            case errc::no_message_available: return &detail::errc::enum_strings[830];
+            case errc::read_only_file_system: return &detail::errc::enum_strings[851];
+            case errc::illegal_byte_sequence: return &detail::errc::enum_strings[873];
+            case errc::address_not_available: return &detail::errc::enum_strings[895];
+            case errc::operation_in_progress: return &detail::errc::enum_strings[917];
+            case errc::state_not_recoverable: return &detail::errc::enum_strings[939];
+            case errc::operation_would_block: return &detail::errc::enum_strings[961];
+            case errc::argument_list_too_long: return &detail::errc::enum_strings[983];
+            case errc::argument_out_of_domain: return &detail::errc::enum_strings[1006];
+            case errc::function_not_supported: return &detail::errc::enum_strings[1029];
+            case errc::protocol_not_supported: return &detail::errc::enum_strings[1052];
+            case errc::operation_not_permitted: return &detail::errc::enum_strings[1075];
+            case errc::executable_format_error: return &detail::errc::enum_strings[1099];
+            case errc::device_or_resource_busy: return &detail::errc::enum_strings[1123];
+            case errc::operation_not_supported: return &detail::errc::enum_strings[1147];
+            case errc::no_such_file_or_directory: return &detail::errc::enum_strings[1171];
+            case errc::no_such_device_or_address: return &detail::errc::enum_strings[1197];
+            case errc::address_family_not_supported: return &detail::errc::enum_strings[1223];
+            case errc::destination_address_required: return &detail::errc::enum_strings[1252];
+            case errc::too_many_files_open_in_system: return &detail::errc::enum_strings[1281];
+            case errc::resource_deadlock_would_occur: return &detail::errc::enum_strings[1311];
+            case errc::too_many_symbolic_link_levels: return &detail::errc::enum_strings[1341];
+            case errc::resource_unavailable_try_again: return &detail::errc::enum_strings[1371];
+            case errc::connection_already_in_progress: return &detail::errc::enum_strings[1402];
+            case errc::inappropriate_io_control_operation: return &detail::errc::enum_strings[1433];
+        }
+        return nullptr;
+    }
+
+    template<>
+    constexpr ::enumbra::from_string_result<errc> from_string<errc>(const char* str, ::std::uint16_t len) noexcept {
+        ::std::uint32_t offset_str = 0;
+        ::std::uint32_t offset_enum = 0;
+        ::std::uint32_t count = 0;
+        switch(len)
+        {
+            case 7: offset_str = 0; offset_enum = 0; count = 1; break;
+            case 8: offset_str = 8; offset_enum = 1; count = 1; break;
+            case 9: offset_str = 17; offset_enum = 2; count = 1; break;
+            case 10: offset_str = 27; offset_enum = 3; count = 2; break;
+            case 11: offset_str = 49; offset_enum = 5; count = 5; break;
+            case 12: offset_str = 109; offset_enum = 10; count = 5; break;
+            case 13: offset_str = 174; offset_enum = 15; count = 3; break;
+            case 14: offset_str = 216; offset_enum = 18; count = 8; break;
+            case 15: offset_str = 336; offset_enum = 26; count = 4; break;
+            case 16: offset_str = 400; offset_enum = 30; count = 4; break;
+            case 17: offset_str = 468; offset_enum = 34; count = 6; break;
+            case 18: offset_str = 576; offset_enum = 40; count = 6; break;
+            case 19: offset_str = 690; offset_enum = 46; count = 7; break;
+            case 20: offset_str = 830; offset_enum = 53; count = 1; break;
+            case 21: offset_str = 851; offset_enum = 54; count = 6; break;
+            case 22: offset_str = 983; offset_enum = 60; count = 4; break;
+            case 23: offset_str = 1075; offset_enum = 64; count = 4; break;
+            case 25: offset_str = 1171; offset_enum = 68; count = 2; break;
+            case 28: offset_str = 1223; offset_enum = 70; count = 2; break;
+            case 29: offset_str = 1281; offset_enum = 72; count = 3; break;
+            case 30: offset_str = 1371; offset_enum = 75; count = 2; break;
+            case 34: offset_str = 1433; offset_enum = 77; count = 1; break;
+            default: return {false, errc()};
+        }
+        for (::std::uint32_t i = 0; i < count; i++) {
+            if (enumbra::detail::streq_known_size(detail::errc::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+                return {true, detail::errc::enum_string_values[offset_enum + i]};
+            }
+        }
+        return {false, errc()};
+    }
+
     // test_flags Definition
     enum class test_flags : uint32_t {
         B = 1,
@@ -1351,6 +1814,7 @@ template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enum
 template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::base_helper<enums::errc> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
@@ -1371,6 +1835,7 @@ template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned> 
 template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, 0, 1, true, 1, 0> { };
 template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0> { };
 template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, 4, 1, true, 4, 0> { };
+template<> struct enumbra::detail::value_enum_helper<enums::errc> : enumbra::detail::value_enum_info<int32_t, 1, 140, 1, 78, false, 9, 8> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::test_flags> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::test_nodefault> : enumbra::detail::flags_enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::TestSparseFlags> : enumbra::detail::flags_enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5> { };
