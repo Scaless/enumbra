@@ -181,7 +181,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
             if (t.is_signed) {
                 // To get the maximum, we fill all bits except the sign bit
                 t.max_possible_value = 0;
-                for (size_t i = 0; i < t.bits - 1; i++) {
+                for (int32_t i = 0; i < t.bits - 1; i++) {
                     t.max_possible_value |= (int128(1) << static_cast<int>(i));
                 }
 
@@ -190,7 +190,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
             } else {
                 // To get the maximum, we fill all bits
                 t.max_possible_value = 0;
-                for (size_t i = 0; i < t.bits; i++) {
+                for (int32_t i = 0; i < t.bits; i++) {
                     t.max_possible_value |= (int128(1) << static_cast<int>(i));
                 }
 

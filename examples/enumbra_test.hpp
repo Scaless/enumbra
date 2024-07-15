@@ -74,7 +74,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 17
+#define ENUMBRA_BASE_TEMPLATES_VERSION 18
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -227,22 +227,10 @@ namespace enumbra {
         bool success;
         T value;
     };
-} // end namespace enumbra
-#else // check existing version supported
-#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
-#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 17
-#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 17
-#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
-#endif // check existing version supported
-#endif // ENUMBRA_BASE_TEMPLATES_VERSION
-
-namespace enums {
 
     // Begin Default Templates
     template<class T>
-    constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
+    constexpr from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
 
     template<class T>
     constexpr auto& values() noexcept = delete;
@@ -250,1594 +238,1702 @@ namespace enums {
     template<class T>
     constexpr auto& flags() noexcept = delete;
 
-    template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>
-    constexpr ::enumbra::from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
+    template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
+    constexpr from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
     // End Default Templates
-
-    // test_string_parse Definition
-    enum class test_string_parse : int64_t {
-        C = -1,
-        B = 1,
-        F = 341,
-        D = 511,
-        E = 9223372036854775807,
-    };
-
-    namespace detail::test_string_parse {
-        constexpr ::enums::test_string_parse values_arr[5] =
-        {
-            ::enums::test_string_parse::C,
-            ::enums::test_string_parse::B,
-            ::enums::test_string_parse::F,
-            ::enums::test_string_parse::D,
-            ::enums::test_string_parse::E,
-        };
-        constexpr const char enum_strings[11] = {
-            "C\0"
-            "B\0"
-            "F\0"
-            "D\0"
-            "E\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<test_string_parse>() noexcept
-    {
-        return detail::test_string_parse::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<test_string_parse> from_integer<test_string_parse>(int64_t v) noexcept { 
-        for(auto value : values<test_string_parse>()) {
-            if(value == static_cast<test_string_parse>(v)) { return { true, static_cast<test_string_parse>(v) }; }
-        }
-        return { false, test_string_parse() };
-    }
-
-    constexpr const char* to_string(const test_string_parse v) noexcept {
-        switch (v) {
-            case test_string_parse::C: return &detail::test_string_parse::enum_strings[0];
-            case test_string_parse::B: return &detail::test_string_parse::enum_strings[2];
-            case test_string_parse::F: return &detail::test_string_parse::enum_strings[4];
-            case test_string_parse::D: return &detail::test_string_parse::enum_strings[6];
-            case test_string_parse::E: return &detail::test_string_parse::enum_strings[8];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<test_string_parse> from_string<test_string_parse>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, test_string_parse()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 5;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::test_string_parse::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::test_string_parse::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, test_string_parse()};
-    }
-
-    // Unsigned64Test Definition
-    enum class Unsigned64Test : uint64_t {
-        MIN = 0,
-        V_UINT16_MAX = 0xFFFF,
-        V_UINT32_MAX = 0xFFFFFFFF,
-        MAX = 0xFFFFFFFFFFFFFFFF,
-    };
-
-    namespace detail::Unsigned64Test {
-        constexpr ::enums::Unsigned64Test values_arr[4] =
-        {
-            ::enums::Unsigned64Test::MIN,
-            ::enums::Unsigned64Test::V_UINT16_MAX,
-            ::enums::Unsigned64Test::V_UINT32_MAX,
-            ::enums::Unsigned64Test::MAX,
-        };
-        constexpr const char enum_strings[35] = {
-            "MIN\0"
-            "MAX\0"
-            "V_UINT16_MAX\0"
-            "V_UINT32_MAX\0"
-        };
-        constexpr ::enums::Unsigned64Test enum_string_values[4] = {
-            ::enums::Unsigned64Test::MIN,
-            ::enums::Unsigned64Test::MAX,
-            ::enums::Unsigned64Test::V_UINT16_MAX,
-            ::enums::Unsigned64Test::V_UINT32_MAX,
-        };
-    }
-
-    template<>
-    constexpr auto& values<Unsigned64Test>() noexcept
-    {
-        return detail::Unsigned64Test::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<Unsigned64Test> from_integer<Unsigned64Test>(uint64_t v) noexcept { 
-        for(auto value : values<Unsigned64Test>()) {
-            if(value == static_cast<Unsigned64Test>(v)) { return { true, static_cast<Unsigned64Test>(v) }; }
-        }
-        return { false, Unsigned64Test() };
-    }
-
-    constexpr const char* to_string(const Unsigned64Test v) noexcept {
-        switch (v) {
-            case Unsigned64Test::MIN: return &detail::Unsigned64Test::enum_strings[0];
-            case Unsigned64Test::MAX: return &detail::Unsigned64Test::enum_strings[4];
-            case Unsigned64Test::V_UINT16_MAX: return &detail::Unsigned64Test::enum_strings[8];
-            case Unsigned64Test::V_UINT32_MAX: return &detail::Unsigned64Test::enum_strings[21];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<Unsigned64Test> from_string<Unsigned64Test>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 12: offset_str = 8; offset_enum = 2; count = 2; break;
-            default: return {false, Unsigned64Test()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::Unsigned64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::Unsigned64Test::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, Unsigned64Test()};
-    }
-
-    // Signed64Test Definition
-    enum class Signed64Test : int64_t {
-        MIN = (-9223372036854775807 - 1),
-        NEG_ONE = -1,
-        MAX = 9223372036854775807,
-    };
-
-    namespace detail::Signed64Test {
-        constexpr ::enums::Signed64Test values_arr[3] =
-        {
-            ::enums::Signed64Test::MIN,
-            ::enums::Signed64Test::NEG_ONE,
-            ::enums::Signed64Test::MAX,
-        };
-        constexpr const char enum_strings[17] = {
-            "MIN\0"
-            "MAX\0"
-            "NEG_ONE\0"
-        };
-        constexpr ::enums::Signed64Test enum_string_values[3] = {
-            ::enums::Signed64Test::MIN,
-            ::enums::Signed64Test::MAX,
-            ::enums::Signed64Test::NEG_ONE,
-        };
-    }
-
-    template<>
-    constexpr auto& values<Signed64Test>() noexcept
-    {
-        return detail::Signed64Test::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<Signed64Test> from_integer<Signed64Test>(int64_t v) noexcept { 
-        for(auto value : values<Signed64Test>()) {
-            if(value == static_cast<Signed64Test>(v)) { return { true, static_cast<Signed64Test>(v) }; }
-        }
-        return { false, Signed64Test() };
-    }
-
-    constexpr const char* to_string(const Signed64Test v) noexcept {
-        switch (v) {
-            case Signed64Test::MIN: return &detail::Signed64Test::enum_strings[0];
-            case Signed64Test::MAX: return &detail::Signed64Test::enum_strings[4];
-            case Signed64Test::NEG_ONE: return &detail::Signed64Test::enum_strings[8];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<Signed64Test> from_string<Signed64Test>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-            default: return {false, Signed64Test()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::Signed64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::Signed64Test::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, Signed64Test()};
-    }
-
-    // Signed32Test Definition
-    enum class Signed32Test : int32_t {
-        MIN = (-2147483647 - 1),
-        NEG_ONE = -1,
-        MAX = 2147483647,
-    };
-
-    namespace detail::Signed32Test {
-        constexpr ::enums::Signed32Test values_arr[3] =
-        {
-            ::enums::Signed32Test::MIN,
-            ::enums::Signed32Test::NEG_ONE,
-            ::enums::Signed32Test::MAX,
-        };
-        constexpr const char enum_strings[17] = {
-            "MIN\0"
-            "MAX\0"
-            "NEG_ONE\0"
-        };
-        constexpr ::enums::Signed32Test enum_string_values[3] = {
-            ::enums::Signed32Test::MIN,
-            ::enums::Signed32Test::MAX,
-            ::enums::Signed32Test::NEG_ONE,
-        };
-    }
-
-    template<>
-    constexpr auto& values<Signed32Test>() noexcept
-    {
-        return detail::Signed32Test::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<Signed32Test> from_integer<Signed32Test>(int32_t v) noexcept { 
-        for(auto value : values<Signed32Test>()) {
-            if(value == static_cast<Signed32Test>(v)) { return { true, static_cast<Signed32Test>(v) }; }
-        }
-        return { false, Signed32Test() };
-    }
-
-    constexpr const char* to_string(const Signed32Test v) noexcept {
-        switch (v) {
-            case Signed32Test::MIN: return &detail::Signed32Test::enum_strings[0];
-            case Signed32Test::MAX: return &detail::Signed32Test::enum_strings[4];
-            case Signed32Test::NEG_ONE: return &detail::Signed32Test::enum_strings[8];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<Signed32Test> from_string<Signed32Test>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-            default: return {false, Signed32Test()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::Signed32Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::Signed32Test::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, Signed32Test()};
-    }
-
-    // Signed16Test Definition
-    enum class Signed16Test : int16_t {
-        MIN = (-32767 - 1),
-        NEG_ONE = -1,
-        MAX = 32767,
-    };
-
-    namespace detail::Signed16Test {
-        constexpr ::enums::Signed16Test values_arr[3] =
-        {
-            ::enums::Signed16Test::MIN,
-            ::enums::Signed16Test::NEG_ONE,
-            ::enums::Signed16Test::MAX,
-        };
-        constexpr const char enum_strings[17] = {
-            "MIN\0"
-            "MAX\0"
-            "NEG_ONE\0"
-        };
-        constexpr ::enums::Signed16Test enum_string_values[3] = {
-            ::enums::Signed16Test::MIN,
-            ::enums::Signed16Test::MAX,
-            ::enums::Signed16Test::NEG_ONE,
-        };
-    }
-
-    template<>
-    constexpr auto& values<Signed16Test>() noexcept
-    {
-        return detail::Signed16Test::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<Signed16Test> from_integer<Signed16Test>(int16_t v) noexcept { 
-        for(auto value : values<Signed16Test>()) {
-            if(value == static_cast<Signed16Test>(v)) { return { true, static_cast<Signed16Test>(v) }; }
-        }
-        return { false, Signed16Test() };
-    }
-
-    constexpr const char* to_string(const Signed16Test v) noexcept {
-        switch (v) {
-            case Signed16Test::MIN: return &detail::Signed16Test::enum_strings[0];
-            case Signed16Test::MAX: return &detail::Signed16Test::enum_strings[4];
-            case Signed16Test::NEG_ONE: return &detail::Signed16Test::enum_strings[8];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<Signed16Test> from_string<Signed16Test>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 3: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-            default: return {false, Signed16Test()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::Signed16Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::Signed16Test::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, Signed16Test()};
-    }
-
-    // Signed8Test Definition
-    enum class Signed8Test : int8_t {
-        V_INT_MIN = (-127 - 1),
-        V_NEG_ONE = -1,
-        V_INT_MAX = 127,
-    };
-
-    namespace detail::Signed8Test {
-        constexpr ::enums::Signed8Test values_arr[3] =
-        {
-            ::enums::Signed8Test::V_INT_MIN,
-            ::enums::Signed8Test::V_NEG_ONE,
-            ::enums::Signed8Test::V_INT_MAX,
-        };
-        constexpr const char enum_strings[31] = {
-            "V_INT_MIN\0"
-            "V_NEG_ONE\0"
-            "V_INT_MAX\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<Signed8Test>() noexcept
-    {
-        return detail::Signed8Test::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<Signed8Test> from_integer<Signed8Test>(int8_t v) noexcept { 
-        for(auto value : values<Signed8Test>()) {
-            if(value == static_cast<Signed8Test>(v)) { return { true, static_cast<Signed8Test>(v) }; }
-        }
-        return { false, Signed8Test() };
-    }
-
-    constexpr const char* to_string(const Signed8Test v) noexcept {
-        switch (v) {
-            case Signed8Test::V_INT_MIN: return &detail::Signed8Test::enum_strings[0];
-            case Signed8Test::V_NEG_ONE: return &detail::Signed8Test::enum_strings[10];
-            case Signed8Test::V_INT_MAX: return &detail::Signed8Test::enum_strings[20];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<Signed8Test> from_string<Signed8Test>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 9) { return {false, Signed8Test()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 3;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<9>(detail::Signed8Test::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::Signed8Test::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, Signed8Test()};
-    }
-
-    // test_value Definition
-    enum class test_value : int32_t {
-        A = 0,
-        B = 1,
-        C = 2,
-    };
-
-    namespace detail::test_value {
-        constexpr ::enums::test_value values_arr[3] =
-        {
-            ::enums::test_value::A,
-            ::enums::test_value::B,
-            ::enums::test_value::C,
-        };
-        constexpr const char enum_strings[7] = {
-            "A\0"
-            "B\0"
-            "C\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<test_value>() noexcept
-    {
-        return detail::test_value::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<test_value> from_integer<test_value>(int32_t v) noexcept { 
-        if((0 <= v) && (v <= 2)) { return { true, static_cast<test_value>(v) }; }
-        return { false, test_value() };
-    }
-
-    constexpr const char* to_string(const test_value v) noexcept {
-        switch (v) {
-            case test_value::A: return &detail::test_value::enum_strings[0];
-            case test_value::B: return &detail::test_value::enum_strings[2];
-            case test_value::C: return &detail::test_value::enum_strings[4];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<test_value> from_string<test_value>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, test_value()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 3;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::test_value::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::test_value::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, test_value()};
-    }
-
-    // HexDiagonal Definition
-    enum class HexDiagonal : uint8_t {
-        NORTH = 0,
-        NORTH_EAST = 1,
-        SOUTH_EAST = 2,
-        SOUTH = 3,
-        SOUTH_WEST = 4,
-        NORTH_WEST = 5,
-    };
-
-    namespace detail::HexDiagonal {
-        constexpr ::enums::HexDiagonal values_arr[6] =
-        {
-            ::enums::HexDiagonal::NORTH,
-            ::enums::HexDiagonal::NORTH_EAST,
-            ::enums::HexDiagonal::SOUTH_EAST,
-            ::enums::HexDiagonal::SOUTH,
-            ::enums::HexDiagonal::SOUTH_WEST,
-            ::enums::HexDiagonal::NORTH_WEST,
-        };
-        constexpr const char enum_strings[57] = {
-            "NORTH\0"
-            "SOUTH\0"
-            "NORTH_EAST\0"
-            "SOUTH_EAST\0"
-            "SOUTH_WEST\0"
-            "NORTH_WEST\0"
-        };
-        constexpr ::enums::HexDiagonal enum_string_values[6] = {
-            ::enums::HexDiagonal::NORTH,
-            ::enums::HexDiagonal::SOUTH,
-            ::enums::HexDiagonal::NORTH_EAST,
-            ::enums::HexDiagonal::SOUTH_EAST,
-            ::enums::HexDiagonal::SOUTH_WEST,
-            ::enums::HexDiagonal::NORTH_WEST,
-        };
-    }
-
-    template<>
-    constexpr auto& values<HexDiagonal>() noexcept
-    {
-        return detail::HexDiagonal::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<HexDiagonal> from_integer<HexDiagonal>(uint8_t v) noexcept { 
-        if(v <= 5) { return { true, static_cast<HexDiagonal>(v) }; }
-        return { false, HexDiagonal() };
-    }
-
-    constexpr const char* to_string(const HexDiagonal v) noexcept {
-        switch (v) {
-            case HexDiagonal::NORTH: return &detail::HexDiagonal::enum_strings[0];
-            case HexDiagonal::SOUTH: return &detail::HexDiagonal::enum_strings[6];
-            case HexDiagonal::NORTH_EAST: return &detail::HexDiagonal::enum_strings[12];
-            case HexDiagonal::SOUTH_EAST: return &detail::HexDiagonal::enum_strings[23];
-            case HexDiagonal::SOUTH_WEST: return &detail::HexDiagonal::enum_strings[34];
-            case HexDiagonal::NORTH_WEST: return &detail::HexDiagonal::enum_strings[45];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<HexDiagonal> from_string<HexDiagonal>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 5: offset_str = 0; offset_enum = 0; count = 2; break;
-            case 10: offset_str = 12; offset_enum = 2; count = 4; break;
-            default: return {false, HexDiagonal()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::HexDiagonal::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::HexDiagonal::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, HexDiagonal()};
-    }
-
-    // NegativeTest1 Definition
-    enum class NegativeTest1 : int8_t {
-        A = -2,
-        B = -1,
-        C = 0,
-        D = 1,
-    };
-
-    namespace detail::NegativeTest1 {
-        constexpr ::enums::NegativeTest1 values_arr[4] =
-        {
-            ::enums::NegativeTest1::A,
-            ::enums::NegativeTest1::B,
-            ::enums::NegativeTest1::C,
-            ::enums::NegativeTest1::D,
-        };
-        constexpr const char enum_strings[9] = {
-            "A\0"
-            "B\0"
-            "C\0"
-            "D\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<NegativeTest1>() noexcept
-    {
-        return detail::NegativeTest1::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<NegativeTest1> from_integer<NegativeTest1>(int8_t v) noexcept { 
-        if((-2 <= v) && (v <= 1)) { return { true, static_cast<NegativeTest1>(v) }; }
-        return { false, NegativeTest1() };
-    }
-
-    constexpr const char* to_string(const NegativeTest1 v) noexcept {
-        switch (v) {
-            case NegativeTest1::A: return &detail::NegativeTest1::enum_strings[0];
-            case NegativeTest1::B: return &detail::NegativeTest1::enum_strings[2];
-            case NegativeTest1::C: return &detail::NegativeTest1::enum_strings[4];
-            case NegativeTest1::D: return &detail::NegativeTest1::enum_strings[6];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<NegativeTest1> from_string<NegativeTest1>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, NegativeTest1()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 4;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::NegativeTest1::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::NegativeTest1::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, NegativeTest1()};
-    }
-
-    // NegativeTest2 Definition
-    enum class NegativeTest2 : int8_t {
-        A = -3,
-        B = -2,
-        C = -1,
-        D = 0,
-    };
-
-    namespace detail::NegativeTest2 {
-        constexpr ::enums::NegativeTest2 values_arr[4] =
-        {
-            ::enums::NegativeTest2::A,
-            ::enums::NegativeTest2::B,
-            ::enums::NegativeTest2::C,
-            ::enums::NegativeTest2::D,
-        };
-        constexpr const char enum_strings[9] = {
-            "A\0"
-            "B\0"
-            "C\0"
-            "D\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<NegativeTest2>() noexcept
-    {
-        return detail::NegativeTest2::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<NegativeTest2> from_integer<NegativeTest2>(int8_t v) noexcept { 
-        if((-3 <= v) && (v <= 0)) { return { true, static_cast<NegativeTest2>(v) }; }
-        return { false, NegativeTest2() };
-    }
-
-    constexpr const char* to_string(const NegativeTest2 v) noexcept {
-        switch (v) {
-            case NegativeTest2::A: return &detail::NegativeTest2::enum_strings[0];
-            case NegativeTest2::B: return &detail::NegativeTest2::enum_strings[2];
-            case NegativeTest2::C: return &detail::NegativeTest2::enum_strings[4];
-            case NegativeTest2::D: return &detail::NegativeTest2::enum_strings[6];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<NegativeTest2> from_string<NegativeTest2>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, NegativeTest2()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 4;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::NegativeTest2::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::NegativeTest2::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, NegativeTest2()};
-    }
-
-    // NegativeTest3 Definition
-    enum class NegativeTest3 : int8_t {
-        A = -3,
-        B = 4,
-    };
-
-    namespace detail::NegativeTest3 {
-        constexpr ::enums::NegativeTest3 values_arr[2] =
-        {
-            ::enums::NegativeTest3::A,
-            ::enums::NegativeTest3::B,
-        };
-        constexpr const char enum_strings[5] = {
-            "A\0"
-            "B\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<NegativeTest3>() noexcept
-    {
-        return detail::NegativeTest3::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<NegativeTest3> from_integer<NegativeTest3>(int8_t v) noexcept { 
-        for(auto value : values<NegativeTest3>()) {
-            if(value == static_cast<NegativeTest3>(v)) { return { true, static_cast<NegativeTest3>(v) }; }
-        }
-        return { false, NegativeTest3() };
-    }
-
-    constexpr const char* to_string(const NegativeTest3 v) noexcept {
-        switch (v) {
-            case NegativeTest3::A: return &detail::NegativeTest3::enum_strings[0];
-            case NegativeTest3::B: return &detail::NegativeTest3::enum_strings[2];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<NegativeTest3> from_string<NegativeTest3>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, NegativeTest3()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 2;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::NegativeTest3::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::NegativeTest3::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, NegativeTest3()};
-    }
-
-    // NegativeTest4 Definition
-    enum class NegativeTest4 : int8_t {
-        A = -4,
-        B = 3,
-    };
-
-    namespace detail::NegativeTest4 {
-        constexpr ::enums::NegativeTest4 values_arr[2] =
-        {
-            ::enums::NegativeTest4::A,
-            ::enums::NegativeTest4::B,
-        };
-        constexpr const char enum_strings[5] = {
-            "A\0"
-            "B\0"
-        };
-    }
-
-    template<>
-    constexpr auto& values<NegativeTest4>() noexcept
-    {
-        return detail::NegativeTest4::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<NegativeTest4> from_integer<NegativeTest4>(int8_t v) noexcept { 
-        for(auto value : values<NegativeTest4>()) {
-            if(value == static_cast<NegativeTest4>(v)) { return { true, static_cast<NegativeTest4>(v) }; }
-        }
-        return { false, NegativeTest4() };
-    }
-
-    constexpr const char* to_string(const NegativeTest4 v) noexcept {
-        switch (v) {
-            case NegativeTest4::A: return &detail::NegativeTest4::enum_strings[0];
-            case NegativeTest4::B: return &detail::NegativeTest4::enum_strings[2];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<NegativeTest4> from_string<NegativeTest4>(const char* str, ::std::uint16_t len) noexcept {
-        if(len != 1) { return {false, NegativeTest4()}; }
-        constexpr ::std::uint32_t offset_str = 0;
-        constexpr ::std::uint32_t offset_enum = 0;
-        constexpr ::std::uint32_t count = 2;
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_fixed_size<1>(detail::NegativeTest4::enum_strings + offset_str + (i * (len + 1)), str)) {
-                return {true, detail::NegativeTest4::values_arr[offset_enum + i]};
-            }
-        }
-        return {false, NegativeTest4()};
-    }
-
-    // EmptyTest1Unsigned Definition
-    enum class EmptyTest1Unsigned : uint8_t {
-        A = 0,
-    };
-
-    namespace detail::EmptyTest1Unsigned {
-        constexpr ::enums::EmptyTest1Unsigned values_arr[1] =
-        {
-            ::enums::EmptyTest1Unsigned::A,
-        };
-    }
-
-    template<>
-    constexpr auto& values<EmptyTest1Unsigned>() noexcept
-    {
-        return detail::EmptyTest1Unsigned::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<EmptyTest1Unsigned> from_integer<EmptyTest1Unsigned>(uint8_t v) noexcept { 
-        if(0 == v) { return { true, static_cast<EmptyTest1Unsigned>(v) }; }
-        return { false, EmptyTest1Unsigned() };
-    }
-
-    constexpr const char* to_string(const EmptyTest1Unsigned v) noexcept {
-        switch (v) {
-            case EmptyTest1Unsigned::A: return "A";
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<EmptyTest1Unsigned> from_string<EmptyTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
-            return {true, EmptyTest1Unsigned::A};
-        }
-        return {false, EmptyTest1Unsigned()};
-    }
-
-    // EmptyTest1Signed Definition
-    enum class EmptyTest1Signed : int8_t {
-        A = 0,
-    };
-
-    namespace detail::EmptyTest1Signed {
-        constexpr ::enums::EmptyTest1Signed values_arr[1] =
-        {
-            ::enums::EmptyTest1Signed::A,
-        };
-    }
-
-    template<>
-    constexpr auto& values<EmptyTest1Signed>() noexcept
-    {
-        return detail::EmptyTest1Signed::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<EmptyTest1Signed> from_integer<EmptyTest1Signed>(int8_t v) noexcept { 
-        if(0 == v) { return { true, static_cast<EmptyTest1Signed>(v) }; }
-        return { false, EmptyTest1Signed() };
-    }
-
-    constexpr const char* to_string(const EmptyTest1Signed v) noexcept {
-        switch (v) {
-            case EmptyTest1Signed::A: return "A";
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<EmptyTest1Signed> from_string<EmptyTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
-            return {true, EmptyTest1Signed::A};
-        }
-        return {false, EmptyTest1Signed()};
-    }
-
-    // SingleTest1Unsigned Definition
-    enum class SingleTest1Unsigned : uint8_t {
-        A = 4,
-    };
-
-    namespace detail::SingleTest1Unsigned {
-        constexpr ::enums::SingleTest1Unsigned values_arr[1] =
-        {
-            ::enums::SingleTest1Unsigned::A,
-        };
-    }
-
-    template<>
-    constexpr auto& values<SingleTest1Unsigned>() noexcept
-    {
-        return detail::SingleTest1Unsigned::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<SingleTest1Unsigned> from_integer<SingleTest1Unsigned>(uint8_t v) noexcept { 
-        if(4 == v) { return { true, static_cast<SingleTest1Unsigned>(v) }; }
-        return { false, SingleTest1Unsigned() };
-    }
-
-    constexpr const char* to_string(const SingleTest1Unsigned v) noexcept {
-        switch (v) {
-            case SingleTest1Unsigned::A: return "A";
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<SingleTest1Unsigned> from_string<SingleTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
-            return {true, SingleTest1Unsigned::A};
-        }
-        return {false, SingleTest1Unsigned()};
-    }
-
-    // SingleTest1Signed Definition
-    enum class SingleTest1Signed : int8_t {
-        A = 4,
-    };
-
-    namespace detail::SingleTest1Signed {
-        constexpr ::enums::SingleTest1Signed values_arr[1] =
-        {
-            ::enums::SingleTest1Signed::A,
-        };
-    }
-
-    template<>
-    constexpr auto& values<SingleTest1Signed>() noexcept
-    {
-        return detail::SingleTest1Signed::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<SingleTest1Signed> from_integer<SingleTest1Signed>(int8_t v) noexcept { 
-        if(4 == v) { return { true, static_cast<SingleTest1Signed>(v) }; }
-        return { false, SingleTest1Signed() };
-    }
-
-    constexpr const char* to_string(const SingleTest1Signed v) noexcept {
-        switch (v) {
-            case SingleTest1Signed::A: return "A";
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<SingleTest1Signed> from_string<SingleTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
-        if (enumbra::detail::streq_s("A", 1, str, len)) {
-            return {true, SingleTest1Signed::A};
-        }
-        return {false, SingleTest1Signed()};
-    }
-
-    // errc Definition
-    enum class errc : int32_t {
-        operation_not_permitted = 1,
-        no_such_file_or_directory = 2,
-        no_such_process = 3,
-        interrupted = 4,
-        io_error = 5,
-        no_such_device_or_address = 6,
-        argument_list_too_long = 7,
-        executable_format_error = 8,
-        bad_file_descriptor = 9,
-        no_child_process = 10,
-        resource_unavailable_try_again = 11,
-        not_enough_memory = 12,
-        permission_denied = 13,
-        bad_address = 14,
-        device_or_resource_busy = 16,
-        file_exists = 17,
-        cross_device_link = 18,
-        no_such_device = 19,
-        not_a_directory = 20,
-        is_a_directory = 21,
-        invalid_argument = 22,
-        too_many_files_open_in_system = 23,
-        too_many_files_open = 24,
-        inappropriate_io_control_operation = 25,
-        file_too_large = 27,
-        no_space_on_device = 28,
-        invalid_seek = 29,
-        read_only_file_system = 30,
-        too_many_links = 31,
-        broken_pipe = 32,
-        argument_out_of_domain = 33,
-        result_out_of_range = 34,
-        resource_deadlock_would_occur = 36,
-        filename_too_long = 38,
-        no_lock_available = 39,
-        function_not_supported = 40,
-        directory_not_empty = 41,
-        illegal_byte_sequence = 42,
-        address_in_use = 100,
-        address_not_available = 101,
-        address_family_not_supported = 102,
-        connection_already_in_progress = 103,
-        bad_message = 104,
-        operation_canceled = 105,
-        connection_aborted = 106,
-        connection_refused = 107,
-        connection_reset = 108,
-        destination_address_required = 109,
-        host_unreachable = 110,
-        identifier_removed = 111,
-        operation_in_progress = 112,
-        already_connected = 113,
-        too_many_symbolic_link_levels = 114,
-        message_size = 115,
-        network_down = 116,
-        network_reset = 117,
-        network_unreachable = 118,
-        no_buffer_space = 119,
-        no_message_available = 120,
-        no_link = 121,
-        no_message = 122,
-        no_protocol_option = 123,
-        no_stream_resources = 124,
-        not_a_stream = 125,
-        not_connected = 126,
-        state_not_recoverable = 127,
-        not_a_socket = 128,
-        not_supported = 129,
-        operation_not_supported = 130,
-        value_too_large = 132,
-        owner_dead = 133,
-        protocol_error = 134,
-        protocol_not_supported = 135,
-        wrong_protocol_type = 136,
-        stream_timeout = 137,
-        timed_out = 138,
-        text_file_busy = 139,
-        operation_would_block = 140,
-    };
-
-    namespace detail::errc {
-        constexpr ::enums::errc values_arr[78] =
-        {
-            ::enums::errc::operation_not_permitted,
-            ::enums::errc::no_such_file_or_directory,
-            ::enums::errc::no_such_process,
-            ::enums::errc::interrupted,
-            ::enums::errc::io_error,
-            ::enums::errc::no_such_device_or_address,
-            ::enums::errc::argument_list_too_long,
-            ::enums::errc::executable_format_error,
-            ::enums::errc::bad_file_descriptor,
-            ::enums::errc::no_child_process,
-            ::enums::errc::resource_unavailable_try_again,
-            ::enums::errc::not_enough_memory,
-            ::enums::errc::permission_denied,
-            ::enums::errc::bad_address,
-            ::enums::errc::device_or_resource_busy,
-            ::enums::errc::file_exists,
-            ::enums::errc::cross_device_link,
-            ::enums::errc::no_such_device,
-            ::enums::errc::not_a_directory,
-            ::enums::errc::is_a_directory,
-            ::enums::errc::invalid_argument,
-            ::enums::errc::too_many_files_open_in_system,
-            ::enums::errc::too_many_files_open,
-            ::enums::errc::inappropriate_io_control_operation,
-            ::enums::errc::file_too_large,
-            ::enums::errc::no_space_on_device,
-            ::enums::errc::invalid_seek,
-            ::enums::errc::read_only_file_system,
-            ::enums::errc::too_many_links,
-            ::enums::errc::broken_pipe,
-            ::enums::errc::argument_out_of_domain,
-            ::enums::errc::result_out_of_range,
-            ::enums::errc::resource_deadlock_would_occur,
-            ::enums::errc::filename_too_long,
-            ::enums::errc::no_lock_available,
-            ::enums::errc::function_not_supported,
-            ::enums::errc::directory_not_empty,
-            ::enums::errc::illegal_byte_sequence,
-            ::enums::errc::address_in_use,
-            ::enums::errc::address_not_available,
-            ::enums::errc::address_family_not_supported,
-            ::enums::errc::connection_already_in_progress,
-            ::enums::errc::bad_message,
-            ::enums::errc::operation_canceled,
-            ::enums::errc::connection_aborted,
-            ::enums::errc::connection_refused,
-            ::enums::errc::connection_reset,
-            ::enums::errc::destination_address_required,
-            ::enums::errc::host_unreachable,
-            ::enums::errc::identifier_removed,
-            ::enums::errc::operation_in_progress,
-            ::enums::errc::already_connected,
-            ::enums::errc::too_many_symbolic_link_levels,
-            ::enums::errc::message_size,
-            ::enums::errc::network_down,
-            ::enums::errc::network_reset,
-            ::enums::errc::network_unreachable,
-            ::enums::errc::no_buffer_space,
-            ::enums::errc::no_message_available,
-            ::enums::errc::no_link,
-            ::enums::errc::no_message,
-            ::enums::errc::no_protocol_option,
-            ::enums::errc::no_stream_resources,
-            ::enums::errc::not_a_stream,
-            ::enums::errc::not_connected,
-            ::enums::errc::state_not_recoverable,
-            ::enums::errc::not_a_socket,
-            ::enums::errc::not_supported,
-            ::enums::errc::operation_not_supported,
-            ::enums::errc::value_too_large,
-            ::enums::errc::owner_dead,
-            ::enums::errc::protocol_error,
-            ::enums::errc::protocol_not_supported,
-            ::enums::errc::wrong_protocol_type,
-            ::enums::errc::stream_timeout,
-            ::enums::errc::timed_out,
-            ::enums::errc::text_file_busy,
-            ::enums::errc::operation_would_block,
-        };
-        constexpr const char enum_strings[1469] = {
-            "no_link\0"
-            "io_error\0"
-            "timed_out\0"
-            "no_message\0"
-            "owner_dead\0"
-            "interrupted\0"
-            "bad_address\0"
-            "file_exists\0"
-            "broken_pipe\0"
-            "bad_message\0"
-            "invalid_seek\0"
-            "message_size\0"
-            "network_down\0"
-            "not_a_stream\0"
-            "not_a_socket\0"
-            "network_reset\0"
-            "not_connected\0"
-            "not_supported\0"
-            "no_such_device\0"
-            "is_a_directory\0"
-            "file_too_large\0"
-            "too_many_links\0"
-            "address_in_use\0"
-            "protocol_error\0"
-            "stream_timeout\0"
-            "text_file_busy\0"
-            "no_such_process\0"
-            "not_a_directory\0"
-            "no_buffer_space\0"
-            "value_too_large\0"
-            "no_child_process\0"
-            "invalid_argument\0"
-            "connection_reset\0"
-            "host_unreachable\0"
-            "not_enough_memory\0"
-            "permission_denied\0"
-            "cross_device_link\0"
-            "filename_too_long\0"
-            "no_lock_available\0"
-            "already_connected\0"
-            "no_space_on_device\0"
-            "operation_canceled\0"
-            "connection_aborted\0"
-            "connection_refused\0"
-            "identifier_removed\0"
-            "no_protocol_option\0"
-            "bad_file_descriptor\0"
-            "too_many_files_open\0"
-            "result_out_of_range\0"
-            "directory_not_empty\0"
-            "network_unreachable\0"
-            "no_stream_resources\0"
-            "wrong_protocol_type\0"
-            "no_message_available\0"
-            "read_only_file_system\0"
-            "illegal_byte_sequence\0"
-            "address_not_available\0"
-            "operation_in_progress\0"
-            "state_not_recoverable\0"
-            "operation_would_block\0"
-            "argument_list_too_long\0"
-            "argument_out_of_domain\0"
-            "function_not_supported\0"
-            "protocol_not_supported\0"
-            "operation_not_permitted\0"
-            "executable_format_error\0"
-            "device_or_resource_busy\0"
-            "operation_not_supported\0"
-            "no_such_file_or_directory\0"
-            "no_such_device_or_address\0"
-            "address_family_not_supported\0"
-            "destination_address_required\0"
-            "too_many_files_open_in_system\0"
-            "resource_deadlock_would_occur\0"
-            "too_many_symbolic_link_levels\0"
-            "resource_unavailable_try_again\0"
-            "connection_already_in_progress\0"
-            "inappropriate_io_control_operation\0"
-        };
-        constexpr ::enums::errc enum_string_values[78] = {
-            ::enums::errc::no_link,
-            ::enums::errc::io_error,
-            ::enums::errc::timed_out,
-            ::enums::errc::no_message,
-            ::enums::errc::owner_dead,
-            ::enums::errc::interrupted,
-            ::enums::errc::bad_address,
-            ::enums::errc::file_exists,
-            ::enums::errc::broken_pipe,
-            ::enums::errc::bad_message,
-            ::enums::errc::invalid_seek,
-            ::enums::errc::message_size,
-            ::enums::errc::network_down,
-            ::enums::errc::not_a_stream,
-            ::enums::errc::not_a_socket,
-            ::enums::errc::network_reset,
-            ::enums::errc::not_connected,
-            ::enums::errc::not_supported,
-            ::enums::errc::no_such_device,
-            ::enums::errc::is_a_directory,
-            ::enums::errc::file_too_large,
-            ::enums::errc::too_many_links,
-            ::enums::errc::address_in_use,
-            ::enums::errc::protocol_error,
-            ::enums::errc::stream_timeout,
-            ::enums::errc::text_file_busy,
-            ::enums::errc::no_such_process,
-            ::enums::errc::not_a_directory,
-            ::enums::errc::no_buffer_space,
-            ::enums::errc::value_too_large,
-            ::enums::errc::no_child_process,
-            ::enums::errc::invalid_argument,
-            ::enums::errc::connection_reset,
-            ::enums::errc::host_unreachable,
-            ::enums::errc::not_enough_memory,
-            ::enums::errc::permission_denied,
-            ::enums::errc::cross_device_link,
-            ::enums::errc::filename_too_long,
-            ::enums::errc::no_lock_available,
-            ::enums::errc::already_connected,
-            ::enums::errc::no_space_on_device,
-            ::enums::errc::operation_canceled,
-            ::enums::errc::connection_aborted,
-            ::enums::errc::connection_refused,
-            ::enums::errc::identifier_removed,
-            ::enums::errc::no_protocol_option,
-            ::enums::errc::bad_file_descriptor,
-            ::enums::errc::too_many_files_open,
-            ::enums::errc::result_out_of_range,
-            ::enums::errc::directory_not_empty,
-            ::enums::errc::network_unreachable,
-            ::enums::errc::no_stream_resources,
-            ::enums::errc::wrong_protocol_type,
-            ::enums::errc::no_message_available,
-            ::enums::errc::read_only_file_system,
-            ::enums::errc::illegal_byte_sequence,
-            ::enums::errc::address_not_available,
-            ::enums::errc::operation_in_progress,
-            ::enums::errc::state_not_recoverable,
-            ::enums::errc::operation_would_block,
-            ::enums::errc::argument_list_too_long,
-            ::enums::errc::argument_out_of_domain,
-            ::enums::errc::function_not_supported,
-            ::enums::errc::protocol_not_supported,
-            ::enums::errc::operation_not_permitted,
-            ::enums::errc::executable_format_error,
-            ::enums::errc::device_or_resource_busy,
-            ::enums::errc::operation_not_supported,
-            ::enums::errc::no_such_file_or_directory,
-            ::enums::errc::no_such_device_or_address,
-            ::enums::errc::address_family_not_supported,
-            ::enums::errc::destination_address_required,
-            ::enums::errc::too_many_files_open_in_system,
-            ::enums::errc::resource_deadlock_would_occur,
-            ::enums::errc::too_many_symbolic_link_levels,
-            ::enums::errc::resource_unavailable_try_again,
-            ::enums::errc::connection_already_in_progress,
-            ::enums::errc::inappropriate_io_control_operation,
-        };
-    }
-
-    template<>
-    constexpr auto& values<errc>() noexcept
-    {
-        return detail::errc::values_arr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_integer_result<errc> from_integer<errc>(int32_t v) noexcept { 
-        for(auto value : values<errc>()) {
-            if(value == static_cast<errc>(v)) { return { true, static_cast<errc>(v) }; }
-        }
-        return { false, errc() };
-    }
-
-    constexpr const char* to_string(const errc v) noexcept {
-        switch (v) {
-            case errc::no_link: return &detail::errc::enum_strings[0];
-            case errc::io_error: return &detail::errc::enum_strings[8];
-            case errc::timed_out: return &detail::errc::enum_strings[17];
-            case errc::no_message: return &detail::errc::enum_strings[27];
-            case errc::owner_dead: return &detail::errc::enum_strings[38];
-            case errc::interrupted: return &detail::errc::enum_strings[49];
-            case errc::bad_address: return &detail::errc::enum_strings[61];
-            case errc::file_exists: return &detail::errc::enum_strings[73];
-            case errc::broken_pipe: return &detail::errc::enum_strings[85];
-            case errc::bad_message: return &detail::errc::enum_strings[97];
-            case errc::invalid_seek: return &detail::errc::enum_strings[109];
-            case errc::message_size: return &detail::errc::enum_strings[122];
-            case errc::network_down: return &detail::errc::enum_strings[135];
-            case errc::not_a_stream: return &detail::errc::enum_strings[148];
-            case errc::not_a_socket: return &detail::errc::enum_strings[161];
-            case errc::network_reset: return &detail::errc::enum_strings[174];
-            case errc::not_connected: return &detail::errc::enum_strings[188];
-            case errc::not_supported: return &detail::errc::enum_strings[202];
-            case errc::no_such_device: return &detail::errc::enum_strings[216];
-            case errc::is_a_directory: return &detail::errc::enum_strings[231];
-            case errc::file_too_large: return &detail::errc::enum_strings[246];
-            case errc::too_many_links: return &detail::errc::enum_strings[261];
-            case errc::address_in_use: return &detail::errc::enum_strings[276];
-            case errc::protocol_error: return &detail::errc::enum_strings[291];
-            case errc::stream_timeout: return &detail::errc::enum_strings[306];
-            case errc::text_file_busy: return &detail::errc::enum_strings[321];
-            case errc::no_such_process: return &detail::errc::enum_strings[336];
-            case errc::not_a_directory: return &detail::errc::enum_strings[352];
-            case errc::no_buffer_space: return &detail::errc::enum_strings[368];
-            case errc::value_too_large: return &detail::errc::enum_strings[384];
-            case errc::no_child_process: return &detail::errc::enum_strings[400];
-            case errc::invalid_argument: return &detail::errc::enum_strings[417];
-            case errc::connection_reset: return &detail::errc::enum_strings[434];
-            case errc::host_unreachable: return &detail::errc::enum_strings[451];
-            case errc::not_enough_memory: return &detail::errc::enum_strings[468];
-            case errc::permission_denied: return &detail::errc::enum_strings[486];
-            case errc::cross_device_link: return &detail::errc::enum_strings[504];
-            case errc::filename_too_long: return &detail::errc::enum_strings[522];
-            case errc::no_lock_available: return &detail::errc::enum_strings[540];
-            case errc::already_connected: return &detail::errc::enum_strings[558];
-            case errc::no_space_on_device: return &detail::errc::enum_strings[576];
-            case errc::operation_canceled: return &detail::errc::enum_strings[595];
-            case errc::connection_aborted: return &detail::errc::enum_strings[614];
-            case errc::connection_refused: return &detail::errc::enum_strings[633];
-            case errc::identifier_removed: return &detail::errc::enum_strings[652];
-            case errc::no_protocol_option: return &detail::errc::enum_strings[671];
-            case errc::bad_file_descriptor: return &detail::errc::enum_strings[690];
-            case errc::too_many_files_open: return &detail::errc::enum_strings[710];
-            case errc::result_out_of_range: return &detail::errc::enum_strings[730];
-            case errc::directory_not_empty: return &detail::errc::enum_strings[750];
-            case errc::network_unreachable: return &detail::errc::enum_strings[770];
-            case errc::no_stream_resources: return &detail::errc::enum_strings[790];
-            case errc::wrong_protocol_type: return &detail::errc::enum_strings[810];
-            case errc::no_message_available: return &detail::errc::enum_strings[830];
-            case errc::read_only_file_system: return &detail::errc::enum_strings[851];
-            case errc::illegal_byte_sequence: return &detail::errc::enum_strings[873];
-            case errc::address_not_available: return &detail::errc::enum_strings[895];
-            case errc::operation_in_progress: return &detail::errc::enum_strings[917];
-            case errc::state_not_recoverable: return &detail::errc::enum_strings[939];
-            case errc::operation_would_block: return &detail::errc::enum_strings[961];
-            case errc::argument_list_too_long: return &detail::errc::enum_strings[983];
-            case errc::argument_out_of_domain: return &detail::errc::enum_strings[1006];
-            case errc::function_not_supported: return &detail::errc::enum_strings[1029];
-            case errc::protocol_not_supported: return &detail::errc::enum_strings[1052];
-            case errc::operation_not_permitted: return &detail::errc::enum_strings[1075];
-            case errc::executable_format_error: return &detail::errc::enum_strings[1099];
-            case errc::device_or_resource_busy: return &detail::errc::enum_strings[1123];
-            case errc::operation_not_supported: return &detail::errc::enum_strings[1147];
-            case errc::no_such_file_or_directory: return &detail::errc::enum_strings[1171];
-            case errc::no_such_device_or_address: return &detail::errc::enum_strings[1197];
-            case errc::address_family_not_supported: return &detail::errc::enum_strings[1223];
-            case errc::destination_address_required: return &detail::errc::enum_strings[1252];
-            case errc::too_many_files_open_in_system: return &detail::errc::enum_strings[1281];
-            case errc::resource_deadlock_would_occur: return &detail::errc::enum_strings[1311];
-            case errc::too_many_symbolic_link_levels: return &detail::errc::enum_strings[1341];
-            case errc::resource_unavailable_try_again: return &detail::errc::enum_strings[1371];
-            case errc::connection_already_in_progress: return &detail::errc::enum_strings[1402];
-            case errc::inappropriate_io_control_operation: return &detail::errc::enum_strings[1433];
-        }
-        return nullptr;
-    }
-
-    template<>
-    constexpr ::enumbra::from_string_result<errc> from_string<errc>(const char* str, ::std::uint16_t len) noexcept {
-        ::std::uint32_t offset_str = 0;
-        ::std::uint32_t offset_enum = 0;
-        ::std::uint32_t count = 0;
-        switch(len)
-        {
-            case 7: offset_str = 0; offset_enum = 0; count = 1; break;
-            case 8: offset_str = 8; offset_enum = 1; count = 1; break;
-            case 9: offset_str = 17; offset_enum = 2; count = 1; break;
-            case 10: offset_str = 27; offset_enum = 3; count = 2; break;
-            case 11: offset_str = 49; offset_enum = 5; count = 5; break;
-            case 12: offset_str = 109; offset_enum = 10; count = 5; break;
-            case 13: offset_str = 174; offset_enum = 15; count = 3; break;
-            case 14: offset_str = 216; offset_enum = 18; count = 8; break;
-            case 15: offset_str = 336; offset_enum = 26; count = 4; break;
-            case 16: offset_str = 400; offset_enum = 30; count = 4; break;
-            case 17: offset_str = 468; offset_enum = 34; count = 6; break;
-            case 18: offset_str = 576; offset_enum = 40; count = 6; break;
-            case 19: offset_str = 690; offset_enum = 46; count = 7; break;
-            case 20: offset_str = 830; offset_enum = 53; count = 1; break;
-            case 21: offset_str = 851; offset_enum = 54; count = 6; break;
-            case 22: offset_str = 983; offset_enum = 60; count = 4; break;
-            case 23: offset_str = 1075; offset_enum = 64; count = 4; break;
-            case 25: offset_str = 1171; offset_enum = 68; count = 2; break;
-            case 28: offset_str = 1223; offset_enum = 70; count = 2; break;
-            case 29: offset_str = 1281; offset_enum = 72; count = 3; break;
-            case 30: offset_str = 1371; offset_enum = 75; count = 2; break;
-            case 34: offset_str = 1433; offset_enum = 77; count = 1; break;
-            default: return {false, errc()};
-        }
-        for (::std::uint32_t i = 0; i < count; i++) {
-            if (enumbra::detail::streq_known_size(detail::errc::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-                return {true, detail::errc::enum_string_values[offset_enum + i]};
-            }
-        }
-        return {false, errc()};
-    }
-
-    // test_flags Definition
-    enum class test_flags : uint32_t {
-        B = 1,
-        C = 2,
-    };
-
-    namespace detail::test_flags {
-        constexpr ::enums::test_flags flags_arr[2] =
-        {
-            ::enums::test_flags::B,
-            ::enums::test_flags::C,
-        };
-    }
-
-    template<>
-    constexpr auto& flags<test_flags>() noexcept
-    {
-        return detail::test_flags::flags_arr;
-    }
-
-    constexpr void zero(test_flags& value) noexcept { value = static_cast<test_flags>(0); }
-    constexpr bool test(test_flags value, test_flags flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
-    constexpr void set(test_flags& value, test_flags flags) noexcept { value = static_cast<test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
-    constexpr void unset(test_flags& value, test_flags flags) noexcept { value = static_cast<test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
-    constexpr void toggle(test_flags& value, test_flags flags) noexcept { value = static_cast<test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
-    constexpr bool is_all(test_flags value) noexcept { return static_cast<uint32_t>(value) >= 0x3; }
-    constexpr bool is_any(test_flags value) noexcept { return static_cast<uint32_t>(value) > 0; }
-    constexpr bool is_none(test_flags value) noexcept { return static_cast<uint32_t>(value) == 0; }
-    constexpr bool is_single(test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(value); return n && !(n & (n - 1)); }
-
-    // test_flags Operator Overloads
-    constexpr test_flags operator~(const test_flags a) noexcept { return static_cast<test_flags>(~static_cast<uint32_t>(a)); }
-    constexpr test_flags operator|(const test_flags a, const test_flags b) noexcept { return static_cast<test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
-    constexpr test_flags operator&(const test_flags a, const test_flags b) noexcept { return static_cast<test_flags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
-    constexpr test_flags operator^(const test_flags a, const test_flags b) noexcept { return static_cast<test_flags>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
-    constexpr test_flags& operator|=(test_flags& a, const test_flags b) noexcept { return a = a | b; }
-    constexpr test_flags& operator&=(test_flags& a, const test_flags b) noexcept { return a = a & b; }
-    constexpr test_flags& operator^=(test_flags& a, const test_flags b) noexcept { return a = a ^ b; }
-
-    // test_nodefault Definition
-    enum class test_nodefault : uint16_t {
-        B = 1,
-        C = 2,
-    };
-
-    namespace detail::test_nodefault {
-        constexpr ::enums::test_nodefault flags_arr[2] =
-        {
-            ::enums::test_nodefault::B,
-            ::enums::test_nodefault::C,
-        };
-    }
-
-    template<>
-    constexpr auto& flags<test_nodefault>() noexcept
-    {
-        return detail::test_nodefault::flags_arr;
-    }
-
-    constexpr void zero(test_nodefault& value) noexcept { value = static_cast<test_nodefault>(0); }
-    constexpr bool test(test_nodefault value, test_nodefault flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-    constexpr void set(test_nodefault& value, test_nodefault flags) noexcept { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-    constexpr void unset(test_nodefault& value, test_nodefault flags) noexcept { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void toggle(test_nodefault& value, test_nodefault flags) noexcept { value = static_cast<test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-    constexpr bool is_all(test_nodefault value) noexcept { return static_cast<uint16_t>(value) >= 0x3; }
-    constexpr bool is_any(test_nodefault value) noexcept { return static_cast<uint16_t>(value) > 0; }
-    constexpr bool is_none(test_nodefault value) noexcept { return static_cast<uint16_t>(value) == 0; }
-    constexpr bool is_single(test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
-
-    // test_nodefault Operator Overloads
-    constexpr test_nodefault operator~(const test_nodefault a) noexcept { return static_cast<test_nodefault>(~static_cast<uint16_t>(a)); }
-    constexpr test_nodefault operator|(const test_nodefault a, const test_nodefault b) noexcept { return static_cast<test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-    constexpr test_nodefault operator&(const test_nodefault a, const test_nodefault b) noexcept { return static_cast<test_nodefault>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-    constexpr test_nodefault operator^(const test_nodefault a, const test_nodefault b) noexcept { return static_cast<test_nodefault>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    constexpr test_nodefault& operator|=(test_nodefault& a, const test_nodefault b) noexcept { return a = a | b; }
-    constexpr test_nodefault& operator&=(test_nodefault& a, const test_nodefault b) noexcept { return a = a & b; }
-    constexpr test_nodefault& operator^=(test_nodefault& a, const test_nodefault b) noexcept { return a = a ^ b; }
-
-    // TestSparseFlags Definition
-    enum class TestSparseFlags : uint16_t {
-        B = 1,
-        C = 4,
-        D = 16,
-    };
-
-    namespace detail::TestSparseFlags {
-        constexpr ::enums::TestSparseFlags flags_arr[3] =
-        {
-            ::enums::TestSparseFlags::B,
-            ::enums::TestSparseFlags::C,
-            ::enums::TestSparseFlags::D,
-        };
-    }
-
-    template<>
-    constexpr auto& flags<TestSparseFlags>() noexcept
-    {
-        return detail::TestSparseFlags::flags_arr;
-    }
-
-    constexpr void zero(TestSparseFlags& value) noexcept { value = static_cast<TestSparseFlags>(0); }
-    constexpr bool test(TestSparseFlags value, TestSparseFlags flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-    constexpr void set(TestSparseFlags& value, TestSparseFlags flags) noexcept { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-    constexpr void unset(TestSparseFlags& value, TestSparseFlags flags) noexcept { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void toggle(TestSparseFlags& value, TestSparseFlags flags) noexcept { value = static_cast<TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-    constexpr bool is_all(TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) >= 0x15; }
-    constexpr bool is_any(TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) > 0; }
-    constexpr bool is_none(TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) == 0; }
-    constexpr bool is_single(TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
-
-    // TestSparseFlags Operator Overloads
-    constexpr TestSparseFlags operator~(const TestSparseFlags a) noexcept { return static_cast<TestSparseFlags>(~static_cast<uint16_t>(a)); }
-    constexpr TestSparseFlags operator|(const TestSparseFlags a, const TestSparseFlags b) noexcept { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-    constexpr TestSparseFlags operator&(const TestSparseFlags a, const TestSparseFlags b) noexcept { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-    constexpr TestSparseFlags operator^(const TestSparseFlags a, const TestSparseFlags b) noexcept { return static_cast<TestSparseFlags>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    constexpr TestSparseFlags& operator|=(TestSparseFlags& a, const TestSparseFlags b) noexcept { return a = a | b; }
-    constexpr TestSparseFlags& operator&=(TestSparseFlags& a, const TestSparseFlags b) noexcept { return a = a & b; }
-    constexpr TestSparseFlags& operator^=(TestSparseFlags& a, const TestSparseFlags b) noexcept { return a = a ^ b; }
-
-    // TestSingleFlag Definition
-    enum class TestSingleFlag : uint16_t {
-        C = 4,
-    };
-
-    namespace detail::TestSingleFlag {
-        constexpr ::enums::TestSingleFlag flags_arr[1] =
-        {
-            ::enums::TestSingleFlag::C,
-        };
-    }
-
-    template<>
-    constexpr auto& flags<TestSingleFlag>() noexcept
-    {
-        return detail::TestSingleFlag::flags_arr;
-    }
-
-    constexpr void zero(TestSingleFlag& value) noexcept { value = static_cast<TestSingleFlag>(0); }
-    constexpr bool test(TestSingleFlag value, TestSingleFlag flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-    constexpr void set(TestSingleFlag& value, TestSingleFlag flags) noexcept { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-    constexpr void unset(TestSingleFlag& value, TestSingleFlag flags) noexcept { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-    constexpr void toggle(TestSingleFlag& value, TestSingleFlag flags) noexcept { value = static_cast<TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-    constexpr bool is_all(TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) >= 0x4; }
-    constexpr bool is_any(TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) > 0; }
-    constexpr bool is_none(TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) == 0; }
-    constexpr bool is_single(TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
-
-    // TestSingleFlag Operator Overloads
-    constexpr TestSingleFlag operator~(const TestSingleFlag a) noexcept { return static_cast<TestSingleFlag>(~static_cast<uint16_t>(a)); }
-    constexpr TestSingleFlag operator|(const TestSingleFlag a, const TestSingleFlag b) noexcept { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
-    constexpr TestSingleFlag operator&(const TestSingleFlag a, const TestSingleFlag b) noexcept { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
-    constexpr TestSingleFlag operator^(const TestSingleFlag a, const TestSingleFlag b) noexcept { return static_cast<TestSingleFlag>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
-    constexpr TestSingleFlag& operator|=(TestSingleFlag& a, const TestSingleFlag b) noexcept { return a = a | b; }
-    constexpr TestSingleFlag& operator&=(TestSingleFlag& a, const TestSingleFlag b) noexcept { return a = a & b; }
-    constexpr TestSingleFlag& operator^=(TestSingleFlag& a, const TestSingleFlag b) noexcept { return a = a ^ b; }
+} // end namespace enumbra
+#else // check existing version supported
+#if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
+#error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 18
+#error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 18
+#error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
+#endif // check existing version supported
+#endif // ENUMBRA_BASE_TEMPLATES_VERSION
+
+namespace enums {
+// test_string_parse Definition
+enum class test_string_parse : int64_t {
+C = -1,
+B = 1,
+F = 341,
+D = 511,
+E = 9223372036854775807,
+};
+
+namespace detail::test_string_parse {
+constexpr ::enums::test_string_parse values_arr[5] =
+{
+::enums::test_string_parse::C,
+::enums::test_string_parse::B,
+::enums::test_string_parse::F,
+::enums::test_string_parse::D,
+::enums::test_string_parse::E,
+};
+constexpr const char enum_strings[11] = {
+"C\0"
+"B\0"
+"F\0"
+"D\0"
+"E\0"
+};
+}
 
 } // namespace enums
 
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::test_string_parse>() noexcept
+{
+return ::enums::detail::test_string_parse::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::test_string_parse> from_integer<::enums::test_string_parse>(int64_t v) noexcept { 
+for(auto value : values<::enums::test_string_parse>()) {
+if(value == static_cast<::enums::test_string_parse>(v)) { return { true, static_cast<::enums::test_string_parse>(v) }; }
+}
+return { false, ::enums::test_string_parse() };
+}
+
+constexpr const char* to_string(const ::enums::test_string_parse v) noexcept {
+switch (v) {
+case ::enums::test_string_parse::C: return &::enums::detail::test_string_parse::enum_strings[0];
+case ::enums::test_string_parse::B: return &::enums::detail::test_string_parse::enum_strings[2];
+case ::enums::test_string_parse::F: return &::enums::detail::test_string_parse::enum_strings[4];
+case ::enums::test_string_parse::D: return &::enums::detail::test_string_parse::enum_strings[6];
+case ::enums::test_string_parse::E: return &::enums::detail::test_string_parse::enum_strings[8];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::test_string_parse> from_string<::enums::test_string_parse>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::test_string_parse()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 5;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::test_string_parse::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::test_string_parse::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::test_string_parse()};
+}
+
+} // enumbra
+namespace enums {
+// Unsigned64Test Definition
+enum class Unsigned64Test : uint64_t {
+MIN = 0,
+V_UINT16_MAX = 0xFFFF,
+V_UINT32_MAX = 0xFFFFFFFF,
+MAX = 0xFFFFFFFFFFFFFFFF,
+};
+
+namespace detail::Unsigned64Test {
+constexpr ::enums::Unsigned64Test values_arr[4] =
+{
+::enums::Unsigned64Test::MIN,
+::enums::Unsigned64Test::V_UINT16_MAX,
+::enums::Unsigned64Test::V_UINT32_MAX,
+::enums::Unsigned64Test::MAX,
+};
+constexpr const char enum_strings[35] = {
+"MIN\0"
+"MAX\0"
+"V_UINT16_MAX\0"
+"V_UINT32_MAX\0"
+};
+constexpr ::enums::Unsigned64Test enum_string_values[4] = {
+::enums::Unsigned64Test::MIN,
+::enums::Unsigned64Test::MAX,
+::enums::Unsigned64Test::V_UINT16_MAX,
+::enums::Unsigned64Test::V_UINT32_MAX,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::Unsigned64Test>() noexcept
+{
+return ::enums::detail::Unsigned64Test::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::Unsigned64Test> from_integer<::enums::Unsigned64Test>(uint64_t v) noexcept { 
+for(auto value : values<::enums::Unsigned64Test>()) {
+if(value == static_cast<::enums::Unsigned64Test>(v)) { return { true, static_cast<::enums::Unsigned64Test>(v) }; }
+}
+return { false, ::enums::Unsigned64Test() };
+}
+
+constexpr const char* to_string(const ::enums::Unsigned64Test v) noexcept {
+switch (v) {
+case ::enums::Unsigned64Test::MIN: return &::enums::detail::Unsigned64Test::enum_strings[0];
+case ::enums::Unsigned64Test::MAX: return &::enums::detail::Unsigned64Test::enum_strings[4];
+case ::enums::Unsigned64Test::V_UINT16_MAX: return &::enums::detail::Unsigned64Test::enum_strings[8];
+case ::enums::Unsigned64Test::V_UINT32_MAX: return &::enums::detail::Unsigned64Test::enum_strings[21];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::Unsigned64Test> from_string<::enums::Unsigned64Test>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+case 12: offset_str = 8; offset_enum = 2; count = 2; break;
+default: return {false, ::enums::Unsigned64Test()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::Unsigned64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::Unsigned64Test::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::Unsigned64Test()};
+}
+
+} // enumbra
+namespace enums {
+// Signed64Test Definition
+enum class Signed64Test : int64_t {
+MIN = (-9223372036854775807 - 1),
+NEG_ONE = -1,
+MAX = 9223372036854775807,
+};
+
+namespace detail::Signed64Test {
+constexpr ::enums::Signed64Test values_arr[3] =
+{
+::enums::Signed64Test::MIN,
+::enums::Signed64Test::NEG_ONE,
+::enums::Signed64Test::MAX,
+};
+constexpr const char enum_strings[17] = {
+"MIN\0"
+"MAX\0"
+"NEG_ONE\0"
+};
+constexpr ::enums::Signed64Test enum_string_values[3] = {
+::enums::Signed64Test::MIN,
+::enums::Signed64Test::MAX,
+::enums::Signed64Test::NEG_ONE,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::Signed64Test>() noexcept
+{
+return ::enums::detail::Signed64Test::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::Signed64Test> from_integer<::enums::Signed64Test>(int64_t v) noexcept { 
+for(auto value : values<::enums::Signed64Test>()) {
+if(value == static_cast<::enums::Signed64Test>(v)) { return { true, static_cast<::enums::Signed64Test>(v) }; }
+}
+return { false, ::enums::Signed64Test() };
+}
+
+constexpr const char* to_string(const ::enums::Signed64Test v) noexcept {
+switch (v) {
+case ::enums::Signed64Test::MIN: return &::enums::detail::Signed64Test::enum_strings[0];
+case ::enums::Signed64Test::MAX: return &::enums::detail::Signed64Test::enum_strings[4];
+case ::enums::Signed64Test::NEG_ONE: return &::enums::detail::Signed64Test::enum_strings[8];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::Signed64Test> from_string<::enums::Signed64Test>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+case 7: offset_str = 8; offset_enum = 2; count = 1; break;
+default: return {false, ::enums::Signed64Test()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::Signed64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::Signed64Test::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::Signed64Test()};
+}
+
+} // enumbra
+namespace enums {
+// Signed32Test Definition
+enum class Signed32Test : int32_t {
+MIN = (-2147483647 - 1),
+NEG_ONE = -1,
+MAX = 2147483647,
+};
+
+namespace detail::Signed32Test {
+constexpr ::enums::Signed32Test values_arr[3] =
+{
+::enums::Signed32Test::MIN,
+::enums::Signed32Test::NEG_ONE,
+::enums::Signed32Test::MAX,
+};
+constexpr const char enum_strings[17] = {
+"MIN\0"
+"MAX\0"
+"NEG_ONE\0"
+};
+constexpr ::enums::Signed32Test enum_string_values[3] = {
+::enums::Signed32Test::MIN,
+::enums::Signed32Test::MAX,
+::enums::Signed32Test::NEG_ONE,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::Signed32Test>() noexcept
+{
+return ::enums::detail::Signed32Test::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::Signed32Test> from_integer<::enums::Signed32Test>(int32_t v) noexcept { 
+for(auto value : values<::enums::Signed32Test>()) {
+if(value == static_cast<::enums::Signed32Test>(v)) { return { true, static_cast<::enums::Signed32Test>(v) }; }
+}
+return { false, ::enums::Signed32Test() };
+}
+
+constexpr const char* to_string(const ::enums::Signed32Test v) noexcept {
+switch (v) {
+case ::enums::Signed32Test::MIN: return &::enums::detail::Signed32Test::enum_strings[0];
+case ::enums::Signed32Test::MAX: return &::enums::detail::Signed32Test::enum_strings[4];
+case ::enums::Signed32Test::NEG_ONE: return &::enums::detail::Signed32Test::enum_strings[8];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::Signed32Test> from_string<::enums::Signed32Test>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+case 7: offset_str = 8; offset_enum = 2; count = 1; break;
+default: return {false, ::enums::Signed32Test()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::Signed32Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::Signed32Test::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::Signed32Test()};
+}
+
+} // enumbra
+namespace enums {
+// Signed16Test Definition
+enum class Signed16Test : int16_t {
+MIN = (-32767 - 1),
+NEG_ONE = -1,
+MAX = 32767,
+};
+
+namespace detail::Signed16Test {
+constexpr ::enums::Signed16Test values_arr[3] =
+{
+::enums::Signed16Test::MIN,
+::enums::Signed16Test::NEG_ONE,
+::enums::Signed16Test::MAX,
+};
+constexpr const char enum_strings[17] = {
+"MIN\0"
+"MAX\0"
+"NEG_ONE\0"
+};
+constexpr ::enums::Signed16Test enum_string_values[3] = {
+::enums::Signed16Test::MIN,
+::enums::Signed16Test::MAX,
+::enums::Signed16Test::NEG_ONE,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::Signed16Test>() noexcept
+{
+return ::enums::detail::Signed16Test::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::Signed16Test> from_integer<::enums::Signed16Test>(int16_t v) noexcept { 
+for(auto value : values<::enums::Signed16Test>()) {
+if(value == static_cast<::enums::Signed16Test>(v)) { return { true, static_cast<::enums::Signed16Test>(v) }; }
+}
+return { false, ::enums::Signed16Test() };
+}
+
+constexpr const char* to_string(const ::enums::Signed16Test v) noexcept {
+switch (v) {
+case ::enums::Signed16Test::MIN: return &::enums::detail::Signed16Test::enum_strings[0];
+case ::enums::Signed16Test::MAX: return &::enums::detail::Signed16Test::enum_strings[4];
+case ::enums::Signed16Test::NEG_ONE: return &::enums::detail::Signed16Test::enum_strings[8];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::Signed16Test> from_string<::enums::Signed16Test>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 3: offset_str = 0; offset_enum = 0; count = 2; break;
+case 7: offset_str = 8; offset_enum = 2; count = 1; break;
+default: return {false, ::enums::Signed16Test()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::Signed16Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::Signed16Test::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::Signed16Test()};
+}
+
+} // enumbra
+namespace enums {
+// Signed8Test Definition
+enum class Signed8Test : int8_t {
+V_INT_MIN = (-127 - 1),
+V_NEG_ONE = -1,
+V_INT_MAX = 127,
+};
+
+namespace detail::Signed8Test {
+constexpr ::enums::Signed8Test values_arr[3] =
+{
+::enums::Signed8Test::V_INT_MIN,
+::enums::Signed8Test::V_NEG_ONE,
+::enums::Signed8Test::V_INT_MAX,
+};
+constexpr const char enum_strings[31] = {
+"V_INT_MIN\0"
+"V_NEG_ONE\0"
+"V_INT_MAX\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::Signed8Test>() noexcept
+{
+return ::enums::detail::Signed8Test::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::Signed8Test> from_integer<::enums::Signed8Test>(int8_t v) noexcept { 
+for(auto value : values<::enums::Signed8Test>()) {
+if(value == static_cast<::enums::Signed8Test>(v)) { return { true, static_cast<::enums::Signed8Test>(v) }; }
+}
+return { false, ::enums::Signed8Test() };
+}
+
+constexpr const char* to_string(const ::enums::Signed8Test v) noexcept {
+switch (v) {
+case ::enums::Signed8Test::V_INT_MIN: return &::enums::detail::Signed8Test::enum_strings[0];
+case ::enums::Signed8Test::V_NEG_ONE: return &::enums::detail::Signed8Test::enum_strings[10];
+case ::enums::Signed8Test::V_INT_MAX: return &::enums::detail::Signed8Test::enum_strings[20];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::Signed8Test> from_string<::enums::Signed8Test>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 9) { return {false, ::enums::Signed8Test()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 3;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<9>(::enums::detail::Signed8Test::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::Signed8Test::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::Signed8Test()};
+}
+
+} // enumbra
+namespace enums {
+// test_value Definition
+enum class test_value : int32_t {
+A = 0,
+B = 1,
+C = 2,
+};
+
+namespace detail::test_value {
+constexpr ::enums::test_value values_arr[3] =
+{
+::enums::test_value::A,
+::enums::test_value::B,
+::enums::test_value::C,
+};
+constexpr const char enum_strings[7] = {
+"A\0"
+"B\0"
+"C\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::test_value>() noexcept
+{
+return ::enums::detail::test_value::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::test_value> from_integer<::enums::test_value>(int32_t v) noexcept { 
+if((0 <= v) && (v <= 2)) { return { true, static_cast<::enums::test_value>(v) }; }
+return { false, ::enums::test_value() };
+}
+
+constexpr const char* to_string(const ::enums::test_value v) noexcept {
+switch (v) {
+case ::enums::test_value::A: return &::enums::detail::test_value::enum_strings[0];
+case ::enums::test_value::B: return &::enums::detail::test_value::enum_strings[2];
+case ::enums::test_value::C: return &::enums::detail::test_value::enum_strings[4];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::test_value> from_string<::enums::test_value>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::test_value()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 3;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::test_value::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::test_value::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::test_value()};
+}
+
+} // enumbra
+namespace enums {
+// HexDiagonal Definition
+enum class HexDiagonal : uint8_t {
+NORTH = 0,
+NORTH_EAST = 1,
+SOUTH_EAST = 2,
+SOUTH = 3,
+SOUTH_WEST = 4,
+NORTH_WEST = 5,
+};
+
+namespace detail::HexDiagonal {
+constexpr ::enums::HexDiagonal values_arr[6] =
+{
+::enums::HexDiagonal::NORTH,
+::enums::HexDiagonal::NORTH_EAST,
+::enums::HexDiagonal::SOUTH_EAST,
+::enums::HexDiagonal::SOUTH,
+::enums::HexDiagonal::SOUTH_WEST,
+::enums::HexDiagonal::NORTH_WEST,
+};
+constexpr const char enum_strings[57] = {
+"NORTH\0"
+"SOUTH\0"
+"NORTH_EAST\0"
+"SOUTH_EAST\0"
+"SOUTH_WEST\0"
+"NORTH_WEST\0"
+};
+constexpr ::enums::HexDiagonal enum_string_values[6] = {
+::enums::HexDiagonal::NORTH,
+::enums::HexDiagonal::SOUTH,
+::enums::HexDiagonal::NORTH_EAST,
+::enums::HexDiagonal::SOUTH_EAST,
+::enums::HexDiagonal::SOUTH_WEST,
+::enums::HexDiagonal::NORTH_WEST,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::HexDiagonal>() noexcept
+{
+return ::enums::detail::HexDiagonal::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::HexDiagonal> from_integer<::enums::HexDiagonal>(uint8_t v) noexcept { 
+if(v <= 5) { return { true, static_cast<::enums::HexDiagonal>(v) }; }
+return { false, ::enums::HexDiagonal() };
+}
+
+constexpr const char* to_string(const ::enums::HexDiagonal v) noexcept {
+switch (v) {
+case ::enums::HexDiagonal::NORTH: return &::enums::detail::HexDiagonal::enum_strings[0];
+case ::enums::HexDiagonal::SOUTH: return &::enums::detail::HexDiagonal::enum_strings[6];
+case ::enums::HexDiagonal::NORTH_EAST: return &::enums::detail::HexDiagonal::enum_strings[12];
+case ::enums::HexDiagonal::SOUTH_EAST: return &::enums::detail::HexDiagonal::enum_strings[23];
+case ::enums::HexDiagonal::SOUTH_WEST: return &::enums::detail::HexDiagonal::enum_strings[34];
+case ::enums::HexDiagonal::NORTH_WEST: return &::enums::detail::HexDiagonal::enum_strings[45];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::HexDiagonal> from_string<::enums::HexDiagonal>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 5: offset_str = 0; offset_enum = 0; count = 2; break;
+case 10: offset_str = 12; offset_enum = 2; count = 4; break;
+default: return {false, ::enums::HexDiagonal()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::HexDiagonal::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::HexDiagonal::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::HexDiagonal()};
+}
+
+} // enumbra
+namespace enums {
+// NegativeTest1 Definition
+enum class NegativeTest1 : int8_t {
+A = -2,
+B = -1,
+C = 0,
+D = 1,
+};
+
+namespace detail::NegativeTest1 {
+constexpr ::enums::NegativeTest1 values_arr[4] =
+{
+::enums::NegativeTest1::A,
+::enums::NegativeTest1::B,
+::enums::NegativeTest1::C,
+::enums::NegativeTest1::D,
+};
+constexpr const char enum_strings[9] = {
+"A\0"
+"B\0"
+"C\0"
+"D\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::NegativeTest1>() noexcept
+{
+return ::enums::detail::NegativeTest1::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::NegativeTest1> from_integer<::enums::NegativeTest1>(int8_t v) noexcept { 
+if((-2 <= v) && (v <= 1)) { return { true, static_cast<::enums::NegativeTest1>(v) }; }
+return { false, ::enums::NegativeTest1() };
+}
+
+constexpr const char* to_string(const ::enums::NegativeTest1 v) noexcept {
+switch (v) {
+case ::enums::NegativeTest1::A: return &::enums::detail::NegativeTest1::enum_strings[0];
+case ::enums::NegativeTest1::B: return &::enums::detail::NegativeTest1::enum_strings[2];
+case ::enums::NegativeTest1::C: return &::enums::detail::NegativeTest1::enum_strings[4];
+case ::enums::NegativeTest1::D: return &::enums::detail::NegativeTest1::enum_strings[6];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::NegativeTest1> from_string<::enums::NegativeTest1>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::NegativeTest1()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 4;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest1::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::NegativeTest1::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::NegativeTest1()};
+}
+
+} // enumbra
+namespace enums {
+// NegativeTest2 Definition
+enum class NegativeTest2 : int8_t {
+A = -3,
+B = -2,
+C = -1,
+D = 0,
+};
+
+namespace detail::NegativeTest2 {
+constexpr ::enums::NegativeTest2 values_arr[4] =
+{
+::enums::NegativeTest2::A,
+::enums::NegativeTest2::B,
+::enums::NegativeTest2::C,
+::enums::NegativeTest2::D,
+};
+constexpr const char enum_strings[9] = {
+"A\0"
+"B\0"
+"C\0"
+"D\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::NegativeTest2>() noexcept
+{
+return ::enums::detail::NegativeTest2::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::NegativeTest2> from_integer<::enums::NegativeTest2>(int8_t v) noexcept { 
+if((-3 <= v) && (v <= 0)) { return { true, static_cast<::enums::NegativeTest2>(v) }; }
+return { false, ::enums::NegativeTest2() };
+}
+
+constexpr const char* to_string(const ::enums::NegativeTest2 v) noexcept {
+switch (v) {
+case ::enums::NegativeTest2::A: return &::enums::detail::NegativeTest2::enum_strings[0];
+case ::enums::NegativeTest2::B: return &::enums::detail::NegativeTest2::enum_strings[2];
+case ::enums::NegativeTest2::C: return &::enums::detail::NegativeTest2::enum_strings[4];
+case ::enums::NegativeTest2::D: return &::enums::detail::NegativeTest2::enum_strings[6];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::NegativeTest2> from_string<::enums::NegativeTest2>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::NegativeTest2()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 4;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest2::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::NegativeTest2::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::NegativeTest2()};
+}
+
+} // enumbra
+namespace enums {
+// NegativeTest3 Definition
+enum class NegativeTest3 : int8_t {
+A = -3,
+B = 4,
+};
+
+namespace detail::NegativeTest3 {
+constexpr ::enums::NegativeTest3 values_arr[2] =
+{
+::enums::NegativeTest3::A,
+::enums::NegativeTest3::B,
+};
+constexpr const char enum_strings[5] = {
+"A\0"
+"B\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::NegativeTest3>() noexcept
+{
+return ::enums::detail::NegativeTest3::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::NegativeTest3> from_integer<::enums::NegativeTest3>(int8_t v) noexcept { 
+for(auto value : values<::enums::NegativeTest3>()) {
+if(value == static_cast<::enums::NegativeTest3>(v)) { return { true, static_cast<::enums::NegativeTest3>(v) }; }
+}
+return { false, ::enums::NegativeTest3() };
+}
+
+constexpr const char* to_string(const ::enums::NegativeTest3 v) noexcept {
+switch (v) {
+case ::enums::NegativeTest3::A: return &::enums::detail::NegativeTest3::enum_strings[0];
+case ::enums::NegativeTest3::B: return &::enums::detail::NegativeTest3::enum_strings[2];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::NegativeTest3> from_string<::enums::NegativeTest3>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::NegativeTest3()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 2;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest3::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::NegativeTest3::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::NegativeTest3()};
+}
+
+} // enumbra
+namespace enums {
+// NegativeTest4 Definition
+enum class NegativeTest4 : int8_t {
+A = -4,
+B = 3,
+};
+
+namespace detail::NegativeTest4 {
+constexpr ::enums::NegativeTest4 values_arr[2] =
+{
+::enums::NegativeTest4::A,
+::enums::NegativeTest4::B,
+};
+constexpr const char enum_strings[5] = {
+"A\0"
+"B\0"
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::NegativeTest4>() noexcept
+{
+return ::enums::detail::NegativeTest4::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::NegativeTest4> from_integer<::enums::NegativeTest4>(int8_t v) noexcept { 
+for(auto value : values<::enums::NegativeTest4>()) {
+if(value == static_cast<::enums::NegativeTest4>(v)) { return { true, static_cast<::enums::NegativeTest4>(v) }; }
+}
+return { false, ::enums::NegativeTest4() };
+}
+
+constexpr const char* to_string(const ::enums::NegativeTest4 v) noexcept {
+switch (v) {
+case ::enums::NegativeTest4::A: return &::enums::detail::NegativeTest4::enum_strings[0];
+case ::enums::NegativeTest4::B: return &::enums::detail::NegativeTest4::enum_strings[2];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::NegativeTest4> from_string<::enums::NegativeTest4>(const char* str, ::std::uint16_t len) noexcept {
+if(len != 1) { return {false, ::enums::NegativeTest4()}; }
+constexpr ::std::uint32_t offset_str = 0;
+constexpr ::std::uint32_t offset_enum = 0;
+constexpr ::std::uint32_t count = 2;
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest4::enum_strings + offset_str + (i * (len + 1)), str)) {
+return {true, ::enums::detail::NegativeTest4::values_arr[offset_enum + i]};
+}
+}
+return {false, ::enums::NegativeTest4()};
+}
+
+} // enumbra
+namespace enums {
+// EmptyTest1Unsigned Definition
+enum class EmptyTest1Unsigned : uint8_t {
+A = 0,
+};
+
+namespace detail::EmptyTest1Unsigned {
+constexpr ::enums::EmptyTest1Unsigned values_arr[1] =
+{
+::enums::EmptyTest1Unsigned::A,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::EmptyTest1Unsigned>() noexcept
+{
+return ::enums::detail::EmptyTest1Unsigned::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::EmptyTest1Unsigned> from_integer<::enums::EmptyTest1Unsigned>(uint8_t v) noexcept { 
+if(0 == v) { return { true, static_cast<::enums::EmptyTest1Unsigned>(v) }; }
+return { false, ::enums::EmptyTest1Unsigned() };
+}
+
+constexpr const char* to_string(const ::enums::EmptyTest1Unsigned v) noexcept {
+switch (v) {
+case ::enums::EmptyTest1Unsigned::A: return "A";
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::EmptyTest1Unsigned> from_string<::enums::EmptyTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
+if (enumbra::detail::streq_s("A", 1, str, len)) {
+return {true, ::enums::EmptyTest1Unsigned::A};
+}
+return {false, ::enums::EmptyTest1Unsigned()};
+}
+
+} // enumbra
+namespace enums {
+// EmptyTest1Signed Definition
+enum class EmptyTest1Signed : int8_t {
+A = 0,
+};
+
+namespace detail::EmptyTest1Signed {
+constexpr ::enums::EmptyTest1Signed values_arr[1] =
+{
+::enums::EmptyTest1Signed::A,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::EmptyTest1Signed>() noexcept
+{
+return ::enums::detail::EmptyTest1Signed::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::EmptyTest1Signed> from_integer<::enums::EmptyTest1Signed>(int8_t v) noexcept { 
+if(0 == v) { return { true, static_cast<::enums::EmptyTest1Signed>(v) }; }
+return { false, ::enums::EmptyTest1Signed() };
+}
+
+constexpr const char* to_string(const ::enums::EmptyTest1Signed v) noexcept {
+switch (v) {
+case ::enums::EmptyTest1Signed::A: return "A";
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::EmptyTest1Signed> from_string<::enums::EmptyTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
+if (enumbra::detail::streq_s("A", 1, str, len)) {
+return {true, ::enums::EmptyTest1Signed::A};
+}
+return {false, ::enums::EmptyTest1Signed()};
+}
+
+} // enumbra
+namespace enums {
+// SingleTest1Unsigned Definition
+enum class SingleTest1Unsigned : uint8_t {
+A = 4,
+};
+
+namespace detail::SingleTest1Unsigned {
+constexpr ::enums::SingleTest1Unsigned values_arr[1] =
+{
+::enums::SingleTest1Unsigned::A,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::SingleTest1Unsigned>() noexcept
+{
+return ::enums::detail::SingleTest1Unsigned::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::SingleTest1Unsigned> from_integer<::enums::SingleTest1Unsigned>(uint8_t v) noexcept { 
+if(4 == v) { return { true, static_cast<::enums::SingleTest1Unsigned>(v) }; }
+return { false, ::enums::SingleTest1Unsigned() };
+}
+
+constexpr const char* to_string(const ::enums::SingleTest1Unsigned v) noexcept {
+switch (v) {
+case ::enums::SingleTest1Unsigned::A: return "A";
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::SingleTest1Unsigned> from_string<::enums::SingleTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
+if (enumbra::detail::streq_s("A", 1, str, len)) {
+return {true, ::enums::SingleTest1Unsigned::A};
+}
+return {false, ::enums::SingleTest1Unsigned()};
+}
+
+} // enumbra
+namespace enums {
+// SingleTest1Signed Definition
+enum class SingleTest1Signed : int8_t {
+A = 4,
+};
+
+namespace detail::SingleTest1Signed {
+constexpr ::enums::SingleTest1Signed values_arr[1] =
+{
+::enums::SingleTest1Signed::A,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::SingleTest1Signed>() noexcept
+{
+return ::enums::detail::SingleTest1Signed::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::SingleTest1Signed> from_integer<::enums::SingleTest1Signed>(int8_t v) noexcept { 
+if(4 == v) { return { true, static_cast<::enums::SingleTest1Signed>(v) }; }
+return { false, ::enums::SingleTest1Signed() };
+}
+
+constexpr const char* to_string(const ::enums::SingleTest1Signed v) noexcept {
+switch (v) {
+case ::enums::SingleTest1Signed::A: return "A";
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::SingleTest1Signed> from_string<::enums::SingleTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
+if (enumbra::detail::streq_s("A", 1, str, len)) {
+return {true, ::enums::SingleTest1Signed::A};
+}
+return {false, ::enums::SingleTest1Signed()};
+}
+
+} // enumbra
+namespace enums {
+// errc Definition
+enum class errc : int32_t {
+operation_not_permitted = 1,
+no_such_file_or_directory = 2,
+no_such_process = 3,
+interrupted = 4,
+io_error = 5,
+no_such_device_or_address = 6,
+argument_list_too_long = 7,
+executable_format_error = 8,
+bad_file_descriptor = 9,
+no_child_process = 10,
+resource_unavailable_try_again = 11,
+not_enough_memory = 12,
+permission_denied = 13,
+bad_address = 14,
+device_or_resource_busy = 16,
+file_exists = 17,
+cross_device_link = 18,
+no_such_device = 19,
+not_a_directory = 20,
+is_a_directory = 21,
+invalid_argument = 22,
+too_many_files_open_in_system = 23,
+too_many_files_open = 24,
+inappropriate_io_control_operation = 25,
+file_too_large = 27,
+no_space_on_device = 28,
+invalid_seek = 29,
+read_only_file_system = 30,
+too_many_links = 31,
+broken_pipe = 32,
+argument_out_of_domain = 33,
+result_out_of_range = 34,
+resource_deadlock_would_occur = 36,
+filename_too_long = 38,
+no_lock_available = 39,
+function_not_supported = 40,
+directory_not_empty = 41,
+illegal_byte_sequence = 42,
+address_in_use = 100,
+address_not_available = 101,
+address_family_not_supported = 102,
+connection_already_in_progress = 103,
+bad_message = 104,
+operation_canceled = 105,
+connection_aborted = 106,
+connection_refused = 107,
+connection_reset = 108,
+destination_address_required = 109,
+host_unreachable = 110,
+identifier_removed = 111,
+operation_in_progress = 112,
+already_connected = 113,
+too_many_symbolic_link_levels = 114,
+message_size = 115,
+network_down = 116,
+network_reset = 117,
+network_unreachable = 118,
+no_buffer_space = 119,
+no_message_available = 120,
+no_link = 121,
+no_message = 122,
+no_protocol_option = 123,
+no_stream_resources = 124,
+not_a_stream = 125,
+not_connected = 126,
+state_not_recoverable = 127,
+not_a_socket = 128,
+not_supported = 129,
+operation_not_supported = 130,
+value_too_large = 132,
+owner_dead = 133,
+protocol_error = 134,
+protocol_not_supported = 135,
+wrong_protocol_type = 136,
+stream_timeout = 137,
+timed_out = 138,
+text_file_busy = 139,
+operation_would_block = 140,
+};
+
+namespace detail::errc {
+constexpr ::enums::errc values_arr[78] =
+{
+::enums::errc::operation_not_permitted,
+::enums::errc::no_such_file_or_directory,
+::enums::errc::no_such_process,
+::enums::errc::interrupted,
+::enums::errc::io_error,
+::enums::errc::no_such_device_or_address,
+::enums::errc::argument_list_too_long,
+::enums::errc::executable_format_error,
+::enums::errc::bad_file_descriptor,
+::enums::errc::no_child_process,
+::enums::errc::resource_unavailable_try_again,
+::enums::errc::not_enough_memory,
+::enums::errc::permission_denied,
+::enums::errc::bad_address,
+::enums::errc::device_or_resource_busy,
+::enums::errc::file_exists,
+::enums::errc::cross_device_link,
+::enums::errc::no_such_device,
+::enums::errc::not_a_directory,
+::enums::errc::is_a_directory,
+::enums::errc::invalid_argument,
+::enums::errc::too_many_files_open_in_system,
+::enums::errc::too_many_files_open,
+::enums::errc::inappropriate_io_control_operation,
+::enums::errc::file_too_large,
+::enums::errc::no_space_on_device,
+::enums::errc::invalid_seek,
+::enums::errc::read_only_file_system,
+::enums::errc::too_many_links,
+::enums::errc::broken_pipe,
+::enums::errc::argument_out_of_domain,
+::enums::errc::result_out_of_range,
+::enums::errc::resource_deadlock_would_occur,
+::enums::errc::filename_too_long,
+::enums::errc::no_lock_available,
+::enums::errc::function_not_supported,
+::enums::errc::directory_not_empty,
+::enums::errc::illegal_byte_sequence,
+::enums::errc::address_in_use,
+::enums::errc::address_not_available,
+::enums::errc::address_family_not_supported,
+::enums::errc::connection_already_in_progress,
+::enums::errc::bad_message,
+::enums::errc::operation_canceled,
+::enums::errc::connection_aborted,
+::enums::errc::connection_refused,
+::enums::errc::connection_reset,
+::enums::errc::destination_address_required,
+::enums::errc::host_unreachable,
+::enums::errc::identifier_removed,
+::enums::errc::operation_in_progress,
+::enums::errc::already_connected,
+::enums::errc::too_many_symbolic_link_levels,
+::enums::errc::message_size,
+::enums::errc::network_down,
+::enums::errc::network_reset,
+::enums::errc::network_unreachable,
+::enums::errc::no_buffer_space,
+::enums::errc::no_message_available,
+::enums::errc::no_link,
+::enums::errc::no_message,
+::enums::errc::no_protocol_option,
+::enums::errc::no_stream_resources,
+::enums::errc::not_a_stream,
+::enums::errc::not_connected,
+::enums::errc::state_not_recoverable,
+::enums::errc::not_a_socket,
+::enums::errc::not_supported,
+::enums::errc::operation_not_supported,
+::enums::errc::value_too_large,
+::enums::errc::owner_dead,
+::enums::errc::protocol_error,
+::enums::errc::protocol_not_supported,
+::enums::errc::wrong_protocol_type,
+::enums::errc::stream_timeout,
+::enums::errc::timed_out,
+::enums::errc::text_file_busy,
+::enums::errc::operation_would_block,
+};
+constexpr const char enum_strings[1469] = {
+"no_link\0"
+"io_error\0"
+"timed_out\0"
+"no_message\0"
+"owner_dead\0"
+"interrupted\0"
+"bad_address\0"
+"file_exists\0"
+"broken_pipe\0"
+"bad_message\0"
+"invalid_seek\0"
+"message_size\0"
+"network_down\0"
+"not_a_stream\0"
+"not_a_socket\0"
+"network_reset\0"
+"not_connected\0"
+"not_supported\0"
+"no_such_device\0"
+"is_a_directory\0"
+"file_too_large\0"
+"too_many_links\0"
+"address_in_use\0"
+"protocol_error\0"
+"stream_timeout\0"
+"text_file_busy\0"
+"no_such_process\0"
+"not_a_directory\0"
+"no_buffer_space\0"
+"value_too_large\0"
+"no_child_process\0"
+"invalid_argument\0"
+"connection_reset\0"
+"host_unreachable\0"
+"not_enough_memory\0"
+"permission_denied\0"
+"cross_device_link\0"
+"filename_too_long\0"
+"no_lock_available\0"
+"already_connected\0"
+"no_space_on_device\0"
+"operation_canceled\0"
+"connection_aborted\0"
+"connection_refused\0"
+"identifier_removed\0"
+"no_protocol_option\0"
+"bad_file_descriptor\0"
+"too_many_files_open\0"
+"result_out_of_range\0"
+"directory_not_empty\0"
+"network_unreachable\0"
+"no_stream_resources\0"
+"wrong_protocol_type\0"
+"no_message_available\0"
+"read_only_file_system\0"
+"illegal_byte_sequence\0"
+"address_not_available\0"
+"operation_in_progress\0"
+"state_not_recoverable\0"
+"operation_would_block\0"
+"argument_list_too_long\0"
+"argument_out_of_domain\0"
+"function_not_supported\0"
+"protocol_not_supported\0"
+"operation_not_permitted\0"
+"executable_format_error\0"
+"device_or_resource_busy\0"
+"operation_not_supported\0"
+"no_such_file_or_directory\0"
+"no_such_device_or_address\0"
+"address_family_not_supported\0"
+"destination_address_required\0"
+"too_many_files_open_in_system\0"
+"resource_deadlock_would_occur\0"
+"too_many_symbolic_link_levels\0"
+"resource_unavailable_try_again\0"
+"connection_already_in_progress\0"
+"inappropriate_io_control_operation\0"
+};
+constexpr ::enums::errc enum_string_values[78] = {
+::enums::errc::no_link,
+::enums::errc::io_error,
+::enums::errc::timed_out,
+::enums::errc::no_message,
+::enums::errc::owner_dead,
+::enums::errc::interrupted,
+::enums::errc::bad_address,
+::enums::errc::file_exists,
+::enums::errc::broken_pipe,
+::enums::errc::bad_message,
+::enums::errc::invalid_seek,
+::enums::errc::message_size,
+::enums::errc::network_down,
+::enums::errc::not_a_stream,
+::enums::errc::not_a_socket,
+::enums::errc::network_reset,
+::enums::errc::not_connected,
+::enums::errc::not_supported,
+::enums::errc::no_such_device,
+::enums::errc::is_a_directory,
+::enums::errc::file_too_large,
+::enums::errc::too_many_links,
+::enums::errc::address_in_use,
+::enums::errc::protocol_error,
+::enums::errc::stream_timeout,
+::enums::errc::text_file_busy,
+::enums::errc::no_such_process,
+::enums::errc::not_a_directory,
+::enums::errc::no_buffer_space,
+::enums::errc::value_too_large,
+::enums::errc::no_child_process,
+::enums::errc::invalid_argument,
+::enums::errc::connection_reset,
+::enums::errc::host_unreachable,
+::enums::errc::not_enough_memory,
+::enums::errc::permission_denied,
+::enums::errc::cross_device_link,
+::enums::errc::filename_too_long,
+::enums::errc::no_lock_available,
+::enums::errc::already_connected,
+::enums::errc::no_space_on_device,
+::enums::errc::operation_canceled,
+::enums::errc::connection_aborted,
+::enums::errc::connection_refused,
+::enums::errc::identifier_removed,
+::enums::errc::no_protocol_option,
+::enums::errc::bad_file_descriptor,
+::enums::errc::too_many_files_open,
+::enums::errc::result_out_of_range,
+::enums::errc::directory_not_empty,
+::enums::errc::network_unreachable,
+::enums::errc::no_stream_resources,
+::enums::errc::wrong_protocol_type,
+::enums::errc::no_message_available,
+::enums::errc::read_only_file_system,
+::enums::errc::illegal_byte_sequence,
+::enums::errc::address_not_available,
+::enums::errc::operation_in_progress,
+::enums::errc::state_not_recoverable,
+::enums::errc::operation_would_block,
+::enums::errc::argument_list_too_long,
+::enums::errc::argument_out_of_domain,
+::enums::errc::function_not_supported,
+::enums::errc::protocol_not_supported,
+::enums::errc::operation_not_permitted,
+::enums::errc::executable_format_error,
+::enums::errc::device_or_resource_busy,
+::enums::errc::operation_not_supported,
+::enums::errc::no_such_file_or_directory,
+::enums::errc::no_such_device_or_address,
+::enums::errc::address_family_not_supported,
+::enums::errc::destination_address_required,
+::enums::errc::too_many_files_open_in_system,
+::enums::errc::resource_deadlock_would_occur,
+::enums::errc::too_many_symbolic_link_levels,
+::enums::errc::resource_unavailable_try_again,
+::enums::errc::connection_already_in_progress,
+::enums::errc::inappropriate_io_control_operation,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& values<::enums::errc>() noexcept
+{
+return ::enums::detail::errc::values_arr;
+}
+
+template<>
+constexpr ::enumbra::from_integer_result<::enums::errc> from_integer<::enums::errc>(int32_t v) noexcept { 
+for(auto value : values<::enums::errc>()) {
+if(value == static_cast<::enums::errc>(v)) { return { true, static_cast<::enums::errc>(v) }; }
+}
+return { false, ::enums::errc() };
+}
+
+constexpr const char* to_string(const ::enums::errc v) noexcept {
+switch (v) {
+case ::enums::errc::no_link: return &::enums::detail::errc::enum_strings[0];
+case ::enums::errc::io_error: return &::enums::detail::errc::enum_strings[8];
+case ::enums::errc::timed_out: return &::enums::detail::errc::enum_strings[17];
+case ::enums::errc::no_message: return &::enums::detail::errc::enum_strings[27];
+case ::enums::errc::owner_dead: return &::enums::detail::errc::enum_strings[38];
+case ::enums::errc::interrupted: return &::enums::detail::errc::enum_strings[49];
+case ::enums::errc::bad_address: return &::enums::detail::errc::enum_strings[61];
+case ::enums::errc::file_exists: return &::enums::detail::errc::enum_strings[73];
+case ::enums::errc::broken_pipe: return &::enums::detail::errc::enum_strings[85];
+case ::enums::errc::bad_message: return &::enums::detail::errc::enum_strings[97];
+case ::enums::errc::invalid_seek: return &::enums::detail::errc::enum_strings[109];
+case ::enums::errc::message_size: return &::enums::detail::errc::enum_strings[122];
+case ::enums::errc::network_down: return &::enums::detail::errc::enum_strings[135];
+case ::enums::errc::not_a_stream: return &::enums::detail::errc::enum_strings[148];
+case ::enums::errc::not_a_socket: return &::enums::detail::errc::enum_strings[161];
+case ::enums::errc::network_reset: return &::enums::detail::errc::enum_strings[174];
+case ::enums::errc::not_connected: return &::enums::detail::errc::enum_strings[188];
+case ::enums::errc::not_supported: return &::enums::detail::errc::enum_strings[202];
+case ::enums::errc::no_such_device: return &::enums::detail::errc::enum_strings[216];
+case ::enums::errc::is_a_directory: return &::enums::detail::errc::enum_strings[231];
+case ::enums::errc::file_too_large: return &::enums::detail::errc::enum_strings[246];
+case ::enums::errc::too_many_links: return &::enums::detail::errc::enum_strings[261];
+case ::enums::errc::address_in_use: return &::enums::detail::errc::enum_strings[276];
+case ::enums::errc::protocol_error: return &::enums::detail::errc::enum_strings[291];
+case ::enums::errc::stream_timeout: return &::enums::detail::errc::enum_strings[306];
+case ::enums::errc::text_file_busy: return &::enums::detail::errc::enum_strings[321];
+case ::enums::errc::no_such_process: return &::enums::detail::errc::enum_strings[336];
+case ::enums::errc::not_a_directory: return &::enums::detail::errc::enum_strings[352];
+case ::enums::errc::no_buffer_space: return &::enums::detail::errc::enum_strings[368];
+case ::enums::errc::value_too_large: return &::enums::detail::errc::enum_strings[384];
+case ::enums::errc::no_child_process: return &::enums::detail::errc::enum_strings[400];
+case ::enums::errc::invalid_argument: return &::enums::detail::errc::enum_strings[417];
+case ::enums::errc::connection_reset: return &::enums::detail::errc::enum_strings[434];
+case ::enums::errc::host_unreachable: return &::enums::detail::errc::enum_strings[451];
+case ::enums::errc::not_enough_memory: return &::enums::detail::errc::enum_strings[468];
+case ::enums::errc::permission_denied: return &::enums::detail::errc::enum_strings[486];
+case ::enums::errc::cross_device_link: return &::enums::detail::errc::enum_strings[504];
+case ::enums::errc::filename_too_long: return &::enums::detail::errc::enum_strings[522];
+case ::enums::errc::no_lock_available: return &::enums::detail::errc::enum_strings[540];
+case ::enums::errc::already_connected: return &::enums::detail::errc::enum_strings[558];
+case ::enums::errc::no_space_on_device: return &::enums::detail::errc::enum_strings[576];
+case ::enums::errc::operation_canceled: return &::enums::detail::errc::enum_strings[595];
+case ::enums::errc::connection_aborted: return &::enums::detail::errc::enum_strings[614];
+case ::enums::errc::connection_refused: return &::enums::detail::errc::enum_strings[633];
+case ::enums::errc::identifier_removed: return &::enums::detail::errc::enum_strings[652];
+case ::enums::errc::no_protocol_option: return &::enums::detail::errc::enum_strings[671];
+case ::enums::errc::bad_file_descriptor: return &::enums::detail::errc::enum_strings[690];
+case ::enums::errc::too_many_files_open: return &::enums::detail::errc::enum_strings[710];
+case ::enums::errc::result_out_of_range: return &::enums::detail::errc::enum_strings[730];
+case ::enums::errc::directory_not_empty: return &::enums::detail::errc::enum_strings[750];
+case ::enums::errc::network_unreachable: return &::enums::detail::errc::enum_strings[770];
+case ::enums::errc::no_stream_resources: return &::enums::detail::errc::enum_strings[790];
+case ::enums::errc::wrong_protocol_type: return &::enums::detail::errc::enum_strings[810];
+case ::enums::errc::no_message_available: return &::enums::detail::errc::enum_strings[830];
+case ::enums::errc::read_only_file_system: return &::enums::detail::errc::enum_strings[851];
+case ::enums::errc::illegal_byte_sequence: return &::enums::detail::errc::enum_strings[873];
+case ::enums::errc::address_not_available: return &::enums::detail::errc::enum_strings[895];
+case ::enums::errc::operation_in_progress: return &::enums::detail::errc::enum_strings[917];
+case ::enums::errc::state_not_recoverable: return &::enums::detail::errc::enum_strings[939];
+case ::enums::errc::operation_would_block: return &::enums::detail::errc::enum_strings[961];
+case ::enums::errc::argument_list_too_long: return &::enums::detail::errc::enum_strings[983];
+case ::enums::errc::argument_out_of_domain: return &::enums::detail::errc::enum_strings[1006];
+case ::enums::errc::function_not_supported: return &::enums::detail::errc::enum_strings[1029];
+case ::enums::errc::protocol_not_supported: return &::enums::detail::errc::enum_strings[1052];
+case ::enums::errc::operation_not_permitted: return &::enums::detail::errc::enum_strings[1075];
+case ::enums::errc::executable_format_error: return &::enums::detail::errc::enum_strings[1099];
+case ::enums::errc::device_or_resource_busy: return &::enums::detail::errc::enum_strings[1123];
+case ::enums::errc::operation_not_supported: return &::enums::detail::errc::enum_strings[1147];
+case ::enums::errc::no_such_file_or_directory: return &::enums::detail::errc::enum_strings[1171];
+case ::enums::errc::no_such_device_or_address: return &::enums::detail::errc::enum_strings[1197];
+case ::enums::errc::address_family_not_supported: return &::enums::detail::errc::enum_strings[1223];
+case ::enums::errc::destination_address_required: return &::enums::detail::errc::enum_strings[1252];
+case ::enums::errc::too_many_files_open_in_system: return &::enums::detail::errc::enum_strings[1281];
+case ::enums::errc::resource_deadlock_would_occur: return &::enums::detail::errc::enum_strings[1311];
+case ::enums::errc::too_many_symbolic_link_levels: return &::enums::detail::errc::enum_strings[1341];
+case ::enums::errc::resource_unavailable_try_again: return &::enums::detail::errc::enum_strings[1371];
+case ::enums::errc::connection_already_in_progress: return &::enums::detail::errc::enum_strings[1402];
+case ::enums::errc::inappropriate_io_control_operation: return &::enums::detail::errc::enum_strings[1433];
+}
+return nullptr;
+}
+
+template<>
+constexpr ::enumbra::from_string_result<::enums::errc> from_string<::enums::errc>(const char* str, ::std::uint16_t len) noexcept {
+::std::uint32_t offset_str = 0;
+::std::uint32_t offset_enum = 0;
+::std::uint32_t count = 0;
+switch(len) {
+case 7: offset_str = 0; offset_enum = 0; count = 1; break;
+case 8: offset_str = 8; offset_enum = 1; count = 1; break;
+case 9: offset_str = 17; offset_enum = 2; count = 1; break;
+case 10: offset_str = 27; offset_enum = 3; count = 2; break;
+case 11: offset_str = 49; offset_enum = 5; count = 5; break;
+case 12: offset_str = 109; offset_enum = 10; count = 5; break;
+case 13: offset_str = 174; offset_enum = 15; count = 3; break;
+case 14: offset_str = 216; offset_enum = 18; count = 8; break;
+case 15: offset_str = 336; offset_enum = 26; count = 4; break;
+case 16: offset_str = 400; offset_enum = 30; count = 4; break;
+case 17: offset_str = 468; offset_enum = 34; count = 6; break;
+case 18: offset_str = 576; offset_enum = 40; count = 6; break;
+case 19: offset_str = 690; offset_enum = 46; count = 7; break;
+case 20: offset_str = 830; offset_enum = 53; count = 1; break;
+case 21: offset_str = 851; offset_enum = 54; count = 6; break;
+case 22: offset_str = 983; offset_enum = 60; count = 4; break;
+case 23: offset_str = 1075; offset_enum = 64; count = 4; break;
+case 25: offset_str = 1171; offset_enum = 68; count = 2; break;
+case 28: offset_str = 1223; offset_enum = 70; count = 2; break;
+case 29: offset_str = 1281; offset_enum = 72; count = 3; break;
+case 30: offset_str = 1371; offset_enum = 75; count = 2; break;
+case 34: offset_str = 1433; offset_enum = 77; count = 1; break;
+default: return {false, ::enums::errc()};
+}
+for (::std::uint32_t i = 0; i < count; i++) {
+if (enumbra::detail::streq_known_size(::enums::detail::errc::enum_strings + offset_str + (i * (len + 1)), str, len)) {
+return {true, ::enums::detail::errc::enum_string_values[offset_enum + i]};
+}
+}
+return {false, ::enums::errc()};
+}
+
+} // enumbra
+
+namespace enums {
+// test_flags Definition
+enum class test_flags : uint32_t {
+B = 1,
+C = 2,
+};
+
+namespace detail::test_flags {
+constexpr ::enums::test_flags flags_arr[2] =
+{
+::enums::test_flags::B,
+::enums::test_flags::C,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& flags<::enums::test_flags>() noexcept
+{
+return ::enums::detail::test_flags::flags_arr;
+}
+
+constexpr void zero(::enums::test_flags& value) noexcept { value = static_cast<::enums::test_flags>(0); }
+constexpr bool test(::enums::test_flags value, ::enums::test_flags flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
+constexpr void set(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
+constexpr void unset(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
+constexpr void toggle(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
+constexpr bool is_all(::enums::test_flags value) noexcept { return static_cast<uint32_t>(value) >= 0x3; }
+constexpr bool is_any(::enums::test_flags value) noexcept { return static_cast<uint32_t>(value) > 0; }
+constexpr bool is_none(::enums::test_flags value) noexcept { return static_cast<uint32_t>(value) == 0; }
+constexpr bool is_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(value); return n && !(n & (n - 1)); }
+
+// ::enums::test_flags Operator Overloads
+constexpr ::enums::test_flags operator~(const ::enums::test_flags a) noexcept { return static_cast<::enums::test_flags>(~static_cast<uint32_t>(a)); }
+constexpr ::enums::test_flags operator|(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
+constexpr ::enums::test_flags operator&(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
+constexpr ::enums::test_flags operator^(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
+constexpr ::enums::test_flags& operator|=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a | b; }
+constexpr ::enums::test_flags& operator&=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a & b; }
+constexpr ::enums::test_flags& operator^=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a ^ b; }
+} // enumbra
+
+namespace enums {
+// test_nodefault Definition
+enum class test_nodefault : uint16_t {
+B = 1,
+C = 2,
+};
+
+namespace detail::test_nodefault {
+constexpr ::enums::test_nodefault flags_arr[2] =
+{
+::enums::test_nodefault::B,
+::enums::test_nodefault::C,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& flags<::enums::test_nodefault>() noexcept
+{
+return ::enums::detail::test_nodefault::flags_arr;
+}
+
+constexpr void zero(::enums::test_nodefault& value) noexcept { value = static_cast<::enums::test_nodefault>(0); }
+constexpr bool test(::enums::test_nodefault value, ::enums::test_nodefault flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+constexpr void set(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+constexpr void unset(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+constexpr void toggle(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+constexpr bool is_all(::enums::test_nodefault value) noexcept { return static_cast<uint16_t>(value) >= 0x3; }
+constexpr bool is_any(::enums::test_nodefault value) noexcept { return static_cast<uint16_t>(value) > 0; }
+constexpr bool is_none(::enums::test_nodefault value) noexcept { return static_cast<uint16_t>(value) == 0; }
+constexpr bool is_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+
+// ::enums::test_nodefault Operator Overloads
+constexpr ::enums::test_nodefault operator~(const ::enums::test_nodefault a) noexcept { return static_cast<::enums::test_nodefault>(~static_cast<uint16_t>(a)); }
+constexpr ::enums::test_nodefault operator|(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr ::enums::test_nodefault operator&(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr ::enums::test_nodefault operator^(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr ::enums::test_nodefault& operator|=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a | b; }
+constexpr ::enums::test_nodefault& operator&=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a & b; }
+constexpr ::enums::test_nodefault& operator^=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a ^ b; }
+} // enumbra
+
+namespace enums {
+// TestSparseFlags Definition
+enum class TestSparseFlags : uint16_t {
+B = 1,
+C = 4,
+D = 16,
+};
+
+namespace detail::TestSparseFlags {
+constexpr ::enums::TestSparseFlags flags_arr[3] =
+{
+::enums::TestSparseFlags::B,
+::enums::TestSparseFlags::C,
+::enums::TestSparseFlags::D,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& flags<::enums::TestSparseFlags>() noexcept
+{
+return ::enums::detail::TestSparseFlags::flags_arr;
+}
+
+constexpr void zero(::enums::TestSparseFlags& value) noexcept { value = static_cast<::enums::TestSparseFlags>(0); }
+constexpr bool test(::enums::TestSparseFlags value, ::enums::TestSparseFlags flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+constexpr void set(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+constexpr void unset(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+constexpr void toggle(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+constexpr bool is_all(::enums::TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) >= 0x15; }
+constexpr bool is_any(::enums::TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) > 0; }
+constexpr bool is_none(::enums::TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) == 0; }
+constexpr bool is_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+
+// ::enums::TestSparseFlags Operator Overloads
+constexpr ::enums::TestSparseFlags operator~(const ::enums::TestSparseFlags a) noexcept { return static_cast<::enums::TestSparseFlags>(~static_cast<uint16_t>(a)); }
+constexpr ::enums::TestSparseFlags operator|(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSparseFlags operator&(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSparseFlags operator^(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSparseFlags& operator|=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a | b; }
+constexpr ::enums::TestSparseFlags& operator&=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a & b; }
+constexpr ::enums::TestSparseFlags& operator^=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a ^ b; }
+} // enumbra
+
+namespace enums {
+// TestSingleFlag Definition
+enum class TestSingleFlag : uint16_t {
+C = 4,
+};
+
+namespace detail::TestSingleFlag {
+constexpr ::enums::TestSingleFlag flags_arr[1] =
+{
+::enums::TestSingleFlag::C,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& flags<::enums::TestSingleFlag>() noexcept
+{
+return ::enums::detail::TestSingleFlag::flags_arr;
+}
+
+constexpr void zero(::enums::TestSingleFlag& value) noexcept { value = static_cast<::enums::TestSingleFlag>(0); }
+constexpr bool test(::enums::TestSingleFlag value, ::enums::TestSingleFlag flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+constexpr void set(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+constexpr void unset(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+constexpr void toggle(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+constexpr bool is_all(::enums::TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) >= 0x4; }
+constexpr bool is_any(::enums::TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) > 0; }
+constexpr bool is_none(::enums::TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) == 0; }
+constexpr bool is_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+
+// ::enums::TestSingleFlag Operator Overloads
+constexpr ::enums::TestSingleFlag operator~(const ::enums::TestSingleFlag a) noexcept { return static_cast<::enums::TestSingleFlag>(~static_cast<uint16_t>(a)); }
+constexpr ::enums::TestSingleFlag operator|(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSingleFlag operator&(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSingleFlag operator^(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(b)); }
+constexpr ::enums::TestSingleFlag& operator|=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a | b; }
+constexpr ::enums::TestSingleFlag& operator&=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a & b; }
+constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a ^ b; }
+} // enumbra
+
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::test_string_parse> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::errc> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, -1, 5, false, 64, 64> { };
+template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::Unsigned64Test> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, 0, 4, false, 64, 64> { };
+template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::Signed64Test> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, (-9223372036854775807 - 1), 3, false, 64, 64> { };
+template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::Signed32Test> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, (-2147483647 - 1), 3, false, 32, 32> { };
+template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::Signed16Test> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, (-32767 - 1), 3, false, 16, 16> { };
+template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::Signed8Test> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, (-127 - 1), 3, false, 8, 8> { };
+template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::test_value> : enumbra::detail::value_enum_info<int32_t, 0, 2, 0, 3, true, 3, 2> { };
+template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::HexDiagonal> : enumbra::detail::value_enum_info<uint8_t, 0, 5, 0, 6, true, 3, 3> { };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest1> : enumbra::detail::value_enum_info<int8_t, -2, 1, -2, 4, true, 2, 2> { };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest2> : enumbra::detail::value_enum_info<int8_t, -3, 0, -3, 4, true, 3, 2> { };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest3> : enumbra::detail::value_enum_info<int8_t, -3, 4, -3, 2, false, 4, 3> { };
+template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest4> : enumbra::detail::value_enum_info<int8_t, -4, 3, -4, 2, false, 3, 3> { };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 0, 0, 0, 1, true, 1, 0> { };
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, 0, 1, true, 1, 0> { };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0> { };
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, 4, 1, true, 4, 0> { };
+template<> struct enumbra::detail::base_helper<enums::errc> : enumbra::detail::type_info<true, true, false> { };
 template<> struct enumbra::detail::value_enum_helper<enums::errc> : enumbra::detail::value_enum_info<int32_t, 1, 140, 1, 78, false, 9, 8> { };
+template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::test_flags> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
+template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::test_nodefault> : enumbra::detail::flags_enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2> { };
+template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::TestSparseFlags> : enumbra::detail::flags_enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5> { };
+template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::TestSingleFlag> : enumbra::detail::flags_enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3> { };
 // Template Specializations End

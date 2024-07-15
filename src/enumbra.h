@@ -30,6 +30,22 @@ namespace enumbra {
 			{ "c_style", IncludeGuardStyle::CStyle },
 		} };
 
+        enum class SIMDCodeGen {
+            Scalar64,
+            Scalar32,
+            SSE2,
+            AVX,
+            AVX2
+        };
+        constexpr std::array<std::pair<std::string_view, SIMDCodeGen>, 5> SIMDCodeGenMapped
+        { {
+                 {"scalar64", SIMDCodeGen::Scalar64},
+                 {"scalar32", SIMDCodeGen::Scalar32},
+                 {"sse2", SIMDCodeGen::SSE2},
+                 {"avx", SIMDCodeGen::AVX},
+                 {"avx2", SIMDCodeGen::AVX2},
+        } };
+
 		enum class StringTableLayout {
 			None,
 			NameOnly,
@@ -44,7 +60,7 @@ namespace enumbra {
 
 		struct enum_size_type {
 			std::string name;
-			uint64_t bits{ 0 };
+			int32_t bits{ 0 };
 			bool is_signed{ true };
 			std::string type_name;
 			int128 min_possible_value{ absl::Int128Max() };
@@ -54,7 +70,7 @@ namespace enumbra {
 		struct cpp_config
 		{
 			std::vector<std::string> output_namespace;
-			std::vector<std::string> preamble_text{};
+			std::vector<std::string> preamble_text;
 			std::vector<std::string> additional_includes;
 			IncludeGuardStyle include_guard_style{ IncludeGuardStyle::PragmaOnce };
 			bool time_generated_in_header{ true };

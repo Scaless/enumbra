@@ -1,0 +1,22 @@
+{
+  "enums": {
+    "block_name": "blockname",
+    "flags_enum_default_value_style": "zero",
+    "value_enum_default_value_style": "min",
+    "flags_enums": [
+      {
+        "name": "minimal",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 2
+          }
+        ]
+      }
+    ]
+  }
+}

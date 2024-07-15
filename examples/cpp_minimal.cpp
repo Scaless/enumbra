@@ -1,3 +1,5 @@
-#include "enumbra_test.hpp"
+#include "enumbra_minimal.hpp"
 
-int main() { return 0; }
+int main() {
+    return 0;
+}

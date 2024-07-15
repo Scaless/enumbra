@@ -1,6 +1,6 @@
 #include "cpp_generator.h"
-#include <vector>
 #include <set>
+#include <vector>
 
 using namespace enumbra;
 using namespace enumbra::cpp;
@@ -13,31 +13,56 @@ std::string to_upper(const std::string &str) {
     return copy;
 }
 
-struct Int128FormatValue {
+struct Int128Format {
     int128 value;
     int64_t bits;
     bool bIsSigned;
 };
 
+std::string format_int128(Int128Format c) {
+    if (c.bIsSigned) {
+        // If a value is the exact minimum of its storage type, we need to output it as an expression
+        // because negative literals are actually a positive literal with a unary minus applied to them.
+        // I'm not making this up. Fantastic language design.
+        // https://stackoverflow.com/a/11270104
+        const bool bIsMinValueForType =
+                (c.bits == 8 && c.value == INT8_MIN) || (c.bits == 16 && c.value == INT16_MIN) ||
+                (c.bits == 32 && c.value == INT32_MIN) || (c.bits == 64 && c.value == INT64_MIN);
+        if (bIsMinValueForType) {
+            return fmt::format("({0} - 1)", static_cast<int64_t>(c.value + 1));
+        }
+
+        return fmt::format("{0}", static_cast<int64_t>(c.value));
+    } else {
+        const uint64_t value = static_cast<uint64_t>(c.value);
+        // TODO: Decide on a consistent behavior to format here, or make it customizable?
+        if (value > 0xFF) {
+            // Note: I find it disappointing that 0XFF {:#X} and 0xff {:#x} are fmt options,
+            // but not 0xFF which I think is the most readable format :)
+            return fmt::format("0x{0:X}", value);
+        } else {
+            return fmt::format("{0}", value);
+        }
+    }
+}
+
 // https://wgml.pl/blog/formatting-user-defined-types-fmt.html
 template<>
-struct fmt::formatter<Int128FormatValue> {
+struct fmt::formatter<Int128Format> {
     template<typename ParseContext>
     constexpr auto parse(ParseContext &ctx) {
         return ctx.begin();
     }
 
-    auto format(Int128FormatValue c, format_context &ctx) {
+    auto format(Int128Format c, format_context &ctx) {
         if (c.bIsSigned) {
             // If a value is the exact minimum of its storage type, we need to output it as an expression
             // because negative literals are actually a positive literal with a unary minus applied to them.
             // I'm not making this up. Fantastic language design.
             // https://stackoverflow.com/a/11270104
             const bool bIsMinValueForType =
-                    (c.bits == 8 && c.value == INT8_MIN) ||
-                    (c.bits == 16 && c.value == INT16_MIN) ||
-                    (c.bits == 32 && c.value == INT32_MIN) ||
-                    (c.bits == 64 && c.value == INT64_MIN);
+                    (c.bits == 8 && c.value == INT8_MIN) || (c.bits == 16 && c.value == INT16_MIN) ||
+                    (c.bits == 32 && c.value == INT32_MIN) || (c.bits == 64 && c.value == INT64_MIN);
             if (bIsMinValueForType) {
                 return fmt::format_to(ctx.out(), "({0} - 1)", static_cast<int64_t>(c.value + 1));
             }
@@ -62,10 +87,11 @@ uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle &style, const enu
         case FlagsEnumDefaultValueStyle::Zero:
             return 0;
         case FlagsEnumDefaultValueStyle::Min: {
-            auto m = std::min_element(definition.values.begin(), definition.values.end(),
-                                      [](const enum_entry &lhs, const enum_entry &rhs) {
-                                          return lhs.p_value < rhs.p_value;
-                                      });
+            auto m =
+                    std::min_element(definition.values.begin(), definition.values.end(),
+                                     [](const enum_entry &lhs, const enum_entry &rhs) {
+                                         return lhs.p_value < rhs.p_value;
+                                     });
             if (m != definition.values.end()) {
                 return static_cast<uint64_t>(m->p_value);
             } else {
@@ -73,10 +99,11 @@ uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle &style, const enu
             }
         }
         case FlagsEnumDefaultValueStyle::Max: {
-            auto m = std::max_element(definition.values.begin(), definition.values.end(),
-                                      [](const enum_entry &lhs, const enum_entry &rhs) {
-                                          return lhs.p_value < rhs.p_value;
-                                      });
+            auto m =
+                    std::max_element(definition.values.begin(), definition.values.end(),
+                                     [](const enum_entry &lhs, const enum_entry &rhs) {
+                                         return lhs.p_value < rhs.p_value;
+                                     });
             if (m != definition.values.end()) {
                 return static_cast<uint64_t>(m->p_value);
             } else {
@@ -104,10 +131,11 @@ uint64_t get_flags_enum_value(const FlagsEnumDefaultValueStyle &style, const enu
 enum_entry get_value_enum_entry(const ValueEnumDefaultValueStyle &style, const enum_definition &definition) {
     switch (style) {
         case ValueEnumDefaultValueStyle::Min: {
-            auto m = std::min_element(definition.values.begin(), definition.values.end(),
-                                      [](const enum_entry &lhs, const enum_entry &rhs) {
-                                          return lhs.p_value < rhs.p_value;
-                                      });
+            auto m =
+                    std::min_element(definition.values.begin(), definition.values.end(),
+                                     [](const enum_entry &lhs, const enum_entry &rhs) {
+                                         return lhs.p_value < rhs.p_value;
+                                     });
             if (m != definition.values.end()) {
                 return *m;
             } else {
@@ -116,10 +144,11 @@ enum_entry get_value_enum_entry(const ValueEnumDefaultValueStyle &style, const e
             }
         }
         case ValueEnumDefaultValueStyle::Max: {
-            auto m = std::max_element(definition.values.begin(), definition.values.end(),
-                                      [](const enum_entry &lhs, const enum_entry &rhs) {
-                                          return lhs.p_value < rhs.p_value;
-                                      });
+            auto m =
+                    std::max_element(definition.values.begin(), definition.values.end(),
+                                     [](const enum_entry &lhs, const enum_entry &rhs) {
+                                         return lhs.p_value < rhs.p_value;
+                                     });
             if (m != definition.values.end()) {
                 return *m;
             } else {
@@ -169,16 +198,16 @@ bool enum_meta_has_unique_enum_names(const enumbra::enum_meta_config &enum_meta)
     for (auto &v: enum_meta.value_enum_definitions) {
         auto seen = seen_names.find(v.name);
         if (seen != seen_names.end()) {
-            throw std::logic_error(
-                    "enum_meta_has_unique_enum_names: Value-Enum name is not unique (name = " + *seen + ")");
+            throw std::logic_error("enum_meta_has_unique_enum_names: Value-Enum name is not unique (name = " + *seen +
+                                   ")");
         }
         seen_names.insert(v.name);
     }
     for (auto &v: enum_meta.flag_enum_definitions) {
         auto seen = seen_names.find(v.name);
         if (seen != seen_names.end()) {
-            throw std::logic_error(
-                    "enum_meta_has_unique_enum_names: Flags-Enum name is not unique (name = " + *seen + ")");
+            throw std::logic_error("enum_meta_has_unique_enum_names: Flags-Enum name is not unique (name = " + *seen +
+                                   ")");
         }
         seen_names.insert(v.name);
     }
@@ -217,9 +246,8 @@ bool is_flags_set_contiguous(const std::set<int128> flags) {
     return true;
 }
 
-
-const std::string &
-cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enum_meta_config &enum_meta) {
+const std::string &cpp_generator::generate_cpp_output(const enumbra_config &cfg,
+                                                      const enumbra::enum_meta_config &enum_meta) {
     auto &cpp = cfg.cpp_config;
     Output.clear();
 
@@ -230,38 +258,40 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     // Setting up re-usable tokens
     const std::string def_macro = fmt::format("ENUMBRA_{}_H", to_upper(enum_meta.block_name));
 
+
+
     // Enumbra pre-preamble
-    write_line("// THIS FILE WAS GENERATED BY A TOOL: https://github.com/Scaless/enumbra");
-    write_line("// It is highly recommended that you not make manual edits to this file,");
-    write_line("// as they will be overwritten when the file is re-generated.");
+    wl("// THIS FILE WAS GENERATED BY A TOOL: https://github.com/Scaless/enumbra");
+    wl("// It is highly recommended that you not make manual edits to this file,");
+    wl("// as they will be overwritten when the file is re-generated.");
     if (cfg.cpp_config.time_generated_in_header) {
         std::time_t time_point = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         char time_buf[255];
         ctime_s(time_buf, 255, &time_point);
-        write_line("// Generated by enumbra v{} on {}", kEnumbraVersion, time_buf);
+        wl("// Generated by enumbra v{} on {}", kEnumbraVersion, time_buf);
     } else {
-        write_line("// Generated by enumbra v{}", kEnumbraVersion);
+        wl("// Generated by enumbra v{}", kEnumbraVersion);
     }
-    write_linefeed();
+    wlf();
 
     // Custom preamble
     for (const auto &line: cpp.preamble_text) {
-        write_line(line);
+        wl(line);
     }
     if (!cpp.preamble_text.empty()) {
-        write_linefeed();
+        wlf();
     }
 
     // INCLUDE GUARD
     switch (cpp.include_guard_style) {
         case enumbra::cpp::IncludeGuardStyle::PragmaOnce:
-            write_line("#pragma once");
-            write_linefeed();
+            wl("#pragma once");
+            wlf();
             break;
         case enumbra::cpp::IncludeGuardStyle::CStyle:
-            write_line("#ifndef {0}", def_macro);
-            write_line("#define {0}", def_macro);
-            write_linefeed();
+            wl("#ifndef {0}", def_macro);
+            wl("#define {0}", def_macro);
+            wlf();
             break;
         case enumbra::cpp::IncludeGuardStyle::None:
         default:
@@ -269,9 +299,9 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
     }
 
     // INCLUDES
-    write_line("#include <cstdint>");
+    wl("#include <cstdint>");
     for (const auto &inc: cpp.additional_includes) {
-        write_line("#include {}", inc);
+        wl("#include {}", inc);
     }
 
     // REQUIRED MACROS
@@ -315,7 +345,7 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION)";
 
         write(macro_strings, enumbra_required_macros_version);
-        write_linefeed();
+        wlf();
     }
 
     // OPTIONAL MACRO DEFINITIONS
@@ -355,13 +385,13 @@ cpp_generator::generate_cpp_output(const enumbra_config &cfg, const enumbra::enu
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION)";
 
         write(macro_strings, enumbra_optional_macros_version);
-        write_linefeed();
+        wlf();
     }
 
     // TEMPLATES
     {
         // Increment this if templates below are modified.
-        const int enumbra_templates_version = 17;
+        const int enumbra_templates_version = 18;
         const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -517,6 +547,20 @@ namespace enumbra {{
         bool success;
         T value;
     }};
+
+    // Begin Default Templates
+    template<class T>
+    constexpr from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
+
+    template<class T>
+    constexpr auto& values() noexcept = delete;
+
+    template<class T>
+    constexpr auto& flags() noexcept = delete;
+
+    template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
+    constexpr from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
+    // End Default Templates
 }} // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
@@ -528,41 +572,20 @@ namespace enumbra {{
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION)";
 
-        write_line(str_templates, enumbra_templates_version);
-        write_linefeed();
+        wl(str_templates, enumbra_templates_version);
+        wlf();
     }
 
     std::vector<std::string> template_specializations;
 
     // Construct the full namespace for templates
-    std::string full_ns;
-    for (auto &ns: cpp.output_namespace) {
-        full_ns += ns + "::";
+    std::string enum_ns;
+    for (size_t i = 0; i < cpp.output_namespace.size(); i++) {
+        enum_ns += cpp.output_namespace[i];
+        if (i != (cpp.output_namespace.size() - 1)) {
+            enum_ns += "::";
+        }
     }
-
-    // START NAMESPACE
-    for (const auto &ns: cpp.output_namespace) {
-        write_line("namespace {} {{", ns);
-    }
-
-    // Default Templates
-    const std::string default_templates = R"(
-    // Begin Default Templates
-    template<class T>
-    constexpr ::enumbra::from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
-
-    template<class T>
-    constexpr auto& values() noexcept = delete;
-
-    template<class T>
-    constexpr auto& flags() noexcept = delete;
-
-    template<class T, class underlying_type = typename ::enumbra::detail::base_helper<T>::base_type>
-    constexpr ::enumbra::from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
-    // End Default Templates
-
-)";
-    write(default_templates);
 
     // VALUE ENUM DEFINITIONS
     for (auto &e: enum_meta.value_enum_definitions) {
@@ -584,9 +607,9 @@ namespace enumbra {{
         seen_names.clear();
 
         // 2. Enum must have at least 1 value
-        if (e.values.size() == 0) {
-            throw std::runtime_error(
-                    "ENUM DEFINITIONS Precondition Check 2: Enum does not contain any values (name = " + e.name + ")");
+        if (e.values.empty()) {
+            throw std::runtime_error(fmt::format(
+                    "ENUM DEFINITIONS Precondition Check 2: Enum does not contain any values (name = {})", e.name));
         }
 
         // Get references and metadata for relevant enum values that we will need
@@ -598,10 +621,11 @@ namespace enumbra {{
         const bool is_size_type_signed = cpp.get_size_type_from_index(e.size_type_index).is_signed;
         const int64_t type_bits = cpp.get_size_type_from_index(e.size_type_index).bits;
 
-        const int64_t max_abs_representable_signed = std::max(std::abs(static_cast<int64_t>(min_entry.p_value) - 1),
-                                                              static_cast<int64_t>(max_entry.p_value));
-        const uint64_t max_abs_representable = is_size_type_signed ? max_abs_representable_signed
-                                                                   : static_cast<uint64_t>(max_entry.p_value);
+        const int64_t max_abs_representable_signed =
+                std::max(std::abs(static_cast<int64_t>(min_entry.p_value) - 1),
+                         static_cast<int64_t>(max_entry.p_value));
+        const uint64_t max_abs_representable =
+                is_size_type_signed ? max_abs_representable_signed : static_cast<uint64_t>(max_entry.p_value);
 
         size_t bits_required_storage = get_storage_bits_required(max_abs_representable);
         const size_t bits_required_transmission = get_transmission_bits_required(max_entry.p_value - min_entry.p_value);
@@ -669,7 +693,6 @@ namespace enumbra {{
         };
         auto string_tables = generate_string_lookup_tables();
 
-
         // Determine if all values are unique, or if some enum value names overlap.
         // TODO: Enforce if flag is set
         std::set<int128> unique_values;
@@ -681,31 +704,45 @@ namespace enumbra {{
         // TODO: Enforce if flag is set
         bool is_contiguous = is_value_set_contiguous(unique_values);
 
+        // Build fmt args
+        push("enum_ns", enum_ns);
+        push("enum_name", e.name);
+        push("enum_detail_ns", fmt::format("::{}::detail::{}", enum_ns, e.name));
+        push("enum_name_fq", fmt::format("::{}::{}", enum_ns, e.name));
+        push("size_type", size_type);
+        push("entry_count", std::to_string(entry_count));
+        push("max_v", format_int128({max_entry.p_value, type_bits, is_size_type_signed}));
+        push("min_v", format_int128({min_entry.p_value, type_bits, is_size_type_signed}));
+
+        // START NAMESPACE
+        wvl("namespace {enum_ns} {{");
+
         // Definition
-        wl_tab(1, "// {} Definition", e.name);
+        wvl("// {enum_name} Definition");
         {
-            wl_tab(1, "enum class {0} : {1} {{", e.name, size_type);
+            wvl("enum class {enum_name} : {size_type} {{");
             for (const auto &v: e.values) {
-                wl_tab(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
+                wl("{} = {},", v.name, Int128Format{v.p_value, type_bits, is_size_type_signed});
             }
-            wl_tab(1, "}};");
+            wvl("}};");
         }
-        write_linefeed();
+        wlf();
 
         // begin detail namespace
-        wl_tab(1, "namespace detail::{0} {{", e.name);
+        wvl("namespace detail::{enum_name} {{");
 
         // values_arr
-        wl_tab(2, "constexpr ::{2}{0} values_arr[{1}] =", e.name, entry_count, full_ns);
-        wl_tab(2, "{{");
+        wvl("constexpr {enum_name_fq} values_arr[{entry_count}] =");
+        wvl("{{");
         for (const auto &v: e.values) {
-            wl_tab(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+            push("val_name", v.name);
+            wvl("{enum_name_fq}::{val_name},");
+            pop("val_name");
         }
-        wl_tab(2, "}};");
+        wvl("}};");
 
-        const bool bStringTableSameAsValuesArray =
-                std::equal(e.values.cbegin(), e.values.cend(),
-                           string_tables.entries.cbegin(), string_tables.entries.cend());
+        const bool bStringTableSameAsValuesArray = std::equal(
+                e.values.cbegin(), e.values.cend(), string_tables.entries.cbegin(), string_tables.entries.cend());
         if (e.values.size() > 1) {
             // enum_strings
             size_t total_char_count = 0;
@@ -714,172 +751,184 @@ namespace enumbra {{
                 total_char_count += 1; // null terminator
             }
             total_char_count += 1; // Final terminator
-            wl_tab(2, "constexpr const char enum_strings[{0}] = {{", total_char_count);
+            wl("constexpr const char enum_strings[{0}] = {{", total_char_count);
             for (auto &s: string_tables.entries) {
-                wl_tab(3, R"("{0}\0")", s.name);
+                wl(R"("{0}\0")", s.name);
             }
-            wl_tab(2, "}};");
+            wvl("}};");
 
             if (!bStringTableSameAsValuesArray) {
                 // enum_string_values
-                wl_tab(2, "constexpr ::{2}{1} enum_string_values[{0}] = {{", entry_count, e.name, full_ns);
+                wvl("constexpr {enum_name_fq} enum_string_values[{entry_count}] = {{");
                 for (auto &v: string_tables.entries) {
-                    wl_tab(3, "::{2}{1}::{0},", v.name, e.name, full_ns);
+                    push("val_name", v.name);
+                    wvl("{enum_name_fq}::{val_name},");
+                    pop("val_name");
                 }
-                wl_tab(2, "}};");
+                wvl("}};");
             }
         }
 
         // End detail namespace
-        wl_tab(1, "}}");
-        write_linefeed();
+        wvl("}}");
+        wlf();
 
-        wl_tab(1, "template<>");
-        wl_tab(1, "constexpr auto& values<{0}>() noexcept", e.name);
-        wl_tab(1, "{{");
-        wl_tab(2, "return detail::{0}::values_arr;", e.name);
-        wl_tab(1, "}}");
-        write_linefeed();
+        // END NAMESPACE
+        for (auto ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
+            wl("}} // namespace {}", *ns);
+        }
+        wlf();
+
+        // Begin enumbra namespace
+        wvl("namespace enumbra {{");
+
+        wvl("template<>");
+        wvl("constexpr auto& values<::{enum_ns}::{enum_name}>() noexcept");
+        wvl("{{");
+        wvl("return {enum_detail_ns}::values_arr;");
+        wvl("}}");
+        wlf();
 
         // from_integer variations
-        wl_tab(1, "template<>", e.name);
-        wl_tab(1, "constexpr ::enumbra::from_integer_result<{0}> from_integer<{0}>({1} v) noexcept {{ ", e.name, size_type);
+        wvl("template<>");
+        wvl("constexpr ::enumbra::from_integer_result<{enum_name_fq}> from_integer<{enum_name_fq}>({size_type} v) noexcept {{ ");
         if (e.values.size() == 1) {
-
-            wl_tab(2, "if({1} == v) {{ return {{ true, static_cast<{0}>(v) }}; }}",
-                   e.name,
-                   Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
-            );
-            wl_tab(2, "return {{ false, {0}() }};", e.name);
-            wl_tab(1, "}}");
+            wvl("if({max_v} == v) {{ return {{ true, static_cast<{enum_name_fq}>(v) }}; }}");
+            wvl("return {{ false, {enum_name_fq}() }};");
+            wvl("}}");
         } else if (is_contiguous) {
-            if ((min_entry.p_value == 0) &&
-                !is_size_type_signed) // Unsigned values can't go below 0 so we just need to check that we're <= max
-            {
-                wl_tab(2, "if(v <= {1}) {{ return {{ true, static_cast<{0}>(v) }}; }}",
-                       e.name,
-                       Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
-                );
-                wl_tab(2, "return {{ false, {0}() }};", e.name);
-                wl_tab(1, "}}");
+            // Unsigned values can't go below 0 so we just need to check that we're <= max
+            if ((min_entry.p_value == 0) && !is_size_type_signed) {
+                wvl("if(v <= {max_v}) {{ return {{ true, static_cast<{enum_name_fq}>(v) }}; }}");
+                wvl("return {{ false, {enum_name_fq}() }};");
+                wvl("}}");
             } else {
-                wl_tab(2, "if(({1} <= v) && (v <= {2})) {{ return {{ true, static_cast<{0}>(v) }}; }}",
-                       e.name,
-                       Int128FormatValue{min_entry.p_value, type_bits, is_size_type_signed},
-                       Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed}
-                );
-                wl_tab(2, "return {{ false, {0}() }};", e.name);
-                wl_tab(1, "}}");
+                wvl("if(({min_v} <= v) && (v <= {max_v})) {{ return {{ true, static_cast<{enum_name_fq}>(v) }}; }}");
+                wvl("return {{ false, {enum_name_fq}() }};");
+                wvl("}}");
             }
         } else {
-            wl_tab(2, "for(auto value : values<{0}>()) {{", e.name);
-            wl_tab(3, "if(value == static_cast<{0}>(v)) {{ return {{ true, static_cast<{0}>(v) }}; }}", e.name);
-            wl_tab(2, "}}");
-            wl_tab(2, "return {{ false, {0}() }};", e.name);
-            wl_tab(1, "}}");
+            wvl("for(auto value : values<{enum_name_fq}>()) {{");
+            wvl("if(value == static_cast<{enum_name_fq}>(v)) {{ return {{ true, static_cast<{enum_name_fq}>(v) }}; }}");
+            wvl("}}");
+            wvl("return {{ false, {enum_name_fq}() }};");
+            wvl("}}");
         }
-        write_linefeed();
+        wlf();
 
         // String Functions
-        wl_tab(1, "constexpr const char* to_string(const {0} v) noexcept {{", e.name);
-        wl_tab(2, "switch (v) {{");
+        wvl("constexpr const char* to_string(const {enum_name_fq} v) noexcept {{");
+        wvl("switch (v) {{");
         if (string_tables.entries.size() == 1) {
             for (auto &v: e.values) {
-                wl_tab(3, "case {1}::{0}: return \"{0}\";", v.name, e.name);
+                push("val_name", v.name);
+                wvl("case {enum_name_fq}::{val_name}: return \"{val_name}\";");
+                pop("val_name");
             }
         } else {
             for (auto &entry: string_tables.tables) {
                 uint32_t offset = entry.offset_str;
                 for (auto &e_name: entry.names) {
-                    wl_tab(3, "case {0}::{1}: return &detail::{0}::enum_strings[{2}];", e.name, e_name, offset);
+                    push("val_name", e_name);
+                    push("offset", std::to_string(offset));
+                    wvl("case {enum_name_fq}::{val_name}: return &::{enum_ns}::detail::{enum_name}::enum_strings[{offset}];");
                     offset += entry.size + 1;
+                    pop("offset");
+                    pop("val_name");
                 }
             }
         }
-        wl_tab(2, "}}");
-        wl_tab(2, "return nullptr;");
-        wl_tab(1, "}}");
-        write_linefeed();
+        wvl("}}");
+        wvl("return nullptr;");
+        wvl("}}");
+        wlf();
 
         // from_string
         if (e.values.size() == 1) {
             const auto &v = e.values.at(0);
-            wl_tab(1, "template<>", e.name);
-            wl_tab(1,
-                   "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) noexcept {{",
-                   e.name);
-            wl_tab(2, "if (enumbra::detail::streq_s(\"{0}\", {1}, str, len)) {{",
-                   v.name, v.name.length());
-            wl_tab(3, "return {{true, {0}::{1}}};", e.name, v.name);
-            wl_tab(2, "}}");
-            wl_tab(2, "return {{false, {0}()}};", e.name);
-            wl_tab(1, "}}");
+            push("entry_name", v.name);
+            push("entry_name_len", std::to_string(v.name.length()));
+            wvl("template<>");
+            wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
+            wvl("if (enumbra::detail::streq_s(\"{entry_name}\", {entry_name_len}, str, len)) {{");
+            wvl("return {{true, {enum_name_fq}::{entry_name}}};");
+            wvl("}}");
+            wvl("return {{false, {enum_name_fq}()}};");
+            wvl("}}");
+            pop("entry_name");
+            pop("entry_name_len");
         } else {
-            wl_tab(1, "template<>");
-            wl_tab(1,
-                   "constexpr ::enumbra::from_string_result<{0}> from_string<{0}>(const char* str, ::std::uint16_t len) noexcept {{",
-                   e.name);
+            wvl("template<>");
+            wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
 
             if (string_tables.tables.size() == 1) {
                 auto &first = string_tables.tables.front();
-                wl_tab(2, "if(len != {0}) {{ return {{false, {1}()}}; }}", first.size, e.name);
-
-                wl_tab(2, "constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
-                wl_tab(2, "constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
-                wl_tab(2, "constexpr ::std::uint32_t count = {0};", first.count);
-                wl_tab(2, "for (::std::uint32_t i = 0; i < count; i++) {{");
-                wl_tab(3,
-                       "if (enumbra::detail::streq_fixed_size<{0}>(detail::{1}::enum_strings + offset_str + (i * (len + 1)), str)) {{",
-                       first.size, e.name);
+                push("entry_name_len", std::to_string(first.size));
+                wvl("if(len != {entry_name_len}) {{ return {{false, {enum_name_fq}()}}; }}");
+                wl("constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
+                wl("constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
+                wl("constexpr ::std::uint32_t count = {0};", first.count);
+                wl("for (::std::uint32_t i = 0; i < count; i++) {{");
+                wvl("if (enumbra::detail::streq_fixed_size<{entry_name_len}>({enum_detail_ns}::enum_strings + offset_str + (i * (len + 1)), str)) {{");
+                pop("entry_name_len");
             } else {
-                wl_tab(2, "::std::uint32_t offset_str = 0;");
-                wl_tab(2, "::std::uint32_t offset_enum = 0;");
-                wl_tab(2, "::std::uint32_t count = 0;");
-                wl_tab(2, "switch(len)");
-                wl_tab(2, "{{");
+                wvl("::std::uint32_t offset_str = 0;");
+                wvl("::std::uint32_t offset_enum = 0;");
+                wvl("::std::uint32_t count = 0;");
+                wvl("switch(len) {{");
                 for (auto &entry: string_tables.tables) {
-                    wl_tab(3, "case {0}: offset_str = {1}; offset_enum = {2}; count = {3}; break;",
-                           entry.size, entry.offset_str, entry.offset_enum, entry.count);
+                    wl("case {0}: offset_str = {1}; offset_enum = {2}; count = {3}; break;",
+                       entry.size, entry.offset_str, entry.offset_enum, entry.count);
                 }
-                wl_tab(3, "default: return {{false, {0}()}};", e.name);
-                wl_tab(2, "}}");
-                wl_tab(2, "for (::std::uint32_t i = 0; i < count; i++) {{");
-                wl_tab(3,
-                       "if (enumbra::detail::streq_known_size(detail::{0}::enum_strings + offset_str + (i * (len + 1)), str, len)) {{",
-                       e.name);
+                wvl("default: return {{false, {enum_name_fq}()}};");
+                wvl("}}");
+                wvl("for (::std::uint32_t i = 0; i < count; i++) {{");
+                wvl("if (enumbra::detail::streq_known_size({enum_detail_ns}::enum_strings + offset_str + (i * (len + 1)), str, len)) {{");
             }
 
             if (bStringTableSameAsValuesArray) {
-                wl_tab(4, "return {{true, detail::{0}::values_arr[offset_enum + i]}};", e.name);
+                wvl("return {{true, {enum_detail_ns}::values_arr[offset_enum + i]}};");
             } else {
-                wl_tab(4, "return {{true, detail::{0}::enum_string_values[offset_enum + i]}};", e.name);
+                wvl("return {{true, {enum_detail_ns}::enum_string_values[offset_enum + i]}};");
             }
-            wl_tab(3, "}}");
-            wl_tab(2, "}}");
+            wvl("}}");
+            wvl("}}");
 
-            wl_tab(2, "return {{false, {0}()}};", e.name);
-            wl_tab(1, "}}");
+            wvl("return {{false, {enum_name_fq}()}};");
+            wvl("}}");
         }
 
         // Helper specializations
-        template_specializations.emplace_back(
-                fmt::format(
-                        "template<> struct enumbra::detail::value_enum_helper<{0}{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{{{ }}}};",
-                        full_ns,
-                        e.name,
-                        size_type,
-                        Int128FormatValue{min_entry.p_value, type_bits, is_size_type_signed},
-                        Int128FormatValue{max_entry.p_value, type_bits, is_size_type_signed},
-                        Int128FormatValue{default_entry.p_value, type_bits, is_size_type_signed},
-                        unique_entry_count,
-                        is_contiguous ? "true" : "false",
-                        bits_required_storage,
-                        bits_required_transmission
-                )
+        template_specializations.emplace_back(fmt::format(
+                "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, true, false> {{ }};",
+                enum_ns, e.name));
+
+        template_specializations.emplace_back(fmt::format(
+                                                      "template<> struct enumbra::detail::value_enum_helper<{0}::{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{ }};",
+                                                      enum_ns,
+                                                      e.name,
+                                                      size_type,
+                                                      Int128Format{min_entry.p_value, type_bits, is_size_type_signed},
+                                                      Int128Format{max_entry.p_value, type_bits, is_size_type_signed},
+                                                      Int128Format{default_entry.p_value, type_bits, is_size_type_signed},
+                                                      unique_entry_count,
+                                                      is_contiguous ? "true" : "false",
+                                                      bits_required_storage,
+                                                      bits_required_transmission
+                                              )
         );
 
-        write_linefeed();
+        wlf();
+
+        // end enumbra namespace
+        wl("}} // enumbra");
     }
+
+    clear_store();
+
+    wlf();
+
+
 
     // Flags ENUM DEFINITIONS
     for (auto &e: enum_meta.flag_enum_definitions) {
@@ -891,29 +940,29 @@ namespace enumbra {{
         // 1. Names of contained values must be unique
         std::set<std::string> seen_names;
         for (auto &v: e.values) {
-            auto seen = seen_names.find(v.name);
-            if (seen != seen_names.end()) {
+            auto res = seen_names.insert(v.name);
+            if (!res.second) {
                 throw std::logic_error(
-                        "ENUM DEFINITIONS Check 1: Enum Value Name is not unique (enum name = " + *seen + ")");
+                        fmt::format("Enum Value Name is not unique (Enum = {}, Name = {})", e.name, v.name));
             }
-            seen_names.insert(v.name);
         }
         seen_names.clear();
 
         // 2. Enum must have at least 1 value
-        if (e.values.size() == 0) {
-            throw std::logic_error(
-                    "ENUM DEFINITIONS Check 2: Enum does not contain any values (enum name = " + e.name + ")");
+        if (e.values.empty()) {
+            throw std::logic_error(fmt::format("Enum does not contain any values (Enum = {})", e.name));
         }
 
         // Determine if all values are unique, or if some enum value names overlap.
         // TODO: Enforce if flag is set
         std::set<int128> unique_values;
-        for (auto &v: e.values) { unique_values.insert(v.p_value); }
+        for (auto &v: e.values) {
+            unique_values.insert(v.p_value);
+        }
         const size_t unique_entry_count = unique_values.size();
         if (e.values.size() != unique_values.size()) {
             throw std::logic_error(
-                    "ENUM DEFINITIONS Check 3: Values in enum do not have unique values (enum name = " + e.name + ")");
+                    fmt::format("Values in enum do not have unique values (Enum = {}})", e.name));
         }
 
         // Get references and metadata for relevant enum values that we will need
@@ -922,8 +971,9 @@ namespace enumbra {{
         for (auto &v: e.values) {
             if (v.p_value < 0) {
                 throw std::logic_error(
-                        "ENUM DEFINITIONS Check 4: Flags-Enum value is less than 0. Flags-Enum values are required to be unsigned. (enum name = " +
-                        e.name + ")");
+                        fmt::format(
+                                "Flags-Enum value is less than 0. Flags-Enum values are required to be unsigned. (Enum = {})",
+                                e.name));
             }
             max_value |= static_cast<uint64_t>(v.p_value);
         }
@@ -931,7 +981,7 @@ namespace enumbra {{
         // TODO: Add default<>
         const uint64_t default_value = get_flags_enum_value(enum_meta.flags_enum_default_value_style, e);
 
-        //const size_t entry_count = e.values.size();
+        // const size_t entry_count = e.values.size();
         const size_t bits_required_storage = get_storage_bits_required(max_value);
         const size_t bits_required_transmission = bits_required_storage;
         const std::string size_type = cpp.get_size_type_from_index(e.size_type_index).type_name;
@@ -946,136 +996,123 @@ namespace enumbra {{
         // TODO: Enforce if flag is set
         bool is_contiguous = is_flags_set_contiguous(unique_values);
 
+        push("enum_ns", enum_ns);
+        push("enum_name", e.name);
+        push("enum_detail_ns", fmt::format("::{}::detail::{}", enum_ns, e.name));
+        push("enum_name_fq", fmt::format("::{}::{}", enum_ns, e.name));
+        push("size_type", size_type);
+        push("unique_entry_count", std::to_string(unique_entry_count));
+        push("max_value", fmt::format("{0:#x}", max_value));
+
+        // START NAMESPACE
+        for (const auto &ns: cpp.output_namespace) {
+            wl("namespace {} {{", ns);
+        }
+
         // Definition
-        wl_tab(1, "// {} Definition", e.name);
+        wvl("// {enum_name} Definition");
         {
-            wl_tab(1, "enum class {0} : {1} {{", e.name, size_type);
+            wvl("enum class {enum_name} : {size_type} {{");
             for (const auto &v: e.values) {
-                wl_tab(2, "{} = {},", v.name, Int128FormatValue{v.p_value, type_bits, is_size_type_signed});
+                wl("{} = {},", v.name, Int128Format{v.p_value, type_bits, is_size_type_signed});
             }
-            wl_tab(1, "}};");
+            wvl("}};");
         }
-        write_linefeed();
+        wlf();
 
-        wl_tab(1, "namespace detail::{0} {{", e.name);
-        wl_tab(2, "constexpr ::{2}{0} flags_arr[{1}] =", e.name, unique_entry_count, full_ns);
-        wl_tab(2, "{{");
+        wvl("namespace detail::{enum_name} {{");
+        wvl("constexpr {enum_name_fq} flags_arr[{unique_entry_count}] =");
+        wvl("{{");
         for (const auto &v: e.values) {
-            wl_tab(3, "::{2}{0}::{1},", e.name, v.name, full_ns);
+            push("val_name", v.name);
+            wvl("{enum_name_fq}::{val_name},");
+            pop("val_name");
         }
-        wl_tab(2, "}};");
-        wl_tab(1, "}}");
-        write_linefeed();
+        wvl("}};");
+        wvl("}}");
+        wlf();
 
-        wl_tab(1, "template<>");
-        wl_tab(1, "constexpr auto& flags<{0}>() noexcept", e.name);
-        wl_tab(1, "{{");
-        wl_tab(2, "return detail::{0}::flags_arr;", e.name);
-        wl_tab(1, "}}");
-        write_linefeed();
+        // END NAMESPACE
+        for (auto ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
+            wl("}} // namespace {}", *ns);
+        }
+        wlf();
+
+        wvl("namespace enumbra {{");
+
+        wvl("template<>");
+        wvl("constexpr auto& flags<{enum_name_fq}>() noexcept");
+        wvl("{{");
+        wvl("return {enum_detail_ns}::flags_arr;");
+        wvl("}}");
+        wlf();
 
         //// Functions
-        wl_tab(1, "constexpr void zero({0}& value) noexcept {{ value = static_cast<{0}>(0); }}", e.name);
-        wl_tab(1,
-               "constexpr bool test({0} value, {0} flags) noexcept {{ return (static_cast<{1}>(flags) & static_cast<{1}>(value)) == static_cast<{1}>(flags); }}",
-               e.name, size_type);
-        wl_tab(1,
-               "constexpr void set({0}& value, {0} flags) noexcept {{ value = static_cast<{0}>(static_cast<{1}>(value) | static_cast<{1}>(flags)); }}",
-               e.name, size_type);
-        wl_tab(1,
-               "constexpr void unset({0}& value, {0} flags) noexcept {{ value = static_cast<{0}>(static_cast<{1}>(value) & (~static_cast<{1}>(flags))); }}",
-               e.name, size_type);
-        wl_tab(1,
-               "constexpr void toggle({0}& value, {0} flags) noexcept {{ value = static_cast<{0}>(static_cast<{1}>(value) ^ static_cast<{1}>(flags)); }}",
-               e.name, size_type);
-        wl_tab(1, "constexpr bool is_all({0} value) noexcept {{ return static_cast<{1}>(value) >= {2:#x}; }}", e.name,
-               size_type, max_value);
-        wl_tab(1, "constexpr bool is_any({0} value) noexcept {{ return static_cast<{1}>(value) > 0; }}", e.name,
-               size_type);
-        wl_tab(1, "constexpr bool is_none({0} value) noexcept {{ return static_cast<{1}>(value) == 0; }}", e.name,
-               size_type);
-        wl_tab(1,
-               "constexpr bool is_single({0} value) noexcept {{ {1} n = static_cast<{1}>(value); return n && !(n & (n - 1)); }}",
-               e.name, size_type);
-        write_linefeed();
+        wvl("constexpr void zero({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
+        wvl("constexpr bool test({enum_name_fq} value, {enum_name_fq} flags) noexcept {{ return (static_cast<{size_type}>(flags) & static_cast<{size_type}>(value)) == static_cast<{size_type}>(flags); }}");
+        wvl("constexpr void set({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) | static_cast<{size_type}>(flags)); }}");
+        wvl("constexpr void unset({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) & (~static_cast<{size_type}>(flags))); }}");
+        wvl("constexpr void toggle({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) ^ static_cast<{size_type}>(flags)); }}");
+        wvl("constexpr bool is_all({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) >= {max_value}; }}");
+        wvl("constexpr bool is_any({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) > 0; }}");
+        wvl("constexpr bool is_none({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) == 0; }}");
+        wvl("constexpr bool is_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(value); return n && !(n & (n - 1)); }}");
+        wlf();
 
         std::vector<const char *> operator_strings = {
-                "// {} Operator Overloads",
+                "// {enum_name_fq} Operator Overloads",
 
-                "constexpr {0} operator~(const {0} a) noexcept {{ return static_cast<{0}>(~static_cast<{1}>(a)); }}",
-                "constexpr {0} operator|(const {0} a, const {0} b) noexcept {{ return static_cast<{0}>(static_cast<{1}>(a) | static_cast<{1}>(b)); }}",
-                "constexpr {0} operator&(const {0} a, const {0} b) noexcept {{ return static_cast<{0}>(static_cast<{1}>(a) & static_cast<{1}>(b)); }}",
-                "constexpr {0} operator^(const {0} a, const {0} b) noexcept {{ return static_cast<{0}>(static_cast<{1}>(a) ^ static_cast<{1}>(b)); }}",
+                "constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}",
+                "constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}",
+                "constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}",
+                "constexpr {enum_name_fq} operator^(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) ^ static_cast<{size_type}>(b)); }}",
 
-                "constexpr {0}& operator|=({0}& a, const {0} b) noexcept {{ return a = a | b; }}",
-                "constexpr {0}& operator&=({0}& a, const {0} b) noexcept {{ return a = a & b; }}",
-                "constexpr {0}& operator^=({0}& a, const {0} b) noexcept {{ return a = a ^ b; }}",
+                "constexpr {enum_name_fq}& operator|=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a | b; }}",
+                "constexpr {enum_name_fq}& operator&=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a & b; }}",
+                "constexpr {enum_name_fq}& operator^=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a ^ b; }}",
         };
         for (auto &str: operator_strings) {
-            wl_tab(1, str, e.name, size_type);
+            wvl(str);
         }
 
         // Helper specializations
+        template_specializations.emplace_back(fmt::format(
+                "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, false, true> {{ }};",
+                enum_ns, e.name));
+
         template_specializations.emplace_back(
-                fmt::format(
-                        "template<> struct enumbra::detail::flags_enum_helper<{0}{1}> : enumbra::detail::flags_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{{{ }}}};",
-                        full_ns,
-                        e.name,
-                        size_type,
-                        Int128FormatValue{min_value, type_bits, is_size_type_signed},
-                        Int128FormatValue{max_value, type_bits, is_size_type_signed},
-                        Int128FormatValue{default_value, type_bits, is_size_type_signed},
-                        unique_entry_count,
-                        is_contiguous ? "true" : "false",
-                        bits_required_storage,
-                        bits_required_transmission
-                )
-        );
+                fmt::format("template<> struct enumbra::detail::flags_enum_helper<{0}::{1}> : "
+                            "enumbra::detail::flags_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{ }};",
+                            enum_ns,
+                            e.name,
+                            size_type,
+                            Int128Format{min_value, type_bits, is_size_type_signed},
+                            Int128Format{max_value, type_bits, is_size_type_signed},
+                            Int128Format{default_value, type_bits, is_size_type_signed},
+                            unique_entry_count,
+                            is_contiguous ? "true" : "false",
+                            bits_required_storage,
+                            bits_required_transmission));
 
-        write_linefeed();
+        wvl("}} // enumbra");
+        wlf();
     }
 
-    // END NAMESPACE
-    for (auto ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
-        write_line("}} // namespace {}", *ns);
-    }
-    write_linefeed();
 
-    // MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after the definitions.
+
+    // MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after
+    // the definitions.
     {
-        write_line("// Template Specializations Begin");
-
-        // Value Enum Template Specializations
-        for (auto &e: enum_meta.value_enum_definitions) {
-            std::vector<const char *> template_strings = {
-                    "template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};",
-            };
-            for (auto &str: template_strings) {
-                write_line(str, e.name, "true", "false", full_ns);
-            }
-        }
-
-        // Flags Enum Template Specializations
-        for (auto &e: enum_meta.flag_enum_definitions) {
-            std::vector<const char *> template_strings = {
-                    "template<> struct enumbra::detail::base_helper<{3}{0}> : enumbra::detail::type_info<true, {1}, {2}> {{ }};",
-            };
-            for (auto &str: template_strings) {
-                write_line(str, e.name, "false", "true", full_ns);
-            }
-        }
-
-        // Write out the buffered template specializations
+        wl("// Template Specializations Begin");
         for (auto &s: template_specializations) {
-            write_line(s);
+            wl_unformatted(s);
         }
-
-        write_line("// Template Specializations End");
+        wl("// Template Specializations End");
     }
 
     // END INCLUDE GUARD
     if (cpp.include_guard_style == IncludeGuardStyle::CStyle) {
-        write_line("#endif // {}", def_macro);
+        wl("#endif // {}", def_macro);
     }
 
     return Output;

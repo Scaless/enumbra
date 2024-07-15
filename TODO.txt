@@ -14,6 +14,7 @@ CODEGEN: Add option for split compilation of Header and Implementation vs. Heade
     add/edit command line parameters: remove cppout, add cppouthpp/cppoutheader/cppoutimpl
 
 CODEGEN: Add option for alignment/padding for strings to allow for SIMD lookups
+CODEGEN: Support for generating and optimizing layouts for SIMD instructions
 
 TEST: Set up a more robust testing framework
     Split test cases into more descriptive variants

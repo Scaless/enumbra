@@ -1,24 +1,26 @@
 #include "enumbra_test.hpp"
 
+// Include second header with the same namespace to test that include macros are working
+#include "enumbra_minimal.hpp"
+
 #include <type_traits>
 
 using namespace enumbra;
-using namespace enums;
 
 #define UNUSED(x) (void)x
 
 struct V
 {
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
-	ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, X)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Y)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Z)
 
 	V() :
 		ENUMBRA_INIT_DEFAULT(W),
 		ENUMBRA_INIT(X, test_nodefault::B),
-		Y(test_nodefault()),
-		Z(test_nodefault())
+		Y(enums::test_nodefault()),
+		Z(enums::test_nodefault())
 	{ }
 };
 
@@ -40,7 +42,7 @@ void test_value_vs_flags()
 	}
 }
 
-// Parameter is const& so we can pass in all types here, even bitfields
+// Parameter is const&, so we can pass in all types here, even bitfields
 template<typename T>
 void test_is_enumbra_type(const T&)
 {
@@ -53,7 +55,6 @@ void test_is_enumbra_type(const T&)
 	}
 	else if constexpr (std::is_enum_v<T>)
 	{
-		// TODO: C++23 check is_scoped_enum<T>
 		// T is just a regular c++ enum type.
 		// T x = T();
 	}
@@ -74,9 +75,9 @@ enum class NonEnumbraEnum
 struct Struct20
 {
 	// Correct usage
-	ENUMBRA_PACK_INIT(test_nodefault, A, test_nodefault::B | test_nodefault::C)
-	ENUMBRA_PACK_INIT(test_nodefault, B, default_value<test_nodefault>())
-	ENUMBRA_PACK_INIT_DEFAULT(test_nodefault, C)
+	ENUMBRA_PACK_INIT(enums::test_nodefault, A, enums::test_nodefault::B | enums::test_nodefault::C)
+	ENUMBRA_PACK_INIT(enums::test_nodefault, B, default_value<enums::test_nodefault>())
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, C)
 
 	// Not allowed
 	// ENUMBRA_PACK_INIT(test_nodefault, Ab, 4)
@@ -87,9 +88,8 @@ struct Struct20
 
 int main()
 {
-    {
+    using namespace enums;
 
-    }
 	test_nodefault d;
     test_nodefault c = test_nodefault::C;
 
