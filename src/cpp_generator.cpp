@@ -771,7 +771,6 @@ namespace enumbra {{
 
         // End detail namespace
         wvl("}}");
-        wlf();
 
         // END NAMESPACE
         for (auto ns = cpp.output_namespace.rbegin(); ns != cpp.output_namespace.rend(); ++ns) {
@@ -923,12 +922,9 @@ namespace enumbra {{
         // end enumbra namespace
         wl("}} // enumbra");
     }
-
-    clear_store();
-
     wlf();
 
-
+    clear_store();
 
     // Flags ENUM DEFINITIONS
     for (auto &e: enum_meta.flag_enum_definitions) {

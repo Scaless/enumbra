@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION) 
+#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)
 #define ENUMBRA_REQUIRED_MACROS_VERSION 9
 
 // Find out what language version we're using
@@ -33,11 +33,11 @@
 #endif
 
 #else // check existing version supported
-#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0 
+#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0
 #error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system. 
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 9 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 9
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version. 
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 9 
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 9
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version. 
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
@@ -252,52 +252,155 @@ namespace enumbra {
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
 
+enum class test {
+    e = 0
+};
+
+template<class e>
+class flag_set {
+public:
+
+private:
+    e flags;
+};
+
+namespace enumbra {
+    // Returns true if n is a power of 2. Must be greater than 0.
+    template<::std::uint64_t n>
+    constexpr bool is_pow2() {
+        static_assert(n > 0);
+        // http://www.graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+        return (n & (n - 1)) == 0;
+    }
+
+    // Round up to the closest power of 2 for a number. Must be greater than 0.
+    template<::std::uint64_t n>
+    constexpr ::std::uint64_t round_pow2() {
+        static_assert(n > 0);
+        if (is_pow2<n>()) {
+            return n;
+        }
+
+        // https://stackoverflow.com/questions/1322510/1322548#1322548
+        ::std::uint64_t v = n;
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v |= v >> 32;
+        v++;
+
+        return v;
+    }
+
+    using array_size_type = ::std::uint64_t;
+
+    template<class E, ::std::uint64_t count>
+    constexpr ::std::uint64_t calc_packed_array_size() {
+        constexpr ::std::uint64_t total_bits = count * round_pow2<::enumbra::bits_required_storage<E>()>();
+        static_assert(total_bits > 0, "Invalid number of total_bits required for enum");
+
+        if ((total_bits % sizeof(array_size_type)) == 0) {
+            return total_bits / sizeof(array_size_type);
+        } else {
+            return 1 + (total_bits / sizeof(array_size_type));
+        }
+    }
+
+    template<class E, ::std::uint64_t count>
+    class packed_value_array {
+    public:
+
+    private:
+        static constexpr ::std::uint64_t storage_count = calc_packed_array_size<E, count>();
+        array_size_type storage[storage_count];
+    };
+}
+
 
 namespace enums {
 // minimal Definition
-enum class minimal : uint32_t {
-B = 1,
-C = 2,
-};
+    enum class minimal : uint32_t {
+        B = 1,
+        C = 2,
+    };
 
-namespace detail::minimal {
-constexpr ::enums::minimal flags_arr[2] =
-{
-::enums::minimal::B,
-::enums::minimal::C,
-};
-}
+    namespace detail::minimal {
+        constexpr ::enums::minimal flags_arr[2] =
+            {
+                ::enums::minimal::B,
+                ::enums::minimal::C,
+            };
+    }
 
 } // namespace enums
 
 namespace enumbra {
-template<>
-constexpr auto& flags<::enums::minimal>() noexcept
-{
-return ::enums::detail::minimal::flags_arr;
-}
+    template<>
+    constexpr auto &flags<::enums::minimal>() noexcept {
+        return ::enums::detail::minimal::flags_arr;
+    }
 
-constexpr void zero(::enums::minimal& value) noexcept { value = static_cast<::enums::minimal>(0); }
-constexpr bool test(::enums::minimal value, ::enums::minimal flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
-constexpr void set(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
-constexpr void unset(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
-constexpr void toggle(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
-constexpr bool is_all(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) >= 0x3; }
-constexpr bool is_any(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) > 0; }
-constexpr bool is_none(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) == 0; }
-constexpr bool is_single(::enums::minimal value) noexcept { uint32_t n = static_cast<uint32_t>(value); return n && !(n & (n - 1)); }
+    constexpr void zero(::enums::minimal &value) noexcept { value = static_cast<::enums::minimal>(0); }
+
+    constexpr bool test(::enums::minimal value, ::enums::minimal flags) noexcept {
+        return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags);
+    }
+
+    constexpr void set(::enums::minimal &value, ::enums::minimal flags) noexcept {
+        value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags));
+    }
+
+    constexpr void unset(::enums::minimal &value, ::enums::minimal flags) noexcept {
+        value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags)));
+    }
+
+    constexpr void toggle(::enums::minimal &value, ::enums::minimal flags) noexcept {
+        value = static_cast<::enums::minimal>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags));
+    }
+
+    constexpr bool is_all(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) >= 0x3; }
+
+    constexpr bool is_any(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) > 0; }
+
+    constexpr bool is_none(::enums::minimal value) noexcept { return static_cast<uint32_t>(value) == 0; }
+
+    constexpr bool is_single(::enums::minimal value) noexcept {
+        uint32_t n = static_cast<uint32_t>(value);
+        return n && !(n & (n - 1));
+    }
 
 // ::enums::minimal Operator Overloads
-constexpr ::enums::minimal operator~(const ::enums::minimal a) noexcept { return static_cast<::enums::minimal>(~static_cast<uint32_t>(a)); }
-constexpr ::enums::minimal operator|(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
-constexpr ::enums::minimal operator&(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
-constexpr ::enums::minimal operator^(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
-constexpr ::enums::minimal& operator|=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a | b; }
-constexpr ::enums::minimal& operator&=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a & b; }
-constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a ^ b; }
+    constexpr ::enums::minimal
+    operator~(const ::enums::minimal a) noexcept { return static_cast<::enums::minimal>(~static_cast<uint32_t>(a)); }
+
+    constexpr ::enums::minimal operator|(const ::enums::minimal a, const ::enums::minimal b) noexcept {
+        return static_cast<::enums::minimal>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    }
+
+    constexpr ::enums::minimal operator&(const ::enums::minimal a, const ::enums::minimal b) noexcept {
+        return static_cast<::enums::minimal>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+    }
+
+    constexpr ::enums::minimal operator^(const ::enums::minimal a, const ::enums::minimal b) noexcept {
+        return static_cast<::enums::minimal>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b));
+    }
+
+    constexpr ::enums::minimal &operator|=(::enums::minimal &a, const ::enums::minimal b) noexcept { return a = a | b; }
+
+    constexpr ::enums::minimal &operator&=(::enums::minimal &a, const ::enums::minimal b) noexcept { return a = a & b; }
+
+    constexpr ::enums::minimal &operator^=(::enums::minimal &a, const ::enums::minimal b) noexcept { return a = a ^ b; }
 } // enumbra
 
 // Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::minimal> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
+template<>
+struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> {
+};
+template<>
+struct enumbra::detail::flags_enum_helper<enums::minimal>
+    : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> {
+};
 // Template Specializations End
