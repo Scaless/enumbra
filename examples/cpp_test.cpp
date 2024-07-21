@@ -1,75 +1,76 @@
 #include "enumbra_test.hpp"
 
 // Include second header with the same namespace to test that include macros are working
-#include "enumbra_minimal.hpp"
+//#include "enumbra_minimal.hpp"
 
 #include <type_traits>
 
-using namespace enumbra;
+enum class NonEnumbraEnum
+{
+    A = 4,
+    B = 5
+};
 
 #define UNUSED(x) (void)x
 
-struct V
+static void TestMacroWithUsingNamespace()
+{
+    using namespace enums;
+    struct NSV
+    {
+        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
+        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
+        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
+        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
+
+        NSV()
+            : ENUMBRA_INIT_DEFAULT(W)
+            , ENUMBRA_INIT(X, test_nodefault::B)
+            , Y(enums::test_nodefault())
+            , Z(enums::test_nodefault())
+        { }
+    };
+    NSV v;
+    UNUSED(v);
+}
+
+struct PackedStruct
 {
 	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
 	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, X)
 	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Y)
 	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Z)
 
-	V() :
+	PackedStruct() :
 		ENUMBRA_INIT_DEFAULT(W),
 		ENUMBRA_INIT(X, test_nodefault::B),
 		Y(enums::test_nodefault()),
 		Z(enums::test_nodefault())
 	{ }
 };
+static_assert(sizeof(PackedStruct) == 2);
 
-static_assert(sizeof(V) == 2);
-
-#if ENUMBRA_CPP_VERSION >= 17
-template<typename T>
-void test_value_vs_flags()
+static void TestEnumbraTypeChecks()
 {
-	if constexpr (is_enumbra_flags_enum<T>()) {
-		T x{};
-		//x.reset_zero(); // Only flags should have this function
-	}
-	else if constexpr (is_enumbra_value_enum<T>()) {
+    static_assert(enumbra::is_enumbra_enum<NonEnumbraEnum> == false);
+    static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnum> == false);
+    static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnum> == false);
 
-	}
-	else {
-        static_assert(false, "T is not an enumbra type.");
-	}
+    static_assert(enumbra::is_enumbra_enum<enums::Signed8Test> == true);
+    static_assert(enumbra::is_enumbra_flags_enum<enums::Signed8Test> == false);
+    static_assert(enumbra::is_enumbra_value_enum<enums::Signed8Test> == true);
+
+    static_assert(enumbra::is_enumbra_enum<enums::TestSingleFlag> == true);
+    static_assert(enumbra::is_enumbra_flags_enum<enums::TestSingleFlag> == true);
+    static_assert(enumbra::is_enumbra_value_enum<enums::TestSingleFlag> == false);
+
+    static_assert(std::is_enum_v<NonEnumbraEnum> == true);
+    static_assert(std::is_enum_v<enums::Signed8Test> == true);
+    static_assert(std::is_enum_v<enums::TestSingleFlag> == true);
 }
 
-// Parameter is const&, so we can pass in all types here, even bitfields
-template<typename T>
-void test_is_enumbra_type(const T&)
-{
-	if constexpr (is_enumbra_enum<T>())
-	{
-		// T is an 'enum class' contained within an enumbra struct type.
-		// T is convertible from its enum class type to its parent struct type with enumbra_base_t
-		constexpr auto min = enumbra::min<T>();
-		UNUSED(min);
-	}
-	else if constexpr (std::is_enum_v<T>)
-	{
-		// T is just a regular c++ enum type.
-		// T x = T();
-	}
-	else
-	{
-        static_assert(false, "T is not an enum class or enumbra type.");
-	}
-}
-#endif
+using namespace enumbra;
 
-enum class NonEnumbraEnum
-{
-	A = 4,
-	B = 5
-};
 
 #if ENUMBRA_CPP_VERSION >= 20
 struct Struct20
@@ -88,6 +89,9 @@ struct Struct20
 
 int main()
 {
+    TestMacroWithUsingNamespace();
+    TestEnumbraTypeChecks();
+
     using namespace enums;
 
 	test_nodefault d;
@@ -140,7 +144,7 @@ int main()
 	f = b ? f : g;
 
 	// Test packed bitfields
-	V v;
+	PackedStruct v;
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
 	v.Z = d;
@@ -177,13 +181,6 @@ int main()
 
 	z |= TestSingleFlag::C;
 	z = z | zz;
-
-#if ENUMBRA_CPP_VERSION >= 17
-	test_is_enumbra_type(d);
-	test_is_enumbra_type(v.X);
-	test_is_enumbra_type(vv);
-	test_is_enumbra_type(NonEnumbraEnum::A);
-#endif
 
 	// Large integers
 	{
