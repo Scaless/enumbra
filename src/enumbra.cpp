@@ -164,7 +164,7 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
         for (auto iter: cpp_cfg["size_types"]) {
             enum_size_type t;
             t.name = iter["name"].get<std::string>();
-            t.bits = iter["bits"].get<uint64_t>();
+            t.bits = iter["bits"].get<int32_t>();
             t.is_signed = iter["is_signed"].get<bool>();
             t.type_name = iter["type_name"].get<std::string>();
 

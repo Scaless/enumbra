@@ -826,7 +826,7 @@ namespace enumbra {{
             }
         } else {
             for (auto &entry: string_tables.tables) {
-                uint32_t offset = entry.offset_str;
+                size_t offset = entry.offset_str;
                 for (auto &e_name: entry.names) {
                     push("val_name", e_name);
                     push("offset", std::to_string(offset));

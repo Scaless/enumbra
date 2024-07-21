@@ -130,9 +130,9 @@ namespace enumbra {
 	{
 		std::string name;
 		std::string description;
-		int128 p_value;
+		int128 p_value = 0;
 	};
-    constexpr bool operator==(const enum_entry& lhs, const enum_entry& rhs)
+    static inline bool operator==(const enum_entry& lhs, const enum_entry& rhs)
     {
         return (lhs.name == rhs.name) && (lhs.description == rhs.description) && (lhs.p_value == rhs.p_value);
     }
