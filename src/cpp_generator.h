@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <optional>
 #include <fmt/format.h>
 #include <fmt/args.h>
 
@@ -43,6 +44,7 @@ struct value_enum_context {
     int64_t unique_entry_count;
     bool is_range_contiguous;
     bool is_one_string_table;
+    std::optional<int128> invalid_sentinel;
 
     string_lookup_tables string_tables;
 };

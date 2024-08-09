@@ -192,12 +192,20 @@ int main()
 		UNUSED(m);
 
 		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
-        static_assert(NANFail.success == false);
+        static_assert(NANFail.has_value() == false);
         UNUSED(NANFail);
 
 		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
-        static_assert(MAXSuccess.success == true);
+        static_assert(MAXSuccess.has_value() == true);
         UNUSED(MAXSuccess);
+
+        constexpr auto SP = from_string<test_string_parse>("C", 1);
+        static_assert(SP.has_value() == true);
+        UNUSED(SP);
+
+        constexpr auto SPN = from_string<test_string_parse>("EEE", 3);
+        static_assert(SPN.has_value() == false);
+        UNUSED(SPN);
 	}
 
 	auto& arr = values<test_string_parse>();

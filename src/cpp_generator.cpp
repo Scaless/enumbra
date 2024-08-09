@@ -291,6 +291,42 @@ const std::string &cpp_generator::generate_cpp_output() {
             }
         }
 
+        // Determine sentinel values
+        {
+
+            const auto GetAvailableSentinel = [&]() -> std::optional<int128> {
+                // TODO: Benchmark for best sentinel to use, or if it's even worth using one at all.
+
+                // 0 is probably the most efficient sentinel to use if it's not already a valid value.
+                if(unique_values.find(0) == unique_values.end()) {
+                    return 0;
+                }
+
+                // If signed, try -1
+                if(new_context.is_size_type_signed) {
+                    if (unique_values.find(-1) == unique_values.end()) {
+                        return -1;
+                    }
+                }
+
+                // If unsigned, try all bits set
+                if(!new_context.is_size_type_signed) {
+                    int128 AllBitsMask = 0;
+                    for(int i = 0; i < new_context.size_type_bits; i++) {
+                        AllBitsMask |= (1ULL << i);
+                    }
+                    if (unique_values.find(AllBitsMask) == unique_values.end()) {
+                        return AllBitsMask;
+                    }
+                }
+
+                // Just use a separate bool.
+                return std::nullopt;
+            };
+
+            new_context.invalid_sentinel = GetAvailableSentinel();
+        }
+
         // Generate string lookup tables
         auto generate_string_lookup_tables = [&]() -> string_lookup_tables {
             string_lookup_tables output;
@@ -345,21 +381,19 @@ const std::string &cpp_generator::generate_cpp_output() {
         push("min_v", format_int128({e.min_entry.p_value, e.size_type_bits, e.is_size_type_signed}));
 
         emit_ve_definition(e);
-        emit_ve_detail(e);
-        emit_ve_func_values(e);
-        emit_ve_func_from_integer(e);
-
-        emit_ve_func_to_string(e);
-        emit_ve_func_from_string(e);
 
         // Helper specializations
-        template_specializations.emplace_back(fmt::format(
-            "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, true, false> {{ }};",
-            ctx.enum_ns, e.enum_name));
-
-        template_specializations.emplace_back(
+        const std::string base_helper_str =
             fmt::format(
-                "template<> struct enumbra::detail::value_enum_helper<{0}::{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}> {{ }};",
+                "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, true, false> {{ }};",
+                ctx.enum_ns,
+                e.enum_name
+            );
+        wl_unformatted(base_helper_str);
+
+        const std::string value_helper_str =
+            fmt::format(
+                "template<> struct enumbra::detail::value_enum_helper<{0}::{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}> {{ }};",
                 ctx.enum_ns,
                 e.enum_name,
                 e.size_type_str,
@@ -369,9 +403,19 @@ const std::string &cpp_generator::generate_cpp_output() {
                 e.unique_entry_count,
                 e.is_range_contiguous ? "true" : "false",
                 e.bits_required_storage,
-                e.bits_required_transmission
-            )
-        );
+                e.bits_required_transmission,
+                e.invalid_sentinel.has_value() ? "true" : "false",
+                Int128Format{e.invalid_sentinel.value_or(0), e.size_type_bits, e.is_size_type_signed}
+            );
+        wl_unformatted(value_helper_str);
+        wlf();
+
+        emit_ve_detail(e);
+        emit_ve_func_values(e);
+        emit_ve_func_from_integer(e);
+
+        emit_ve_func_to_string(e);
+        emit_ve_func_from_string(e);
 
         wlf();
     }
@@ -673,7 +717,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 20;
+    const int enumbra_templates_version = 21;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -684,6 +728,11 @@ namespace enumbra {{
         struct enable_if {{}};
         template<class T>
         struct enable_if<true, T> {{ typedef T type; }};
+
+        template<bool B, class T, class F>
+        struct conditional {{ using type = T; }};
+        template<class T, class F>
+        struct conditional<false, T, F> {{ using type = F; }};
 
         constexpr bool is_constant_evaluated() noexcept {{ return __builtin_is_constant_evaluated(); }}
 
@@ -698,7 +747,8 @@ namespace enumbra {{
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
             underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
+            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v,
+            bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
         struct value_enum_info {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
@@ -708,6 +758,8 @@ namespace enumbra {{
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
             static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
+            static constexpr bool has_invalid_sentinel = has_invalid_sentinel_v;
+            static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         }};
 
         // Flags enum info
@@ -818,11 +870,45 @@ namespace enumbra {{
     template<class T, class underlying_type = T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) noexcept = delete;
 
-    template<class T>
-    struct from_string_result
+    namespace detail {{
+        struct optional_result_base_inplace {{
+            constexpr optional_result_base_inplace() = default;
+        }};
+        struct optional_result_base_bool {{
+            constexpr optional_result_base_bool() = default;
+        protected:
+            bool success = false;
+        }};
+    }}
+
+    template<class T, bool inplace_success = detail::value_enum_helper<T>::has_invalid_sentinel>
+    struct from_string_result : ::enumbra::detail::conditional<inplace_success, ::enumbra::detail::optional_result_base_inplace, ::enumbra::detail::optional_result_base_bool>::type
     {{
-        bool success;
-        T value;
+    private:
+        T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+    public:
+        constexpr from_string_result() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) {{ }}
+
+        constexpr explicit from_string_result(T value) : v(value) {{
+            if constexpr(!inplace_success) {{
+                this->success = true;
+            }}
+        }}
+
+        [[nodiscard]] constexpr explicit operator bool() const noexcept {{
+            if constexpr (inplace_success) {{
+                return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+            }} else {{
+                return this->success;
+            }}
+        }}
+
+        [[nodiscard]] constexpr bool has_value() const noexcept {{ return operator bool(); }}
+
+        [[nodiscard]] constexpr T& value() & noexcept {{ return v; }}
+        [[nodiscard]] constexpr const T& value() const & noexcept {{ return v; }}
+        [[nodiscard]] constexpr T&& value() && noexcept {{ return v; }}
+        [[nodiscard]] constexpr const T&& value() const && noexcept {{ return v; }}
     }};
 
     template <class T>
@@ -996,27 +1082,29 @@ void cpp_generator::emit_ve_func_to_string(const value_enum_context &e) {
 }
 
 void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
+//    return;
     if (e.values.size() == 1) {
         const auto &v = e.values.at(0);
         push("entry_name", v.name);
         push("entry_name_len", std::to_string(v.name.length()));
         wvl("template<>");
         wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
+        wvl("using result_type = ::enumbra::from_string_result<{enum_name_fq}>;");
         wvl("if (enumbra::detail::streq_s(\"{entry_name}\", {entry_name_len}, str, len)) {{");
-        wvl("return {{true, {enum_name_fq}::{entry_name}}};");
+        wvl("return result_type({enum_name_fq}::{entry_name});");
         wvl("}}");
-        wvl("return {{false, {enum_name_fq}()}};");
+        wvl("return {{}};");
         wvl("}}");
         pop("entry_name");
         pop("entry_name_len");
     } else {
         wvl("template<>");
         wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
-
+        wvl("using result_type = ::enumbra::from_string_result<{enum_name_fq}>;");
         if (e.string_tables.tables.size() == 1) {
             auto &first = e.string_tables.tables.front();
             push("entry_name_len", std::to_string(first.size));
-            wvl("if(len != {entry_name_len}) {{ return {{false, {enum_name_fq}()}}; }}");
+            wvl("if(len != {entry_name_len}) {{ return {{}}; }}");
             wl("constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
             wl("constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
             wl("constexpr ::std::uint32_t count = {0};", first.count);
@@ -1032,21 +1120,21 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
                 wl("case {0}: offset_str = {1}; offset_enum = {2}; count = {3}; break;",
                    entry.size, entry.offset_str, entry.offset_enum, entry.count);
             }
-            wvl("default: return {{false, {enum_name_fq}()}};");
+            wvl("default: return {{}};");
             wvl("}}");
             wvl("for (::std::uint32_t i = 0; i < count; i++) {{");
             wvl("if (::enumbra::detail::streq_known_size({enum_detail_ns}::enum_strings + offset_str + (i * (len + 1)), str, len)) {{");
         }
 
         if (e.is_one_string_table) {
-            wvl("return {{true, {enum_detail_ns}::values_arr[offset_enum + i]}};");
+            wvl("return result_type({enum_detail_ns}::values_arr[offset_enum + i]);");
         } else {
-            wvl("return {{true, {enum_detail_ns}::enum_string_values[offset_enum + i]}};");
+            wvl("return result_type({enum_detail_ns}::enum_string_values[offset_enum + i]);");
         }
         wvl("}}");
         wvl("}}");
 
-        wvl("return {{false, {enum_name_fq}()}};");
+        wvl("return {{}};");
         wvl("}}");
     }
 }

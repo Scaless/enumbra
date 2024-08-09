@@ -74,7 +74,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 20
+#define ENUMBRA_BASE_TEMPLATES_VERSION 21
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -82,6 +82,11 @@ namespace enumbra {
         struct enable_if {};
         template<class T>
         struct enable_if<true, T> { typedef T type; };
+
+        template<bool B, class T, class F>
+        struct conditional { using type = T; };
+        template<class T, class F>
+        struct conditional<false, T, F> { using type = F; };
 
         constexpr bool is_constant_evaluated() noexcept { return __builtin_is_constant_evaluated(); }
 
@@ -96,7 +101,8 @@ namespace enumbra {
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
             underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
+            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v,
+            bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
         struct value_enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
@@ -106,6 +112,8 @@ namespace enumbra {
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
             static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
+            static constexpr bool has_invalid_sentinel = has_invalid_sentinel_v;
+            static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         };
 
         // Flags enum info
@@ -216,11 +224,45 @@ namespace enumbra {
     template<class T, class underlying_type = T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) noexcept = delete;
 
-    template<class T>
-    struct from_string_result
+    namespace detail {
+        struct optional_result_base_inplace {
+            constexpr optional_result_base_inplace() = default;
+        };
+        struct optional_result_base_bool {
+            constexpr optional_result_base_bool() = default;
+        protected:
+            bool success = false;
+        };
+    }
+
+    template<class T, bool inplace_success = detail::value_enum_helper<T>::has_invalid_sentinel>
+    struct from_string_result : ::enumbra::detail::conditional<inplace_success, ::enumbra::detail::optional_result_base_inplace, ::enumbra::detail::optional_result_base_bool>::type
     {
-        bool success;
-        T value;
+    private:
+        T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+    public:
+        constexpr from_string_result() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) { }
+
+        constexpr explicit from_string_result(T value) : v(value) {
+            if constexpr(!inplace_success) {
+                this->success = true;
+            }
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const noexcept {
+            if constexpr (inplace_success) {
+                return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+            } else {
+                return this->success;
+            }
+        }
+
+        [[nodiscard]] constexpr bool has_value() const noexcept { return operator bool(); }
+
+        [[nodiscard]] constexpr T& value() & noexcept { return v; }
+        [[nodiscard]] constexpr const T& value() const & noexcept { return v; }
+        [[nodiscard]] constexpr T&& value() && noexcept { return v; }
+        [[nodiscard]] constexpr const T&& value() const && noexcept { return v; }
     };
 
     template <class T>
@@ -247,9 +289,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 20
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 21
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 20
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 21
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -263,6 +305,9 @@ D = 511,
 E = 9223372036854775807,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::test_string_parse> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, -1, 5, false, 64, 64, true, 0> { };
 
 namespace enums::detail::test_string_parse {
 constexpr ::enums::test_string_parse values_arr[5] =
@@ -311,16 +356,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::test_string_parse> enumbra::from_string<::enums::test_string_parse>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::test_string_parse()}; }
+using result_type = ::enumbra::from_string_result<::enums::test_string_parse>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 5;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::test_string_parse::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::test_string_parse::values_arr[offset_enum + i]};
+return result_type(::enums::detail::test_string_parse::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::test_string_parse()};
+return {};
 }
 
 namespace enums {
@@ -331,6 +377,9 @@ V_UINT32_MAX = 0xFFFFFFFF,
 MAX = 0xFFFFFFFFFFFFFFFF,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Unsigned64Test> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, 0, 4, false, 64, 64, false, 0> { };
 
 namespace enums::detail::Unsigned64Test {
 constexpr ::enums::Unsigned64Test values_arr[4] =
@@ -382,20 +431,21 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::Unsigned64Test> enumbra::from_string<::enums::Unsigned64Test>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::Unsigned64Test>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
 switch(len) {
 case 3: offset_str = 0; offset_enum = 0; count = 2; break;
 case 12: offset_str = 8; offset_enum = 2; count = 2; break;
-default: return {false, ::enums::Unsigned64Test()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::Unsigned64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::Unsigned64Test::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::Unsigned64Test::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::Unsigned64Test()};
+return {};
 }
 
 namespace enums {
@@ -405,6 +455,9 @@ NEG_ONE = -1,
 MAX = 9223372036854775807,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed64Test> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, (-9223372036854775807 - 1), 3, false, 64, 64, true, 0> { };
 
 namespace enums::detail::Signed64Test {
 constexpr ::enums::Signed64Test values_arr[3] =
@@ -452,20 +505,21 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::Signed64Test> enumbra::from_string<::enums::Signed64Test>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::Signed64Test>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
 switch(len) {
 case 3: offset_str = 0; offset_enum = 0; count = 2; break;
 case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-default: return {false, ::enums::Signed64Test()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::Signed64Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::Signed64Test::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::Signed64Test::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::Signed64Test()};
+return {};
 }
 
 namespace enums {
@@ -475,6 +529,9 @@ NEG_ONE = -1,
 MAX = 2147483647,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed32Test> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, (-2147483647 - 1), 3, false, 32, 32, true, 0> { };
 
 namespace enums::detail::Signed32Test {
 constexpr ::enums::Signed32Test values_arr[3] =
@@ -522,20 +579,21 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::Signed32Test> enumbra::from_string<::enums::Signed32Test>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::Signed32Test>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
 switch(len) {
 case 3: offset_str = 0; offset_enum = 0; count = 2; break;
 case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-default: return {false, ::enums::Signed32Test()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::Signed32Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::Signed32Test::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::Signed32Test::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::Signed32Test()};
+return {};
 }
 
 namespace enums {
@@ -545,6 +603,9 @@ NEG_ONE = -1,
 MAX = 32767,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed16Test> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, (-32767 - 1), 3, false, 16, 16, true, 0> { };
 
 namespace enums::detail::Signed16Test {
 constexpr ::enums::Signed16Test values_arr[3] =
@@ -592,20 +653,21 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::Signed16Test> enumbra::from_string<::enums::Signed16Test>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::Signed16Test>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
 switch(len) {
 case 3: offset_str = 0; offset_enum = 0; count = 2; break;
 case 7: offset_str = 8; offset_enum = 2; count = 1; break;
-default: return {false, ::enums::Signed16Test()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::Signed16Test::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::Signed16Test::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::Signed16Test::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::Signed16Test()};
+return {};
 }
 
 namespace enums {
@@ -615,6 +677,9 @@ V_NEG_ONE = -1,
 V_INT_MAX = 127,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::Signed8Test> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, (-127 - 1), 3, false, 8, 8, true, 0> { };
 
 namespace enums::detail::Signed8Test {
 constexpr ::enums::Signed8Test values_arr[3] =
@@ -657,16 +722,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::Signed8Test> enumbra::from_string<::enums::Signed8Test>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 9) { return {false, ::enums::Signed8Test()}; }
+using result_type = ::enumbra::from_string_result<::enums::Signed8Test>;
+if(len != 9) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 3;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<9>(::enums::detail::Signed8Test::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::Signed8Test::values_arr[offset_enum + i]};
+return result_type(::enums::detail::Signed8Test::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::Signed8Test()};
+return {};
 }
 
 namespace enums {
@@ -676,6 +742,9 @@ B = 1,
 C = 2,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::test_value> : enumbra::detail::value_enum_info<int32_t, 0, 2, 0, 3, true, 3, 2, true, -1> { };
 
 namespace enums::detail::test_value {
 constexpr ::enums::test_value values_arr[3] =
@@ -716,16 +785,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::test_value> enumbra::from_string<::enums::test_value>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::test_value()}; }
+using result_type = ::enumbra::from_string_result<::enums::test_value>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 3;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::test_value::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::test_value::values_arr[offset_enum + i]};
+return result_type(::enums::detail::test_value::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::test_value()};
+return {};
 }
 
 namespace enums {
@@ -738,6 +808,9 @@ SOUTH_WEST = 4,
 NORTH_WEST = 5,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::HexDiagonal> : enumbra::detail::value_enum_info<uint8_t, 0, 5, 0, 6, true, 3, 3, true, 255> { };
 
 namespace enums::detail::HexDiagonal {
 constexpr ::enums::HexDiagonal values_arr[6] =
@@ -795,20 +868,21 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::HexDiagonal> enumbra::from_string<::enums::HexDiagonal>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::HexDiagonal>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
 switch(len) {
 case 5: offset_str = 0; offset_enum = 0; count = 2; break;
 case 10: offset_str = 12; offset_enum = 2; count = 4; break;
-default: return {false, ::enums::HexDiagonal()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::HexDiagonal::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::HexDiagonal::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::HexDiagonal::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::HexDiagonal()};
+return {};
 }
 
 namespace enums {
@@ -819,6 +893,9 @@ C = 0,
 D = 1,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest1> : enumbra::detail::value_enum_info<int8_t, -2, 1, -2, 4, true, 2, 2, false, 0> { };
 
 namespace enums::detail::NegativeTest1 {
 constexpr ::enums::NegativeTest1 values_arr[4] =
@@ -862,16 +939,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::NegativeTest1> enumbra::from_string<::enums::NegativeTest1>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::NegativeTest1()}; }
+using result_type = ::enumbra::from_string_result<::enums::NegativeTest1>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 4;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest1::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::NegativeTest1::values_arr[offset_enum + i]};
+return result_type(::enums::detail::NegativeTest1::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::NegativeTest1()};
+return {};
 }
 
 namespace enums {
@@ -882,6 +960,9 @@ C = -1,
 D = 0,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest2> : enumbra::detail::value_enum_info<int8_t, -3, 0, -3, 4, true, 3, 2, false, 0> { };
 
 namespace enums::detail::NegativeTest2 {
 constexpr ::enums::NegativeTest2 values_arr[4] =
@@ -925,16 +1006,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::NegativeTest2> enumbra::from_string<::enums::NegativeTest2>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::NegativeTest2()}; }
+using result_type = ::enumbra::from_string_result<::enums::NegativeTest2>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 4;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest2::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::NegativeTest2::values_arr[offset_enum + i]};
+return result_type(::enums::detail::NegativeTest2::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::NegativeTest2()};
+return {};
 }
 
 namespace enums {
@@ -943,6 +1025,9 @@ A = -3,
 B = 4,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest3> : enumbra::detail::value_enum_info<int8_t, -3, 4, -3, 2, false, 4, 3, true, 0> { };
 
 namespace enums::detail::NegativeTest3 {
 constexpr ::enums::NegativeTest3 values_arr[2] =
@@ -982,16 +1067,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::NegativeTest3> enumbra::from_string<::enums::NegativeTest3>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::NegativeTest3()}; }
+using result_type = ::enumbra::from_string_result<::enums::NegativeTest3>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 2;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest3::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::NegativeTest3::values_arr[offset_enum + i]};
+return result_type(::enums::detail::NegativeTest3::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::NegativeTest3()};
+return {};
 }
 
 namespace enums {
@@ -1000,6 +1086,9 @@ A = -4,
 B = 3,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest4> : enumbra::detail::value_enum_info<int8_t, -4, 3, -4, 2, false, 3, 3, true, 0> { };
 
 namespace enums::detail::NegativeTest4 {
 constexpr ::enums::NegativeTest4 values_arr[2] =
@@ -1039,16 +1128,17 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::NegativeTest4> enumbra::from_string<::enums::NegativeTest4>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::NegativeTest4()}; }
+using result_type = ::enumbra::from_string_result<::enums::NegativeTest4>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 2;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::NegativeTest4::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::NegativeTest4::values_arr[offset_enum + i]};
+return result_type(::enums::detail::NegativeTest4::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::NegativeTest4()};
+return {};
 }
 
 namespace enums {
@@ -1056,6 +1146,9 @@ enum class EmptyTest1Unsigned : uint8_t {
 A = 0,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 0, 0, 0, 1, true, 1, 0, true, 255> { };
 
 namespace enums::detail::EmptyTest1Unsigned {
 constexpr ::enums::EmptyTest1Unsigned values_arr[1] =
@@ -1087,10 +1180,11 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::EmptyTest1Unsigned> enumbra::from_string<::enums::EmptyTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::EmptyTest1Unsigned>;
 if (enumbra::detail::streq_s("A", 1, str, len)) {
-return {true, ::enums::EmptyTest1Unsigned::A};
+return result_type(::enums::EmptyTest1Unsigned::A);
 }
-return {false, ::enums::EmptyTest1Unsigned()};
+return {};
 }
 
 namespace enums {
@@ -1098,6 +1192,9 @@ enum class EmptyTest1Signed : int8_t {
 A = 0,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, 0, 1, true, 1, 0, true, -1> { };
 
 namespace enums::detail::EmptyTest1Signed {
 constexpr ::enums::EmptyTest1Signed values_arr[1] =
@@ -1129,10 +1226,11 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::EmptyTest1Signed> enumbra::from_string<::enums::EmptyTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::EmptyTest1Signed>;
 if (enumbra::detail::streq_s("A", 1, str, len)) {
-return {true, ::enums::EmptyTest1Signed::A};
+return result_type(::enums::EmptyTest1Signed::A);
 }
-return {false, ::enums::EmptyTest1Signed()};
+return {};
 }
 
 namespace enums {
@@ -1140,6 +1238,9 @@ enum class SingleTest1Unsigned : uint8_t {
 A = 4,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0, true, 0> { };
 
 namespace enums::detail::SingleTest1Unsigned {
 constexpr ::enums::SingleTest1Unsigned values_arr[1] =
@@ -1171,10 +1272,11 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::SingleTest1Unsigned> enumbra::from_string<::enums::SingleTest1Unsigned>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::SingleTest1Unsigned>;
 if (enumbra::detail::streq_s("A", 1, str, len)) {
-return {true, ::enums::SingleTest1Unsigned::A};
+return result_type(::enums::SingleTest1Unsigned::A);
 }
-return {false, ::enums::SingleTest1Unsigned()};
+return {};
 }
 
 namespace enums {
@@ -1182,6 +1284,9 @@ enum class SingleTest1Signed : int8_t {
 A = 4,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, 4, 1, true, 4, 0, true, 0> { };
 
 namespace enums::detail::SingleTest1Signed {
 constexpr ::enums::SingleTest1Signed values_arr[1] =
@@ -1213,10 +1318,11 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::SingleTest1Signed> enumbra::from_string<::enums::SingleTest1Signed>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::SingleTest1Signed>;
 if (enumbra::detail::streq_s("A", 1, str, len)) {
-return {true, ::enums::SingleTest1Signed::A};
+return result_type(::enums::SingleTest1Signed::A);
 }
-return {false, ::enums::SingleTest1Signed()};
+return {};
 }
 
 namespace enums {
@@ -1301,6 +1407,9 @@ text_file_busy = 139,
 operation_would_block = 140,
 };
 }
+
+template<> struct enumbra::detail::base_helper<enums::errc> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<enums::errc> : enumbra::detail::value_enum_info<int32_t, 1, 140, 1, 78, false, 9, 8, true, 0> { };
 
 namespace enums::detail::errc {
 constexpr ::enums::errc values_arr[78] =
@@ -1648,6 +1757,7 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::from_string_result<::enums::errc> enumbra::from_string<::enums::errc>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::errc>;
 ::std::uint32_t offset_str = 0;
 ::std::uint32_t offset_enum = 0;
 ::std::uint32_t count = 0;
@@ -1674,14 +1784,14 @@ case 28: offset_str = 1223; offset_enum = 70; count = 2; break;
 case 29: offset_str = 1281; offset_enum = 72; count = 3; break;
 case 30: offset_str = 1371; offset_enum = 75; count = 2; break;
 case 34: offset_str = 1433; offset_enum = 77; count = 1; break;
-default: return {false, ::enums::errc()};
+default: return {};
 }
 for (::std::uint32_t i = 0; i < count; i++) {
 if (::enumbra::detail::streq_known_size(::enums::detail::errc::enum_strings + offset_str + (i * (len + 1)), str, len)) {
-return {true, ::enums::detail::errc::enum_string_values[offset_enum + i]};
+return result_type(::enums::detail::errc::enum_string_values[offset_enum + i]);
 }
 }
-return {false, ::enums::errc()};
+return {};
 }
 
 
@@ -1862,40 +1972,6 @@ constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const 
 } // enumbra
 
 // Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::test_string_parse> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, -1, 5, false, 64, 64> { };
-template<> struct enumbra::detail::base_helper<enums::Unsigned64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::Unsigned64Test> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, 0, 4, false, 64, 64> { };
-template<> struct enumbra::detail::base_helper<enums::Signed64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::Signed64Test> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, (-9223372036854775807 - 1), 3, false, 64, 64> { };
-template<> struct enumbra::detail::base_helper<enums::Signed32Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::Signed32Test> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, (-2147483647 - 1), 3, false, 32, 32> { };
-template<> struct enumbra::detail::base_helper<enums::Signed16Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::Signed16Test> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, (-32767 - 1), 3, false, 16, 16> { };
-template<> struct enumbra::detail::base_helper<enums::Signed8Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::Signed8Test> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, (-127 - 1), 3, false, 8, 8> { };
-template<> struct enumbra::detail::base_helper<enums::test_value> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::test_value> : enumbra::detail::value_enum_info<int32_t, 0, 2, 0, 3, true, 3, 2> { };
-template<> struct enumbra::detail::base_helper<enums::HexDiagonal> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::HexDiagonal> : enumbra::detail::value_enum_info<uint8_t, 0, 5, 0, 6, true, 3, 3> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest1> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest1> : enumbra::detail::value_enum_info<int8_t, -2, 1, -2, 4, true, 2, 2> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest2> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest2> : enumbra::detail::value_enum_info<int8_t, -3, 0, -3, 4, true, 3, 2> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest3> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest3> : enumbra::detail::value_enum_info<int8_t, -3, 4, -3, 2, false, 4, 3> { };
-template<> struct enumbra::detail::base_helper<enums::NegativeTest4> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::NegativeTest4> : enumbra::detail::value_enum_info<int8_t, -4, 3, -4, 2, false, 3, 3> { };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 0, 0, 0, 1, true, 1, 0> { };
-template<> struct enumbra::detail::base_helper<enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, 0, 1, true, 1, 0> { };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0> { };
-template<> struct enumbra::detail::base_helper<enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, 4, 1, true, 4, 0> { };
-template<> struct enumbra::detail::base_helper<enums::errc> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::errc> : enumbra::detail::value_enum_info<int32_t, 1, 140, 1, 78, false, 9, 8> { };
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::test_flags> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
 template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
