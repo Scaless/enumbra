@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
         auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path);
 
         if (loaded_enumbra_config.generate_cpp) {
-            cpp_generator cpp_gen;
-            const std::string &generated_cpp = cpp_gen.generate_cpp_output(loaded_enumbra_config, enum_config);
+            cpp_generator cpp_gen(loaded_enumbra_config, enum_config);
+            const std::string &generated_cpp = cpp_gen.generate_cpp_output();
 
             if (result.count("p")) {
                 std::cout << generated_cpp << std::endl;

@@ -12,6 +12,7 @@ find_package(fmt)
 add_executable (enumbra
 		"src/enumbra.cpp"
 		"src/cpp_generator.cpp"
+		"src/cpp_utility.cpp"
 )
 target_compile_features(enumbra PRIVATE cxx_std_17)
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "enumbra.h"
+#include "cpp_utility.h"
+
 #include <array>
 #include <string>
 #include <string_view>
@@ -8,14 +10,85 @@
 #include <fmt/format.h>
 #include <fmt/args.h>
 
+#include <type_traits>
+
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 
+struct string_lookup_table {
+    size_t offset_str = 0;
+    size_t offset_enum = 0;
+    size_t count = 0;
+    size_t size = 0;
+    std::vector<std::string> names;
+};
+struct string_lookup_tables {
+    std::vector<string_lookup_table> tables;
+    std::vector<enumbra::enum_entry> entries;
+};
+
+struct value_enum_context {
+    std::string enum_name;
+    std::vector<enumbra::enum_entry> values;
+
+    enumbra::enum_entry default_entry;
+    enumbra::enum_entry min_entry;
+    enumbra::enum_entry max_entry;
+    int64_t entry_count;
+    std::string size_type_str;
+    bool is_size_type_signed;
+    int64_t size_type_bits;
+    int64_t bits_required_storage;
+    int64_t bits_required_transmission;
+    int64_t unique_entry_count;
+    bool is_range_contiguous;
+    bool is_one_string_table;
+
+    string_lookup_tables string_tables;
+};
+
+struct flags_enum_context {
+
+};
+
+struct output_context {
+    std::string def_macro;
+    std::string enum_ns;
+
+    std::vector<value_enum_context> value_enums;
+    std::vector<flags_enum_context> flags_enums;
+};
+
 class cpp_generator {
 public:
-	const std::string& generate_cpp_output(const enumbra::enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta);
+    cpp_generator(const enumbra::enumbra_config& cfg, const enumbra::enum_meta_config& enum_meta);
+
+	const std::string& generate_cpp_output();
 
 private:
+    const enumbra::cpp::cpp_config& cpp_cfg;
+    const enumbra::enum_meta_config& enum_meta;
+
+    void build_contexts();
+
+    // Shared
+    void emit_preamble();
+    void emit_include_guard_begin();
+    void emit_includes();
+    void emit_required_macros();
+    void emit_optional_macros();
+    void emit_templates();
+
+    // Value enums
+    void emit_ve_definition(const value_enum_context& e);
+    void emit_ve_detail(const value_enum_context& e);
+    void emit_ve_func_values(const value_enum_context& e);
+    void emit_ve_func_from_integer(const value_enum_context& e);
+    void emit_ve_func_to_string(const value_enum_context& e);
+    void emit_ve_func_from_string(const value_enum_context& e);
+
+private:
+    output_context ctx;
 	std::string Output; // Final output
 
     // Argument store
@@ -45,6 +118,7 @@ private:
     }
     void clear_store() { store_.clear(); }
 
+    // Write functions
 	template <typename... Args>
 	void write(std::string_view fmt, Args&&... args) {
 		fmt::format_to(std::back_inserter(Output), fmt, std::forward<Args>(args)...);
