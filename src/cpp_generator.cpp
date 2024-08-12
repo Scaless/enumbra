@@ -383,17 +383,11 @@ const std::string &cpp_generator::generate_cpp_output() {
         emit_ve_definition(e);
 
         // Helper specializations
-        const std::string base_helper_str =
-            fmt::format(
-                "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, true, false> {{ }};",
-                ctx.enum_ns,
-                e.enum_name
-            );
-        wl_unformatted(base_helper_str);
+        wvl("template<> struct enumbra::detail::base_helper<{enum_name_fq}> : enumbra::detail::type_info<true, true, false> {{ }};");
 
         const std::string value_helper_str =
             fmt::format(
-                "template<> struct enumbra::detail::value_enum_helper<{0}::{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}> {{ }};",
+                "template<> struct enumbra::detail::value_enum_helper<::{0}::{1}> : enumbra::detail::value_enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}> {{ }};",
                 ctx.enum_ns,
                 e.enum_name,
                 e.size_type_str,
@@ -717,7 +711,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 21;
+    const int enumbra_templates_version = 22;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -881,8 +875,8 @@ namespace enumbra {{
         }};
     }}
 
-    template<class T, bool inplace_success = detail::value_enum_helper<T>::has_invalid_sentinel>
-    struct from_string_result : ::enumbra::detail::conditional<inplace_success, ::enumbra::detail::optional_result_base_inplace, ::enumbra::detail::optional_result_base_bool>::type
+    template<class T, bool use_invalid_sentinel = detail::value_enum_helper<T>::has_invalid_sentinel>
+    struct from_string_result : ::enumbra::detail::conditional<use_invalid_sentinel, ::enumbra::detail::optional_result_base_inplace, ::enumbra::detail::optional_result_base_bool>::type
     {{
     private:
         T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
@@ -890,13 +884,13 @@ namespace enumbra {{
         constexpr from_string_result() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) {{ }}
 
         constexpr explicit from_string_result(T value) : v(value) {{
-            if constexpr(!inplace_success) {{
+            if constexpr(!use_invalid_sentinel) {{
                 this->success = true;
             }}
         }}
 
         [[nodiscard]] constexpr explicit operator bool() const noexcept {{
-            if constexpr (inplace_success) {{
+            if constexpr (use_invalid_sentinel) {{
                 return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
             }} else {{
                 return this->success;

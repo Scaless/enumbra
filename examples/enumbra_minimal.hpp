@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION) 
+#if !defined(ENUMBRA_REQUIRED_MACROS_VERSION)
 #define ENUMBRA_REQUIRED_MACROS_VERSION 9
 
 // Find out what language version we're using
@@ -33,12 +33,12 @@
 #endif
 
 #else // check existing version supported
-#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0 
-#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system. 
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 9 
-#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version. 
-#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 9 
-#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version. 
+#if (ENUMBRA_REQUIRED_MACROS_VERSION + 0) == 0
+#error ENUMBRA_REQUIRED_MACROS_VERSION has been defined without a proper version number. Check your build system.
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) < 9
+#error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
+#elif (ENUMBRA_REQUIRED_MACROS_VERSION + 0) > 9
+#error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
@@ -74,7 +74,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 19
+#define ENUMBRA_BASE_TEMPLATES_VERSION 22
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -83,9 +83,16 @@ namespace enumbra {
         template<class T>
         struct enable_if<true, T> { typedef T type; };
 
+        template<bool B, class T, class F>
+        struct conditional { using type = T; };
+        template<class T, class F>
+        struct conditional<false, T, F> { using type = F; };
+
+        constexpr bool is_constant_evaluated() noexcept { return __builtin_is_constant_evaluated(); }
+
         // Type info
         template<bool is_enumbra, bool is_value_enum, bool is_flags_enum>
-        struct type_info { 
+        struct type_info {
             static constexpr bool enumbra_type = is_enumbra;
             static constexpr bool enumbra_value_enum = is_value_enum;
             static constexpr bool enumbra_flags_enum = is_flags_enum;
@@ -94,7 +101,8 @@ namespace enumbra {
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
             underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
+            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v,
+            bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
         struct value_enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
@@ -104,10 +112,12 @@ namespace enumbra {
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
             static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
+            static constexpr bool has_invalid_sentinel = has_invalid_sentinel_v;
+            static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         };
 
         // Flags enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v, 
+        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
             underlying_type default_v, ::std::int32_t count_v,
             bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
         struct flags_enum_info {
@@ -120,7 +130,7 @@ namespace enumbra {
             static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
             static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
         };
-        
+
         // Default template for non-enumbra types
         template<class T>
         struct base_helper : type_info<false, false, false> { };
@@ -214,11 +224,45 @@ namespace enumbra {
     template<class T, class underlying_type = T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
     constexpr underlying_type to_underlying(T e) noexcept = delete;
 
-    template<class T>
-    struct from_string_result
+    namespace detail {
+        struct optional_result_base_inplace {
+            constexpr optional_result_base_inplace() = default;
+        };
+        struct optional_result_base_bool {
+            constexpr optional_result_base_bool() = default;
+        protected:
+            bool success = false;
+        };
+    }
+
+    template<class T, bool use_invalid_sentinel = detail::value_enum_helper<T>::has_invalid_sentinel>
+    struct from_string_result : ::enumbra::detail::conditional<use_invalid_sentinel, ::enumbra::detail::optional_result_base_inplace, ::enumbra::detail::optional_result_base_bool>::type
     {
-        bool success;
-        T value;
+    private:
+        T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+    public:
+        constexpr from_string_result() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) { }
+
+        constexpr explicit from_string_result(T value) : v(value) {
+            if constexpr(!use_invalid_sentinel) {
+                this->success = true;
+            }
+        }
+
+        [[nodiscard]] constexpr explicit operator bool() const noexcept {
+            if constexpr (use_invalid_sentinel) {
+                return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+            } else {
+                return this->success;
+            }
+        }
+
+        [[nodiscard]] constexpr bool has_value() const noexcept { return operator bool(); }
+
+        [[nodiscard]] constexpr T& value() & noexcept { return v; }
+        [[nodiscard]] constexpr const T& value() const & noexcept { return v; }
+        [[nodiscard]] constexpr T&& value() && noexcept { return v; }
+        [[nodiscard]] constexpr const T&& value() const && noexcept { return v; }
     };
 
     template <class T>
@@ -245,21 +289,24 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 19
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 22
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 19
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 22
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
 
 namespace enums {
-// minimal_val Definition
 enum class minimal_val : uint32_t {
 B = 1,
 C = 2,
 };
+}
 
-namespace detail::minimal_val {
+template<> struct enumbra::detail::base_helper<::enums::minimal_val> : enumbra::detail::type_info<true, true, false> { };
+template<> struct enumbra::detail::value_enum_helper<::enums::minimal_val> : enumbra::detail::value_enum_info<uint32_t, 1, 2, 1, 2, true, 2, 1, true, 0> { };
+
+namespace enums::detail::minimal_val {
 constexpr ::enums::minimal_val values_arr[2] =
 {
 ::enums::minimal_val::B,
@@ -270,21 +317,20 @@ constexpr const char enum_strings[5] = {
 "C\0"
 };
 }
-} // namespace enums
 
-namespace enumbra {
 template<>
-constexpr auto& values<::enums::minimal_val>() noexcept
+constexpr auto& enumbra::values<::enums::minimal_val>() noexcept
 {
 return ::enums::detail::minimal_val::values_arr;
 }
 
 template<>
-constexpr ::enumbra::from_integer_result<::enums::minimal_val> from_integer<::enums::minimal_val>(uint32_t v) noexcept { 
+constexpr ::enumbra::from_integer_result<::enums::minimal_val> enumbra::from_integer<::enums::minimal_val>(uint32_t v) noexcept { 
 if((1 <= v) && (v <= 2)) { return { true, static_cast<::enums::minimal_val>(v) }; }
 return { false, ::enums::minimal_val() };
 }
 
+namespace enumbra {
 constexpr const char* to_string(const ::enums::minimal_val v) noexcept {
 switch (v) {
 case ::enums::minimal_val::B: return &::enums::detail::minimal_val::enum_strings[0];
@@ -292,22 +338,23 @@ case ::enums::minimal_val::C: return &::enums::detail::minimal_val::enum_strings
 }
 return nullptr;
 }
+}
 
 template<>
-constexpr ::enumbra::from_string_result<::enums::minimal_val> from_string<::enums::minimal_val>(const char* str, ::std::uint16_t len) noexcept {
-if(len != 1) { return {false, ::enums::minimal_val()}; }
+constexpr ::enumbra::from_string_result<::enums::minimal_val> enumbra::from_string<::enums::minimal_val>(const char* str, ::std::uint16_t len) noexcept {
+using result_type = ::enumbra::from_string_result<::enums::minimal_val>;
+if(len != 1) { return {}; }
 constexpr ::std::uint32_t offset_str = 0;
 constexpr ::std::uint32_t offset_enum = 0;
 constexpr ::std::uint32_t count = 2;
 for (::std::uint32_t i = 0; i < count; i++) {
 if (enumbra::detail::streq_fixed_size<1>(::enums::detail::minimal_val::enum_strings + offset_str + (i * (len + 1)), str)) {
-return {true, ::enums::detail::minimal_val::values_arr[offset_enum + i]};
+return result_type(::enums::detail::minimal_val::values_arr[offset_enum + i]);
 }
 }
-return {false, ::enums::minimal_val()};
+return {};
 }
 
-} // enumbra
 
 namespace enums {
 // minimal Definition
@@ -354,8 +401,6 @@ constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minim
 } // enumbra
 
 // Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::minimal_val> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<enums::minimal_val> : enumbra::detail::value_enum_info<uint32_t, 1, 2, 1, 2, true, 2, 1> { };
 template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::flags_enum_helper<enums::minimal> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
 // Template Specializations End
