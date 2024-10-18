@@ -407,6 +407,7 @@ const std::string &cpp_generator::generate_cpp_output() {
         emit_ve_detail(e);
         emit_ve_func_values(e);
         emit_ve_func_from_integer(e);
+        emit_ve_func_is_valid(e);
 
         emit_ve_func_to_string(e);
         emit_ve_func_from_string(e);
@@ -507,6 +508,12 @@ const std::string &cpp_generator::generate_cpp_output() {
         wvl("}}");
         wlf();
 
+        wvl("template<>");
+        wvl("constexpr bool is_valid<{enum_name_fq}>({enum_name_fq} e) noexcept {{ ");
+        wvl("return (static_cast<{size_type}>(e) | {max_v}) == {max_v};");
+        wvl("}}");
+        wlf();
+
         //// Functions
         wvl("constexpr void zero({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
         wvl("constexpr bool test({enum_name_fq} value, {enum_name_fq} flags) noexcept {{ return (static_cast<{size_type}>(flags) & static_cast<{size_type}>(value)) == static_cast<{size_type}>(flags); }}");
@@ -518,22 +525,6 @@ const std::string &cpp_generator::generate_cpp_output() {
         wvl("constexpr bool is_none({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) == 0; }}");
         wvl("constexpr bool is_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(value); return n && !(n & (n - 1)); }}");
         wlf();
-
-        std::vector<const char *> operator_strings = {
-            "// {enum_name_fq} Operator Overloads",
-
-            "constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}",
-            "constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}",
-            "constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}",
-            "constexpr {enum_name_fq} operator^(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) ^ static_cast<{size_type}>(b)); }}",
-
-            "constexpr {enum_name_fq}& operator|=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a | b; }}",
-            "constexpr {enum_name_fq}& operator&=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a & b; }}",
-            "constexpr {enum_name_fq}& operator^=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a ^ b; }}",
-        };
-        for (auto &str: operator_strings) {
-            wvl(str);
-        }
 
         // Helper specializations
         template_specializations.emplace_back(fmt::format(
@@ -555,6 +546,25 @@ const std::string &cpp_generator::generate_cpp_output() {
                         bits_required_transmission));
 
         wvl("}} // enumbra");
+        wlf();
+
+        // Operator Overloads need to be outside of enumbra::
+        std::vector<const char*> operator_strings = {
+            "// {enum_name_fq} Operator Overloads",
+
+            "constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}",
+            "constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}",
+            "constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}",
+            "constexpr {enum_name_fq} operator^(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) ^ static_cast<{size_type}>(b)); }}",
+
+            "constexpr {enum_name_fq}& operator|=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a | b; }}",
+            "constexpr {enum_name_fq}& operator&=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a & b; }}",
+            "constexpr {enum_name_fq}& operator^=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a ^ b; }}",
+        };
+        for (auto& str : operator_strings) {
+            wvl(str);
+        }
+
         wlf();
     }
 
@@ -924,6 +934,10 @@ namespace enumbra {{
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
     constexpr from_integer_result<T> from_integer(underlying_type value) noexcept = delete;
+
+    template<class T>
+    constexpr bool is_valid(T e) noexcept = delete;
+
     // End Default Templates
 }} // end namespace enumbra
 #else // check existing version supported
@@ -1013,6 +1027,8 @@ void cpp_generator::emit_ve_func_values(const value_enum_context &) {
 }
 
 void cpp_generator::emit_ve_func_from_integer(const value_enum_context &e) {
+    // NOTE: If you modify this function, also check if changes are needed for emit_ve_func_is_valid
+    
     // from_integer variations
     wvl("template<>");
     wvl("constexpr ::enumbra::from_integer_result<{enum_name_fq}> enumbra::from_integer<{enum_name_fq}>({size_type} v) noexcept {{ ");
@@ -1038,6 +1054,36 @@ void cpp_generator::emit_ve_func_from_integer(const value_enum_context &e) {
         wvl("return {{ false, {enum_name_fq}() }};");
         wvl("}}");
     }
+    wlf();
+}
+
+void cpp_generator::emit_ve_func_is_valid(const value_enum_context& e)
+{
+    // NOTE: If you modify this function, also check if changes are needed for emit_ve_func_from_integer
+
+    wvl("template<>");
+    wvl("constexpr bool enumbra::is_valid<{enum_name_fq}>({enum_name_fq} e) noexcept {{ ");
+    
+    if (e.values.size() == 1) {
+        wvl("return {max_v} == static_cast<{size_type}>(e);");
+    }
+    else if (e.is_range_contiguous) {
+        // Unsigned values can't go below 0 so we just need to check that we're <= max
+        if ((e.min_entry.p_value == 0) && !e.is_size_type_signed) {
+            wvl("return static_cast<{size_type}>(e) <= {max_v};");
+        }
+        else {
+            wvl("return ({min_v} <= static_cast<{size_type}>(e)) && (static_cast<{size_type}>(e) <= {max_v});");
+        }
+    }
+    else {
+        wvl("for(auto value : values<{enum_name_fq}>()) {{");
+        wvl("if(value == e) {{ return true; }}");
+        wvl("}}");
+        wvl("return false;");
+    }
+    wvl("}}");
+
     wlf();
 }
 

@@ -14,7 +14,7 @@
       "project": "CMakeLists.txt",
       "projectTarget": "",
       "name": "rsc",
-      "args": [ "-c C:/Repos/rsc/rsc/rschexlib/rschexlib/rsc_enumbra_config.json -s C:/Repos/rsc/rsc/rschexlib/rschexlib/rsc_enums.json --cppout C:/Repos/rsc/rsc/rschexlib/rschexlib/rsc_enumbra.hpp" ]
+      "args": [ "-c C:/Repos/rsc/rsc/rsccorelib/include/rsc_enumbra_config.json -s C:/Repos/rsc/rsc/rsccorelib/include/rsc_enums.json --cppout C:/Repos/rsc/rsc/rsccorelib/include/rsc_enumbra.h" ]
     }
   ]
 }
