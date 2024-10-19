@@ -53,7 +53,7 @@ enum class Direction : uint8_t {
 #include <generated_enumbra_header.h>
 
 // Default value is defined in the config used to generate the header
-Direction dir = enumbra::default_value<Direction>();  file
+Direction dir = enumbra::default_value<Direction>();
 dir = Direction::WEST;
 switch (dir) {
     case Direction::NORTH: break;
@@ -101,7 +101,7 @@ perms |= FilePermissions::EXECUTE;
 // Test and set with functions as well
 enumbra::set(perms, FilePermissions::DELETE);
 if(enumbra::test(perms, FilePermissions::DELETE)){
-    ...
+    // All metadata is known at compile time to allow for good code-gen.
 }
 enumbra::unset(perms, FilePermissions::READ);
 
