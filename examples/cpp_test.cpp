@@ -50,34 +50,32 @@ struct PackedStruct
 };
 static_assert(sizeof(PackedStruct) == 2);
 
-static void TestEnumbraTypeChecks()
-{
-    static_assert(enumbra::is_enumbra_enum<NonEnumbraEnum> == false);
-    static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnum> == false);
-    static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnum> == false);
+// Type Checks
+static_assert(enumbra::is_enumbra_enum<NonEnumbraEnum> == false);
+static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnum> == false);
+static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnum> == false);
 
-    static_assert(enumbra::is_enumbra_enum<enums::Signed8Test> == true);
-    static_assert(enumbra::is_enumbra_flags_enum<enums::Signed8Test> == false);
-    static_assert(enumbra::is_enumbra_value_enum<enums::Signed8Test> == true);
+static_assert(enumbra::is_enumbra_enum<enums::Signed8Test> == true);
+static_assert(enumbra::is_enumbra_flags_enum<enums::Signed8Test> == false);
+static_assert(enumbra::is_enumbra_value_enum<enums::Signed8Test> == true);
 
-    static_assert(enumbra::is_enumbra_enum<enums::TestSingleFlag> == true);
-    static_assert(enumbra::is_enumbra_flags_enum<enums::TestSingleFlag> == true);
-    static_assert(enumbra::is_enumbra_value_enum<enums::TestSingleFlag> == false);
+static_assert(enumbra::is_enumbra_enum<enums::TestSingleFlag> == true);
+static_assert(enumbra::is_enumbra_flags_enum<enums::TestSingleFlag> == true);
+static_assert(enumbra::is_enumbra_value_enum<enums::TestSingleFlag> == false);
 
-    static_assert(std::is_enum_v<NonEnumbraEnum> == true);
-    static_assert(std::is_enum_v<enums::Signed8Test> == true);
-    static_assert(std::is_enum_v<enums::TestSingleFlag> == true);
-}
+static_assert(std::is_enum_v<NonEnumbraEnum> == true);
+static_assert(std::is_enum_v<enums::Signed8Test> == true);
+static_assert(std::is_enum_v<enums::TestSingleFlag> == true);
 
-using namespace enumbra;
 
+//using namespace enumbra;
 
 #if ENUMBRA_CPP_VERSION >= 20
 struct Struct20
 {
 	// Correct usage
 	ENUMBRA_PACK_INIT(enums::test_nodefault, A, enums::test_nodefault::B | enums::test_nodefault::C)
-	ENUMBRA_PACK_INIT(enums::test_nodefault, B, default_value<enums::test_nodefault>())
+	ENUMBRA_PACK_INIT(enums::test_nodefault, B, enumbra::default_value<enums::test_nodefault>())
 	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, C)
 
 	// Not allowed
@@ -90,7 +88,6 @@ struct Struct20
 int main()
 {
     TestMacroWithUsingNamespace();
-    TestEnumbraTypeChecks();
 
     using namespace enums;
 
@@ -185,35 +182,35 @@ int main()
 	// Large integers
 	{
 		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-        static_assert(to_underlying(Max) == UINT64_MAX);
+        static_assert(enumbra::to_underlying(Max) == UINT64_MAX);
 		UNUSED(Max);
 
 		constexpr auto m = enumbra::min<HexDiagonal>();
 		UNUSED(m);
 
-		constexpr auto NANFail = from_string<Unsigned64Test>("NAN", 3);
+		constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN", 3);
         static_assert(NANFail.has_value() == false);
         UNUSED(NANFail);
 
-		constexpr auto MAXSuccess = from_string<Unsigned64Test>("V_UINT32_MAX", 12);
+		constexpr auto MAXSuccess = enumbra::from_string<Unsigned64Test>("V_UINT32_MAX", 12);
         static_assert(MAXSuccess.has_value() == true);
         UNUSED(MAXSuccess);
 
-        constexpr auto SP = from_string<test_string_parse>("C", 1);
+        constexpr auto SP = enumbra::from_string<test_string_parse>("C", 1);
         static_assert(SP.has_value() == true);
         UNUSED(SP);
 
-        constexpr auto SPN = from_string<test_string_parse>("EEE", 3);
+        constexpr auto SPN = enumbra::from_string<test_string_parse>("EEE", 3);
         static_assert(SPN.has_value() == false);
         UNUSED(SPN);
 	}
 
-	auto& arr = values<test_string_parse>();
+	auto& arr = enumbra::values<test_string_parse>();
 
 	// Range-for
 	for (auto& key : arr)
 	{
-		const auto str = to_string(key);
+		const auto str = enumbra::to_string(key);
 		UNUSED(str);
 
 		constexpr auto x = enumbra::min<test_string_parse>();
@@ -227,26 +224,26 @@ int main()
 		constexpr int64_t raw = 1;
 		constexpr int64_t raw2 = 0;
 
-        constexpr auto result = from_integer<test_string_parse>(raw);
+        constexpr auto result = enumbra::from_integer<test_string_parse>(raw);
         static_assert(result.success);
         static_assert(result.value == test_string_parse::B);
 
-        constexpr auto result2 = from_integer<test_string_parse>(raw2);
+        constexpr auto result2 = enumbra::from_integer<test_string_parse>(raw2);
         static_assert(result2.success == false);
         UNUSED(result2);
 	}
 	{
 		constexpr uint8_t raw = 0;
-		constexpr auto valid = from_integer<HexDiagonal>(raw);
+		constexpr auto valid = enumbra::from_integer<HexDiagonal>(raw);
         static_assert(valid.success);
 		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
-		constexpr auto valid2 = from_integer<HexDiagonal>(raw2);
+		constexpr auto valid2 = enumbra::from_integer<HexDiagonal>(raw2);
         static_assert(valid2.success == false);
 		UNUSED(valid2);
 
-		HexDiagonal hd = from_integer_unsafe<HexDiagonal>(raw2);
+		HexDiagonal hd = enumbra::from_integer_unsafe<HexDiagonal>(raw2);
 		UNUSED(hd);
 	}
 
@@ -260,16 +257,16 @@ int main()
 		ENUMBRA_TOGGLE(qt.flags, test_flags::B)
 		ENUMBRA_UNSET(qt.flags, test_flags::B)
 
-		test_flags tf = default_value<test_flags>();
+		test_flags tf = enumbra::default_value<test_flags>();
 		ENUMBRA_ZERO(tf)
 		ENUMBRA_SET(tf, test_flags::C)
 		ENUMBRA_TOGGLE(tf, test_flags::B)
 		ENUMBRA_UNSET(tf, test_flags::B)
 
-		zero(tf);
-		set(tf, test_flags::C);
-		toggle(tf, test_flags::B);
-		unset(tf, test_flags::B);
+		enumbra::zero(tf);
+		enumbra::set(tf, test_flags::C);
+		enumbra::toggle(tf, test_flags::B);
+		enumbra::unset(tf, test_flags::B);
 	}
 
 	{
@@ -278,7 +275,7 @@ int main()
 		zzz = eee;
         UNUSED(zzz);
 
-		auto ccc = to_underlying(eee);
+		auto ccc = enumbra::to_underlying(eee);
 		UNUSED(ccc);
 	}
 

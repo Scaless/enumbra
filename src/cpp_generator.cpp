@@ -210,12 +210,14 @@ const std::string &cpp_generator::generate_cpp_output() {
         }
         if (e.values.size() != unique_values.size()) {
             throw std::logic_error(
-                fmt::format("Values in enum do not have unique values (Enum = {}})", e.name));
+                fmt::format("Values in enum do not have unique values (Enum = {})", e.name));
         }
     }
 
     // Build value enum contexts
     for (auto &e: enum_meta.value_enum_definitions) {
+        clear_store();
+
         // Value Enum Precondition checks
 
         // 1. Names of contained values must be unique
@@ -416,20 +418,18 @@ const std::string &cpp_generator::generate_cpp_output() {
     }
     wlf();
 
-    clear_store();
+    
 
     // Flags ENUM DEFINITIONS
     for (auto &e: enum_meta.flag_enum_definitions) {
+        clear_store();
 
         // Get references and metadata for relevant enum values that we will need
         const uint64_t min_value = 0; // The minimum for a flags entry is always 0 - no bits set
         uint64_t max_value = 0;
         for (auto &v: e.values) {
             if (v.p_value < 0) {
-                throw std::logic_error(
-                    fmt::format(
-                        "Flags-Enum value is less than 0. Flags-Enum values are required to be unsigned. (Enum = {})",
-                        e.name));
+                throw std::logic_error(fmt::format("Flags-Enum value is less than 0. Flags-Enum values are required to be unsigned. (Enum = {})", e.name));
             }
             max_value |= static_cast<uint64_t>(v.p_value);
         }
@@ -681,16 +681,16 @@ void cpp_generator::emit_includes() {
 void cpp_generator::emit_optional_macros() {
     if (cpp_cfg.enumbra_bitfield_macros) {
         // Increment this if macros below are modified.
-        const int enumbra_optional_macros_version = 6;
+        const int enumbra_optional_macros_version = 7;
         std::string macro_strings = R"(
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
 #define ENUMBRA_OPTIONAL_MACROS_VERSION {0}
 
 // Bitfield convenience functions
-#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; zero(_field_); Field = _field_; }}
-#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; set(_field_, Value); Field = _field_; }}
-#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; unset(_field_, Value); Field = _field_; }}
-#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; toggle(_field_, Value); Field = _field_; }}
+#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; ::enumbra::zero(_field_); (Field) = _field_; }}
+#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }}
+#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }}
+#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }}
 
 // Bit field storage helper
 #define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();

@@ -123,8 +123,8 @@ private:
 
     // Write functions
 	template <typename... Args>
-	void write(std::string_view fmt, Args&&... args) {
-		fmt::format_to(std::back_inserter(Output), fmt, std::forward<Args>(args)...);
+	void write(std::string_view fmt, Args&... args) {
+		fmt::vformat_to(std::back_inserter(Output), fmt, fmt::make_format_args(args...));
 	}
 
     // write line feed

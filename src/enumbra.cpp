@@ -2,7 +2,7 @@
 //
 
 #include "enumbra.h"
-#include <iostream>
+#include <cstdio>
 #include <filesystem>
 #include <charconv>
 #include <fstream>
@@ -32,15 +32,14 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg);
 
 void parse_enumbra_csharp(enumbra::enumbra_config &enumbra_config, json &csharp_cfg);
 
-void
-parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_config &enum_config, json &meta_config);
+void parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_config &enum_config, json &meta_config);
 
 void print_help(const cxxopts::Options &options) {
-    std::cout << options.help() << std::endl;
+    printf("%s\n", options.help().c_str());
 }
 
 void print_version() {
-    std::cout << "enumbra v" << kEnumbraVersion << std::endl;
+    printf("enumbra v%s\n", kEnumbraVersion);
 }
 
 int main(int argc, char **argv) {
@@ -96,12 +95,12 @@ int main(int argc, char **argv) {
             const std::string &generated_cpp = cpp_gen.generate_cpp_output();
 
             if (result.count("p")) {
-                std::cout << generated_cpp << std::endl;
+                printf("%s\n", generated_cpp.c_str());
             }
             std::ofstream file(cppout_file_path);
             file << generated_cpp;
 
-            std::cout << "The cpp file was successfully output at: " << cppout_file_path << std::endl;
+            printf("The cpp file was successfully output to: %s\n", cppout_file_path.c_str());
         }
         if (loaded_enumbra_config.generate_csharp) {
             // TODO
@@ -109,7 +108,7 @@ int main(int argc, char **argv) {
     }
     catch (const std::exception &e) {
         // TODO: print a better stacktrace
-        std::cout << e.what();
+        printf("%s\n", e.what());
         return -1;
     }
 

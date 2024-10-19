@@ -11,7 +11,7 @@ using int128 = absl::int128;
 using uint128 = absl::uint128;
 
 namespace enumbra {
-	constexpr char kEnumbraVersion[] = "0.2.0";
+	constexpr char kEnumbraVersion[] = "0.2.1";
 
 	namespace csharp {
 		// ...
