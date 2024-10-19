@@ -1,5 +1,5 @@
 #include "enumbra_minimal.hpp"
 
-int main() {
+int minimal() {
     return 0;
 }

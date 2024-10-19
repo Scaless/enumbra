@@ -16,6 +16,20 @@
             "value": 2
           }
         ]
+      },
+      {
+        "name": "big",
+        "size_type": "unsigned64",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1234567
+          },
+          {
+            "name": "C",
+            "value": 89101112
+          }
+        ]
       }
     ],
     "flags_enums": [

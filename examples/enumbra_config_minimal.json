@@ -6,14 +6,15 @@
       ],
       "time_generated_in_header": false,
       "preamble_text": [
-        "// This is where you would put your code license!"
+
       ],
       "include_guard": "pragma_once",
       "additional_includes": [
-        "<cstdint>"
+
       ],
       "default_flags_enum_size_type": "unsigned32",
       "default_value_enum_size_type": "unsigned32",
+
       "string_table_layout": "name_and_description",
       "min_max_functions": true,
       "bit_info_functions": true,
@@ -22,49 +23,49 @@
         {
           "name": "unsigned8",
           "bits": 8,
-          "type_name": "uint8_t",
+          "type_name": "unsigned char",
           "is_signed": false
         },
         {
           "name": "unsigned16",
           "bits": 16,
-          "type_name": "uint16_t",
+          "type_name": "unsigned short",
           "is_signed": false
         },
         {
           "name": "unsigned32",
           "bits": 32,
-          "type_name": "uint32_t",
+          "type_name": "unsigned int",
           "is_signed": false
         },
         {
           "name": "unsigned64",
           "bits": 64,
-          "type_name": "uint64_t",
+          "type_name": "unsigned long long",
           "is_signed": false
         },
         {
           "name": "signed8",
           "bits": 8,
-          "type_name": "int8_t",
+          "type_name": "char",
           "is_signed": true
         },
         {
           "name": "signed16",
           "bits": 16,
-          "type_name": "int16_t",
+          "type_name": "short",
           "is_signed": true
         },
         {
           "name": "signed32",
           "bits": 32,
-          "type_name": "int32_t",
+          "type_name": "int",
           "is_signed": true
         },
         {
           "name": "signed64",
           "bits": 64,
-          "type_name": "int64_t",
+          "type_name": "long long",
           "is_signed": true
         }
       ],

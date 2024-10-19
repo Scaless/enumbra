@@ -13,6 +13,13 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "",
+      "name": "enumbra minimal",
+      "args": [ "-c C:/Repos/enumbra/examples/enumbra_config_minimal.json -s C:/Repos/enumbra/examples/enum_minimal.json --cppout C:/Repos/enumbra/examples/enumbra_minimal.hpp" ]
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "",
       "name": "rsc",
       "args": [ "-c C:/Repos/rsc/rsc/rsccorelib/include/rsc_enumbra_config.json -s C:/Repos/rsc/rsc/rsccorelib/include/rsc_enums.json --cppout C:/Repos/rsc/rsc/rsccorelib/include/rsc_enumbra.h" ]
     }

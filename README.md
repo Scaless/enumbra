@@ -26,13 +26,11 @@ A Flags Enum may represent no state, one state, or multiple states.
 # Generators
 
 ## C++
-Generated C++ code requires a minimum of C++17. Additional features are conditionally enabled up to C++23.  
+Generated C++ code requires a minimum of C++17. Additional features are conditionally enabled up to C++23. 
 
-Currently, enumbra's generated headers require ONE C++ standard library header: `<cstdint>`
+At the moment, generated headers **do not include any standard library headers** and are completely standalone! Features are implemented completely with the C++ core language.
 
-Generated headers are self-sufficient, just drop them into your project and include them. There are no master headers or include order issues to worry about.  
-
-Including headers generated with incompatible versions of enumbra will throw compiler warnings.  
+There are no master headers or include order issues to worry about, however including headers generated with incompatible versions of enumbra will issue compiler warnings.  
 
 ### Examples
 

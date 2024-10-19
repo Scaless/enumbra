@@ -6,7 +6,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # C++ 23 Project
-add_executable (enumbra_cpp23_test "cpp_test.cpp")
+add_executable (enumbra_cpp23_test "cpp_test.cpp" "cpp_minimal.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(enumbra_cpp23_test PRIVATE /WX /Wall /wd4514 /wd5045 /wd4820 /std:c++latest)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -21,7 +21,7 @@ else()
 endif()
 
 # C++ 20 Project
-add_executable (enumbra_cpp20_test "cpp_test.cpp")
+add_executable (enumbra_cpp20_test "cpp_test.cpp" "cpp_minimal.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(enumbra_cpp20_test PRIVATE /WX /Wall /wd4514 /wd5045 /wd4820 /std:c++20)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -36,7 +36,7 @@ else()
 endif()
 
 # C++ 17 Project
-add_executable (enumbra_cpp17_test "cpp_test.cpp")
+add_executable (enumbra_cpp17_test "cpp_test.cpp" "cpp_minimal.cpp")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(enumbra_cpp17_test PRIVATE /WX /Wall /wd4514 /wd5045 /wd4820 /std:c++17)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

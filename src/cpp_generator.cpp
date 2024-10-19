@@ -672,7 +672,6 @@ void cpp_generator::emit_include_guard_begin() {
 }
 
 void cpp_generator::emit_includes() {
-    wl("#include <cstdint>");
     for (const auto &inc: cpp_cfg.additional_includes) {
         wl("#include {}", inc);
     }
@@ -721,7 +720,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 22;
+    const int enumbra_templates_version = 23;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -738,7 +737,8 @@ namespace enumbra {{
         template<class T, class F>
         struct conditional<false, T, F> {{ using type = F; }};
 
-        constexpr bool is_constant_evaluated() noexcept {{ return __builtin_is_constant_evaluated(); }}
+        // Supported on clang/gcc/MSVC, but we don't use it anywhere yet. 
+        // constexpr bool is_constant_evaluated() noexcept {{ return __builtin_is_constant_evaluated(); }}
 
         // Type info
         template<bool is_enumbra, bool is_value_enum, bool is_flags_enum>
@@ -750,35 +750,35 @@ namespace enumbra {{
 
         // Value enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v,
+            underlying_type default_v, int count_v,
+            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v,
             bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
         struct value_enum_info {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type def = default_v;
-            static constexpr ::std::int32_t count = count_v;
+            static constexpr int count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
-            static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
+            static constexpr int bits_required_storage = bits_required_storage_v;
+            static constexpr int bits_required_transmission = bits_required_transmission_v;
             static constexpr bool has_invalid_sentinel = has_invalid_sentinel_v;
             static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         }};
 
         // Flags enum info
         template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, ::std::int32_t count_v,
-            bool is_contiguous_v, ::std::int32_t bits_required_storage_v, ::std::int32_t bits_required_transmission_v>
+            underlying_type default_v, int count_v,
+            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
         struct flags_enum_info {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
             static constexpr underlying_type default_value = default_v;
-            static constexpr ::std::int32_t count = count_v;
+            static constexpr int count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr ::std::int32_t bits_required_storage = bits_required_storage_v;
-            static constexpr ::std::int32_t bits_required_transmission = bits_required_transmission_v;
+            static constexpr int bits_required_storage = bits_required_storage_v;
+            static constexpr int bits_required_transmission = bits_required_transmission_v;
         }};
 
         // Default template for non-enumbra types
@@ -790,19 +790,19 @@ namespace enumbra {{
         struct flags_enum_helper;
 
         // Constexpr string compare
-        constexpr bool streq_s(const char* a, ::std::uint32_t a_len, const char* b, ::std::uint32_t b_len) noexcept {{
+        constexpr bool streq_s(const char* a, int a_len, const char* b, int b_len) noexcept {{
             if(a_len != b_len) {{ return false; }}
-            for(::std::uint32_t i = 0; i < a_len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
+            for(int i = 0; i < a_len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
-        constexpr bool streq_known_size(const char* a, const char* b, ::std::uint32_t len) noexcept {{
-            for(::std::uint32_t i = 0; i < len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
+        constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {{
+            for(int i = 0; i < len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
-        template<uint32_t length>
+        template<int length>
         constexpr bool streq_fixed_size(const char* a, const char* b) noexcept {{
             static_assert(length > 0);
-            for(::std::uint32_t i = 0; i < length; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
+            for(int i = 0; i < length; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
     }} // end namespace enumbra::detail
@@ -835,11 +835,11 @@ namespace enumbra {{
     constexpr T default_value() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t count() noexcept {{ return detail::value_enum_helper<T>::count; }}
+    constexpr int count() noexcept {{ return detail::value_enum_helper<T>::count; }}
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t count() noexcept {{ return detail::flags_enum_helper<T>::count; }}
+    constexpr int count() noexcept {{ return detail::flags_enum_helper<T>::count; }}
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t count() noexcept = delete;
+    constexpr int count() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>, T>::type* = nullptr>
     constexpr bool is_contiguous() noexcept {{ return detail::value_enum_helper<T>::is_contiguous; }}
@@ -849,18 +849,18 @@ namespace enumbra {{
     constexpr bool is_contiguous() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_storage() noexcept {{ return detail::value_enum_helper<T>::bits_required_storage; }}
+    constexpr int bits_required_storage() noexcept {{ return detail::value_enum_helper<T>::bits_required_storage; }}
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_storage() noexcept {{ return detail::flags_enum_helper<T>::bits_required_storage; }}
+    constexpr int bits_required_storage() noexcept {{ return detail::flags_enum_helper<T>::bits_required_storage; }}
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_storage() noexcept = delete;
+    constexpr int bits_required_storage() noexcept = delete;
 
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_value_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_transmission() noexcept {{ return detail::value_enum_helper<T>::bits_required_transmission; }}
+    constexpr int bits_required_transmission() noexcept {{ return detail::value_enum_helper<T>::bits_required_transmission; }}
     template<class T, typename ::enumbra::detail::enable_if<is_enumbra_flags_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_transmission() noexcept {{ return detail::flags_enum_helper<T>::bits_required_transmission; }}
+    constexpr int bits_required_transmission() noexcept {{ return detail::flags_enum_helper<T>::bits_required_transmission; }}
     template<class T, typename ::enumbra::detail::enable_if<!is_enumbra_enum<T>, T>::type* = nullptr>
-    constexpr ::std::int32_t bits_required_transmission() noexcept = delete;
+    constexpr int bits_required_transmission() noexcept = delete;
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename ::enumbra::detail::enable_if<is_enumbra_enum<T>, T>::type* = nullptr>
     constexpr T from_integer_unsafe(underlying_type e) noexcept {{ return static_cast<T>(e); }}
@@ -924,7 +924,7 @@ namespace enumbra {{
 
     // Begin Default Templates
     template<class T>
-    constexpr from_string_result<T> from_string(const char* str, ::std::uint16_t len) noexcept = delete;
+    constexpr from_string_result<T> from_string(const char* str, int len) noexcept = delete;
 
     template<class T>
     constexpr auto& values() noexcept = delete;
@@ -1128,7 +1128,7 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
         push("entry_name", v.name);
         push("entry_name_len", std::to_string(v.name.length()));
         wvl("template<>");
-        wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
+        wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
         wvl("using result_type = ::enumbra::from_string_result<{enum_name_fq}>;");
         wvl("if (enumbra::detail::streq_s(\"{entry_name}\", {entry_name_len}, str, len)) {{");
         wvl("return result_type({enum_name_fq}::{entry_name});");
@@ -1139,22 +1139,22 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
         pop("entry_name_len");
     } else {
         wvl("template<>");
-        wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, ::std::uint16_t len) noexcept {{");
+        wvl("constexpr ::enumbra::from_string_result<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
         wvl("using result_type = ::enumbra::from_string_result<{enum_name_fq}>;");
         if (e.string_tables.tables.size() == 1) {
             auto &first = e.string_tables.tables.front();
             push("entry_name_len", std::to_string(first.size));
             wvl("if(len != {entry_name_len}) {{ return {{}}; }}");
-            wl("constexpr ::std::uint32_t offset_str = {0};", first.offset_str);
-            wl("constexpr ::std::uint32_t offset_enum = {0};", first.offset_enum);
-            wl("constexpr ::std::uint32_t count = {0};", first.count);
-            wl("for (::std::uint32_t i = 0; i < count; i++) {{");
+            wl("constexpr int offset_str = {0};", first.offset_str);
+            wl("constexpr int offset_enum = {0};", first.offset_enum);
+            wl("constexpr int count = {0};", first.count);
+            wl("for (int i = 0; i < count; i++) {{");
             wvl("if (enumbra::detail::streq_fixed_size<{entry_name_len}>({enum_detail_ns}::enum_strings + offset_str + (i * (len + 1)), str)) {{");
             pop("entry_name_len");
         } else {
-            wvl("::std::uint32_t offset_str = 0;");
-            wvl("::std::uint32_t offset_enum = 0;");
-            wvl("::std::uint32_t count = 0;");
+            wvl("int offset_str = 0;");
+            wvl("int offset_enum = 0;");
+            wvl("int count = 0;");
             wvl("switch(len) {{");
             for (auto &entry: e.string_tables.tables) {
                 wl("case {0}: offset_str = {1}; offset_enum = {2}; count = {3}; break;",
@@ -1162,7 +1162,7 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
             }
             wvl("default: return {{}};");
             wvl("}}");
-            wvl("for (::std::uint32_t i = 0; i < count; i++) {{");
+            wvl("for (int i = 0; i < count; i++) {{");
             wvl("if (::enumbra::detail::streq_known_size({enum_detail_ns}::enum_strings + offset_str + (i * (len + 1)), str, len)) {{");
         }
 
