@@ -30,7 +30,7 @@ Generated C++ code requires a minimum of C++17. Additional features are conditio
 
 At the moment, generated headers **do not include any standard library headers** by default and are completely standalone! Features are implemented completely with the C++ core language.
 
-The example configuration includes <cstdint> for fixed size enum types, which is the recommended configuration.
+The example configuration includes \<cstdint\> for fixed size enum types, which is the recommended configuration.
 
 There are no master headers or include order issues to worry about, however including headers generated with incompatible versions of enumbra will issue compiler warnings.  
 
