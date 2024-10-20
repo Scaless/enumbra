@@ -198,6 +198,11 @@ int main()
 			static_assert(NANFail.has_value() == false);
 			UNUSED(NANFail);
 		}
+		{
+			constexpr auto Hex = enumbra::from_string<HexDiagonal>("NORTH");
+			static_assert(Hex.has_value());
+			UNUSED(Hex);
+		}
 
 		constexpr auto MAXSuccess = enumbra::from_string<Unsigned64Test>("V_UINT32_MAX", 12);
         static_assert(MAXSuccess.has_value() == true);

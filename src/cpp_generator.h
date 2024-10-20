@@ -35,15 +35,15 @@ struct value_enum_context {
     enumbra::enum_entry default_entry;
     enumbra::enum_entry min_entry;
     enumbra::enum_entry max_entry;
-    int64_t entry_count;
+    int64_t entry_count = 0;
     std::string size_type_str;
-    bool is_size_type_signed;
-    int64_t size_type_bits;
-    int64_t bits_required_storage;
-    int64_t bits_required_transmission;
-    int64_t unique_entry_count;
-    bool is_range_contiguous;
-    bool is_one_string_table;
+    bool is_size_type_signed = false;
+    int64_t size_type_bits = 0;
+    int64_t bits_required_storage = 0;
+    int64_t bits_required_transmission = 0;
+    int64_t unique_entry_count = 0;
+    bool is_range_contiguous = false;
+    bool is_one_string_table = false;
     std::optional<int128> invalid_sentinel;
 
     string_lookup_tables string_tables;
