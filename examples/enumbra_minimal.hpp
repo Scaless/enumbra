@@ -45,7 +45,7 @@
 #define ENUMBRA_OPTIONAL_MACROS_VERSION 7
 
 // Bitfield convenience functions
-#define ENUMBRA_ZERO(Field) { decltype(Field) _field_ = Field; ::enumbra::zero(_field_); (Field) = _field_; }
+#define ENUMBRA_CLEAR(Field) { decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; }
 #define ENUMBRA_SET(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }
 #define ENUMBRA_UNSET(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }
 #define ENUMBRA_TOGGLE(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }
@@ -475,15 +475,15 @@ constexpr bool is_valid<::enums::minimal>(::enums::minimal e) noexcept {
 return (static_cast<unsigned int>(e) | 0x54F9338) == 0x54F9338;
 }
 
-constexpr void zero(::enums::minimal& value) noexcept { value = static_cast<::enums::minimal>(0); }
+constexpr void clear(::enums::minimal& value) noexcept { value = static_cast<::enums::minimal>(0); }
 constexpr bool test(::enums::minimal value, ::enums::minimal flags) noexcept { return (static_cast<unsigned int>(flags) & static_cast<unsigned int>(value)) == static_cast<unsigned int>(flags); }
 constexpr void set(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) | static_cast<unsigned int>(flags)); }
 constexpr void unset(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) & (~static_cast<unsigned int>(flags))); }
 constexpr void toggle(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) ^ static_cast<unsigned int>(flags)); }
-constexpr bool is_all(::enums::minimal value) noexcept { return static_cast<unsigned int>(value) >= 0x3; }
-constexpr bool is_any(::enums::minimal value) noexcept { return static_cast<unsigned int>(value) > 0; }
-constexpr bool is_none(::enums::minimal value) noexcept { return static_cast<unsigned int>(value) == 0; }
-constexpr bool is_single(::enums::minimal value) noexcept { unsigned int n = static_cast<unsigned int>(value); return n && !(n & (n - 1)); }
+constexpr bool has_all(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) | 0x3) == 0x3; }
+constexpr bool has_any(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) | 0x3) > 0; }
+constexpr bool has_none(::enums::minimal value) noexcept { return static_cast<unsigned int>(value) == 0; }
+constexpr bool has_single(::enums::minimal value) noexcept { unsigned int n = static_cast<unsigned int>(value); return n && !(n & (n - 1)); }
 
 } // enumbra
 

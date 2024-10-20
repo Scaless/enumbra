@@ -266,18 +266,18 @@ int main()
 			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags)
 		};
 		q_t qt{};
-		ENUMBRA_ZERO(qt.flags)
+		ENUMBRA_CLEAR(qt.flags)
 		ENUMBRA_SET(qt.flags, test_flags::B)
 		ENUMBRA_TOGGLE(qt.flags, test_flags::B)
 		ENUMBRA_UNSET(qt.flags, test_flags::B)
 
 		test_flags tf = enumbra::default_value<test_flags>();
-		ENUMBRA_ZERO(tf)
+		ENUMBRA_CLEAR(tf)
 		ENUMBRA_SET(tf, test_flags::C)
 		ENUMBRA_TOGGLE(tf, test_flags::B)
 		ENUMBRA_UNSET(tf, test_flags::B)
 
-		enumbra::zero(tf);
+		enumbra::clear(tf);
 		enumbra::set(tf, test_flags::C);
 		enumbra::toggle(tf, test_flags::B);
 		enumbra::unset(tf, test_flags::B);

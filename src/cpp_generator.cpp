@@ -516,15 +516,16 @@ const std::string &cpp_generator::generate_cpp_output() {
         wlf();
 
         //// Functions
-        wvl("constexpr void zero({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
+        wvl("constexpr void clear({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
         wvl("constexpr bool test({enum_name_fq} value, {enum_name_fq} flags) noexcept {{ return (static_cast<{size_type}>(flags) & static_cast<{size_type}>(value)) == static_cast<{size_type}>(flags); }}");
         wvl("constexpr void set({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) | static_cast<{size_type}>(flags)); }}");
         wvl("constexpr void unset({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) & (~static_cast<{size_type}>(flags))); }}");
         wvl("constexpr void toggle({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) ^ static_cast<{size_type}>(flags)); }}");
-        wvl("constexpr bool is_all({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) >= {max_value}; }}");
-        wvl("constexpr bool is_any({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) > 0; }}");
-        wvl("constexpr bool is_none({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) == 0; }}");
-        wvl("constexpr bool is_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(value); return n && !(n & (n - 1)); }}");
+        
+        wvl("constexpr bool has_all({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) | {max_value}) == {max_value}; }}");
+        wvl("constexpr bool has_any({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) | {max_value}) > 0; }}");
+        wvl("constexpr bool has_none({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) == 0; }}");
+        wvl("constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(value); return n && !(n & (n - 1)); }}");
         wlf();
 
         // Helper specializations
@@ -687,7 +688,7 @@ void cpp_generator::emit_optional_macros() {
 #define ENUMBRA_OPTIONAL_MACROS_VERSION {0}
 
 // Bitfield convenience functions
-#define ENUMBRA_ZERO(Field) {{ decltype(Field) _field_ = Field; ::enumbra::zero(_field_); (Field) = _field_; }}
+#define ENUMBRA_CLEAR(Field) {{ decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; }}
 #define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }}
 #define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }}
 #define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }}
