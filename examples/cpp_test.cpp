@@ -225,22 +225,24 @@ int main()
 		constexpr int64_t raw2 = 0;
 
         constexpr auto result = enumbra::from_integer<test_string_parse>(raw);
-        static_assert(result.success);
-        static_assert(result.value == test_string_parse::B);
+		static_assert(result);
+		static_assert(result.has_value());
+        static_assert(result.value() == test_string_parse::B);
 
         constexpr auto result2 = enumbra::from_integer<test_string_parse>(raw2);
-        static_assert(result2.success == false);
+		static_assert(!result2);
+		static_assert(result2.has_value() == false);
         UNUSED(result2);
 	}
 	{
 		constexpr uint8_t raw = 0;
 		constexpr auto valid = enumbra::from_integer<HexDiagonal>(raw);
-        static_assert(valid.success);
+        static_assert(valid);
 		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
 		constexpr auto valid2 = enumbra::from_integer<HexDiagonal>(raw2);
-        static_assert(valid2.success == false);
+        static_assert(valid2.has_value() == false);
 		UNUSED(valid2);
 
 		HexDiagonal hd = enumbra::from_integer_unsafe<HexDiagonal>(raw2);

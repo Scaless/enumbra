@@ -1,0 +1,342 @@
+{
+  "enums": {
+    "block_name": "blockname",
+    "flags_enum_default_value_style": "zero",
+    "value_enum_default_value_style": "min",
+    "flags_enums": [
+      {
+        "name": "test_flags",
+        "entries": [
+          {
+            "name": "B",
+            "value": 1
+          },
+          {
+            "name": "C",
+            "value": 2
+          }
+        ]
+      }
+    ],
+    "value_enums": [
+      {
+        "name": "errc",
+        "size_type": "signed32",
+        "entries": [
+          {
+            "name": "address_family_not_supported",
+            "value": 102
+          },
+          {
+            "name": "address_in_use",
+            "value": 100
+          },
+          {
+            "name": "address_not_available",
+            "value": 101
+          },
+          {
+            "name": "already_connected",
+            "value": 113
+          },
+          {
+            "name": "argument_list_too_long",
+            "value": 7
+          },
+          {
+            "name": "argument_out_of_domain",
+            "value": 33
+          },
+          {
+            "name": "bad_address",
+            "value": 14
+          },
+          {
+            "name": "bad_file_descriptor",
+            "value": 9
+          },
+          {
+            "name": "bad_message",
+            "value": 104
+          },
+          {
+            "name": "broken_pipe",
+            "value": 32
+          },
+          {
+            "name": "connection_aborted",
+            "value": 106
+          },
+          {
+            "name": "connection_already_in_progress",
+            "value": 103
+          },
+          {
+            "name": "connection_refused",
+            "value": 107
+          },
+          {
+            "name": "connection_reset",
+            "value": 108
+          },
+          {
+            "name": "cross_device_link",
+            "value": 18
+          },
+          {
+            "name": "destination_address_required",
+            "value": 109
+          },
+          {
+            "name": "device_or_resource_busy",
+            "value": 16
+          },
+          {
+            "name": "directory_not_empty",
+            "value": 41
+          },
+          {
+            "name": "executable_format_error",
+            "value": 8
+          },
+          {
+            "name": "file_exists",
+            "value": 17
+          },
+          {
+            "name": "file_too_large",
+            "value": 27
+          },
+          {
+            "name": "filename_too_long",
+            "value": 38
+          },
+          {
+            "name": "function_not_supported",
+            "value": 40
+          },
+          {
+            "name": "host_unreachable",
+            "value": 110
+          },
+          {
+            "name": "identifier_removed",
+            "value": 111
+          },
+          {
+            "name": "illegal_byte_sequence",
+            "value": 42
+          },
+          {
+            "name": "inappropriate_io_control_operation",
+            "value": 25
+          },
+          {
+            "name": "interrupted",
+            "value": 4
+          },
+          {
+            "name": "invalid_argument",
+            "value": 22
+          },
+          {
+            "name": "invalid_seek",
+            "value": 29
+          },
+          {
+            "name": "io_error",
+            "value": 5
+          },
+          {
+            "name": "is_a_directory",
+            "value": 21
+          },
+          {
+            "name": "message_size",
+            "value": 115
+          },
+          {
+            "name": "network_down",
+            "value": 116
+          },
+          {
+            "name": "network_reset",
+            "value": 117
+          },
+          {
+            "name": "network_unreachable",
+            "value": 118
+          },
+          {
+            "name": "no_buffer_space",
+            "value": 119
+          },
+          {
+            "name": "no_child_process",
+            "value": 10
+          },
+          {
+            "name": "no_link",
+            "value": 121
+          },
+          {
+            "name": "no_lock_available",
+            "value": 39
+          },
+          {
+            "name": "no_message_available",
+            "value": 120
+          },
+          {
+            "name": "no_message",
+            "value": 122
+          },
+          {
+            "name": "no_protocol_option",
+            "value": 123
+          },
+          {
+            "name": "no_space_on_device",
+            "value": 28
+          },
+          {
+            "name": "no_stream_resources",
+            "value": 124
+          },
+          {
+            "name": "no_such_device_or_address",
+            "value": 6
+          },
+          {
+            "name": "no_such_device",
+            "value": 19
+          },
+          {
+            "name": "no_such_file_or_directory",
+            "value": 2
+          },
+          {
+            "name": "no_such_process",
+            "value": 3
+          },
+          {
+            "name": "not_a_directory",
+            "value": 20
+          },
+          {
+            "name": "not_a_socket",
+            "value": 128
+          },
+          {
+            "name": "not_a_stream",
+            "value": 125
+          },
+          {
+            "name": "not_connected",
+            "value": 126
+          },
+          {
+            "name": "not_enough_memory",
+            "value": 12
+          },
+          {
+            "name": "not_supported",
+            "value": 129
+          },
+          {
+            "name": "operation_canceled",
+            "value": 105
+          },
+          {
+            "name": "operation_in_progress",
+            "value": 112
+          },
+          {
+            "name": "operation_not_permitted",
+            "value": 1
+          },
+          {
+            "name": "operation_not_supported",
+            "value": 130
+          },
+          {
+            "name": "operation_would_block",
+            "value": 140
+          },
+          {
+            "name": "owner_dead",
+            "value": 133
+          },
+          {
+            "name": "permission_denied",
+            "value": 13
+          },
+          {
+            "name": "protocol_error",
+            "value": 134
+          },
+          {
+            "name": "protocol_not_supported",
+            "value": 135
+          },
+          {
+            "name": "read_only_file_system",
+            "value": 30
+          },
+          {
+            "name": "resource_deadlock_would_occur",
+            "value": 36
+          },
+          {
+            "name": "resource_unavailable_try_again",
+            "value": 11
+          },
+          {
+            "name": "result_out_of_range",
+            "value": 34
+          },
+          {
+            "name": "state_not_recoverable",
+            "value": 127
+          },
+          {
+            "name": "stream_timeout",
+            "value": 137
+          },
+          {
+            "name": "text_file_busy",
+            "value": 139
+          },
+          {
+            "name": "timed_out",
+            "value": 138
+          },
+          {
+            "name": "too_many_files_open_in_system",
+            "value": 23
+          },
+          {
+            "name": "too_many_files_open",
+            "value": 24
+          },
+          {
+            "name": "too_many_links",
+            "value": 31
+          },
+          {
+            "name": "too_many_symbolic_link_levels",
+            "value": 114
+          },
+          {
+            "name": "value_too_large",
+            "value": 132
+          },
+          {
+            "name": "wrong_protocol_type",
+            "value": 136
+          }
+        ]
+      }
+    ]
+  }
+}

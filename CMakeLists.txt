@@ -13,7 +13,7 @@ add_executable (enumbra
 		"src/enumbra.cpp"
 		"src/cpp_generator.cpp"
 		"src/cpp_utility.cpp"
-)
+ "benchmark/benchmark_shared.h")
 target_compile_features(enumbra PRIVATE cxx_std_17)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

@@ -44,6 +44,8 @@ void print_version() {
 
 int main(int argc, char **argv) {
     try {
+        auto start = std::chrono::system_clock::now();
+
         cxxopts::Options options("enumbra", "An enum code generator. https://github.com/Scaless/enumbra");
         options
                 .custom_help("-c enumbra_config.json -s enum.json")
@@ -100,7 +102,9 @@ int main(int argc, char **argv) {
             std::ofstream file(cppout_file_path);
             file << generated_cpp;
 
-            printf("The cpp file was successfully output to: %s\n", cppout_file_path.c_str());
+            auto end = std::chrono::system_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            printf("The cpp file was successfully output in (%s ms) to: %s\n", std::to_string(elapsed.count()).c_str(), cppout_file_path.c_str());
         }
         if (loaded_enumbra_config.generate_csharp) {
             // TODO
