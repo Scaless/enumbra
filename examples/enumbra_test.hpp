@@ -76,7 +76,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 24
+#define ENUMBRA_BASE_TEMPLATES_VERSION 25
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -146,21 +146,24 @@ namespace enumbra {
         template<class T>
         struct flags_enum_helper;
 
-        // Constexpr string compare
-        constexpr bool streq_s(const char* a, int a_len, const char* b, int b_len) noexcept {
-            if(a_len != b_len) { return false; }
-            for(int i = 0; i < a_len; ++i) { if(a[i] != b[i]) { return false; } }
-            return true;
-        }
+        // Compare strings with sizes only known at runtime
         constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {
             for(int i = 0; i < len; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
         }
+        // Compare strings with sizes known at compile time
         template<int length>
         constexpr bool streq_fixed_size(const char* a, const char* b) noexcept {
             static_assert(length > 0);
             for(int i = 0; i < length; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
+        }
+        // C-style string length
+        constexpr int strlen(const char* a) noexcept {
+            if (a == nullptr) { return 0; }
+            int count = 0;
+            while (a[count] != 0) { count++; }
+            return count;
         }
     } // end namespace enumbra::detail
     template<class T>
@@ -273,6 +276,9 @@ namespace enumbra {
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
 
+    template<class T>
+    constexpr optional_value<T> from_string(const char* str) noexcept = delete;
+
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
     constexpr optional_value<T> from_integer(underlying_type value) noexcept = delete;
 
@@ -290,9 +296,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 24
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 25
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 24
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 25
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -376,6 +382,13 @@ return ::enumbra::optional_value<::enums::test_string_parse>(::enums::detail::te
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_string_parse> enumbra::from_string<::enums::test_string_parse>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::test_string_parse>(str, len);
+}
+
 
 namespace enums {
 enum class Unsigned64Test : uint64_t {
@@ -463,6 +476,13 @@ return ::enumbra::optional_value<::enums::Unsigned64Test>(::enums::detail::Unsig
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::Unsigned64Test> enumbra::from_string<::enums::Unsigned64Test>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::Unsigned64Test>(str, len);
+}
+
+
 namespace enums {
 enum class Signed64Test : int64_t {
 MIN = (-9223372036854775807 - 1),
@@ -543,6 +563,13 @@ return ::enumbra::optional_value<::enums::Signed64Test>(::enums::detail::Signed6
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::Signed64Test> enumbra::from_string<::enums::Signed64Test>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::Signed64Test>(str, len);
+}
+
 
 namespace enums {
 enum class Signed32Test : int32_t {
@@ -625,6 +652,13 @@ return ::enumbra::optional_value<::enums::Signed32Test>(::enums::detail::Signed3
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::Signed32Test> enumbra::from_string<::enums::Signed32Test>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::Signed32Test>(str, len);
+}
+
+
 namespace enums {
 enum class Signed16Test : int16_t {
 MIN = (-32767 - 1),
@@ -706,6 +740,13 @@ return ::enumbra::optional_value<::enums::Signed16Test>(::enums::detail::Signed1
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::Signed16Test> enumbra::from_string<::enums::Signed16Test>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::Signed16Test>(str, len);
+}
+
+
 namespace enums {
 enum class Signed8Test : int8_t {
 V_INT_MIN = (-127 - 1),
@@ -778,6 +819,13 @@ return ::enumbra::optional_value<::enums::Signed8Test>(::enums::detail::Signed8T
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::Signed8Test> enumbra::from_string<::enums::Signed8Test>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::Signed8Test>(str, len);
+}
+
+
 namespace enums {
 enum class test_value : int32_t {
 A = 0,
@@ -844,6 +892,13 @@ return ::enumbra::optional_value<::enums::test_value>(::enums::detail::test_valu
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_value> enumbra::from_string<::enums::test_value>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::test_value>(str, len);
+}
+
 
 namespace enums {
 enum class HexDiagonal : uint8_t {
@@ -936,6 +991,13 @@ return ::enumbra::optional_value<::enums::HexDiagonal>(::enums::detail::HexDiago
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::HexDiagonal> enumbra::from_string<::enums::HexDiagonal>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::HexDiagonal>(str, len);
+}
+
+
 namespace enums {
 enum class NegativeTest1 : int8_t {
 A = -2,
@@ -1006,6 +1068,13 @@ return ::enumbra::optional_value<::enums::NegativeTest1>(::enums::detail::Negati
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::NegativeTest1> enumbra::from_string<::enums::NegativeTest1>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::NegativeTest1>(str, len);
+}
+
 
 namespace enums {
 enum class NegativeTest2 : int8_t {
@@ -1078,6 +1147,13 @@ return ::enumbra::optional_value<::enums::NegativeTest2>(::enums::detail::Negati
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::NegativeTest2> enumbra::from_string<::enums::NegativeTest2>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::NegativeTest2>(str, len);
+}
+
+
 namespace enums {
 enum class NegativeTest3 : int8_t {
 A = -3,
@@ -1145,6 +1221,13 @@ return ::enumbra::optional_value<::enums::NegativeTest3>(::enums::detail::Negati
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::NegativeTest3> enumbra::from_string<::enums::NegativeTest3>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::NegativeTest3>(str, len);
+}
+
 
 namespace enums {
 enum class NegativeTest4 : int8_t {
@@ -1214,6 +1297,13 @@ return ::enumbra::optional_value<::enums::NegativeTest4>(::enums::detail::Negati
 return {};
 }
 
+template<>
+constexpr ::enumbra::optional_value<::enums::NegativeTest4> enumbra::from_string<::enums::NegativeTest4>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::NegativeTest4>(str, len);
+}
+
+
 namespace enums {
 enum class EmptyTest1Unsigned : uint8_t {
 A = 0,
@@ -1258,11 +1348,18 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::EmptyTest1Unsigned> enumbra::from_string<::enums::EmptyTest1Unsigned>(const char* str, int len) noexcept {
-if (::enumbra::detail::streq_s("A", 1, str, len)) {
+if ((len == 1) && ::enumbra::detail::streq_fixed_size<1>("A", str)) {
 return ::enumbra::optional_value<::enums::EmptyTest1Unsigned>(::enums::EmptyTest1Unsigned::A);
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::EmptyTest1Unsigned> enumbra::from_string<::enums::EmptyTest1Unsigned>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::EmptyTest1Unsigned>(str, len);
+}
+
 
 namespace enums {
 enum class EmptyTest1Signed : int8_t {
@@ -1308,11 +1405,18 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::EmptyTest1Signed> enumbra::from_string<::enums::EmptyTest1Signed>(const char* str, int len) noexcept {
-if (::enumbra::detail::streq_s("A", 1, str, len)) {
+if ((len == 1) && ::enumbra::detail::streq_fixed_size<1>("A", str)) {
 return ::enumbra::optional_value<::enums::EmptyTest1Signed>(::enums::EmptyTest1Signed::A);
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::EmptyTest1Signed> enumbra::from_string<::enums::EmptyTest1Signed>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::EmptyTest1Signed>(str, len);
+}
+
 
 namespace enums {
 enum class SingleTest1Unsigned : uint8_t {
@@ -1358,11 +1462,18 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::SingleTest1Unsigned> enumbra::from_string<::enums::SingleTest1Unsigned>(const char* str, int len) noexcept {
-if (::enumbra::detail::streq_s("A", 1, str, len)) {
+if ((len == 1) && ::enumbra::detail::streq_fixed_size<1>("A", str)) {
 return ::enumbra::optional_value<::enums::SingleTest1Unsigned>(::enums::SingleTest1Unsigned::A);
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::SingleTest1Unsigned> enumbra::from_string<::enums::SingleTest1Unsigned>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::SingleTest1Unsigned>(str, len);
+}
+
 
 namespace enums {
 enum class SingleTest1Signed : int8_t {
@@ -1408,11 +1519,18 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::SingleTest1Signed> enumbra::from_string<::enums::SingleTest1Signed>(const char* str, int len) noexcept {
-if (::enumbra::detail::streq_s("A", 1, str, len)) {
+if ((len == 1) && ::enumbra::detail::streq_fixed_size<1>("A", str)) {
 return ::enumbra::optional_value<::enums::SingleTest1Signed>(::enums::SingleTest1Signed::A);
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::SingleTest1Signed> enumbra::from_string<::enums::SingleTest1Signed>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::SingleTest1Signed>(str, len);
+}
+
 
 namespace enums {
 enum class errc : int32_t {
@@ -1889,6 +2007,13 @@ return ::enumbra::optional_value<::enums::errc>(::enums::detail::errc::enum_stri
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::errc> enumbra::from_string<::enums::errc>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::errc>(str, len);
+}
+
 
 
 namespace enums {

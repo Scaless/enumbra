@@ -412,7 +412,8 @@ const std::string &cpp_generator::generate_cpp_output() {
         emit_ve_func_is_valid(e);
 
         emit_ve_func_to_string(e);
-        emit_ve_func_from_string(e);
+        emit_ve_func_from_string_with_size(e);
+        emit_ve_func_from_string_cstr(e);
 
         wlf();
     }
@@ -720,7 +721,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 24;
+    const int enumbra_templates_version = 25;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -793,21 +794,24 @@ namespace enumbra {{
         template<class T>
         struct flags_enum_helper;
 
-        // Constexpr string compare
-        constexpr bool streq_s(const char* a, int a_len, const char* b, int b_len) noexcept {{
-            if(a_len != b_len) {{ return false; }}
-            for(int i = 0; i < a_len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
-            return true;
-        }}
+        // Compare strings with sizes only known at runtime
         constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {{
             for(int i = 0; i < len; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
         }}
+        // Compare strings with sizes known at compile time
         template<int length>
         constexpr bool streq_fixed_size(const char* a, const char* b) noexcept {{
             static_assert(length > 0);
             for(int i = 0; i < length; ++i) {{ if(a[i] != b[i]) {{ return false; }} }}
             return true;
+        }}
+        // C-style string length
+        constexpr int strlen(const char* a) noexcept {{
+            if (a == nullptr) {{ return 0; }}
+            int count = 0;
+            while (a[count] != 0) {{ count++; }}
+            return count;
         }}
     }} // end namespace enumbra::detail
     template<class T>
@@ -919,6 +923,9 @@ namespace enumbra {{
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
+
+    template<class T>
+    constexpr optional_value<T> from_string(const char* str) noexcept = delete;
 
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
     constexpr optional_value<T> from_integer(underlying_type value) noexcept = delete;
@@ -1115,15 +1122,14 @@ void cpp_generator::emit_ve_func_to_string(const value_enum_context &e) {
     wlf();
 }
 
-void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
-//    return;
+void cpp_generator::emit_ve_func_from_string_with_size(const value_enum_context &e) {
     if (e.values.size() == 1) {
         const auto &v = e.values.at(0);
         push("entry_name", v.name);
         push("entry_name_len", std::to_string(v.name.length()));
         wvl("template<>");
         wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
-        wvl("if (::enumbra::detail::streq_s(\"{entry_name}\", {entry_name_len}, str, len)) {{");
+        wvl("if ((len == {entry_name_len}) && ::enumbra::detail::streq_fixed_size<{entry_name_len}>(\"{entry_name}\", str)) {{");
         wvl("return ::enumbra::optional_value<{enum_name_fq}>({enum_name_fq}::{entry_name});");
         wvl("}}");
         wvl("return {{}};");
@@ -1169,5 +1175,16 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
         wvl("return {{}};");
         wvl("}}");
     }
+    wlf();
+}
+
+void cpp_generator::emit_ve_func_from_string_cstr(const value_enum_context& /*e*/)
+{
+    wvl("template<>");
+    wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str) noexcept {{");
+    wvl("const int len = ::enumbra::detail::strlen(str);");
+    wvl("return ::enumbra::from_string<{enum_name_fq}>(str, len);");
+    wvl("}}");
+    wlf();
 }
 

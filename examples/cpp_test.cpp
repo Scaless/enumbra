@@ -188,9 +188,16 @@ int main()
 		constexpr auto m = enumbra::min<HexDiagonal>();
 		UNUSED(m);
 
-		constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN", 3);
-        static_assert(NANFail.has_value() == false);
-        UNUSED(NANFail);
+		{
+			constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN", 3);
+			static_assert(NANFail.has_value() == false);
+			UNUSED(NANFail);
+		}
+		{
+			constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN");
+			static_assert(NANFail.has_value() == false);
+			UNUSED(NANFail);
+		}
 
 		constexpr auto MAXSuccess = enumbra::from_string<Unsigned64Test>("V_UINT32_MAX", 12);
         static_assert(MAXSuccess.has_value() == true);

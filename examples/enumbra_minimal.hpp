@@ -73,7 +73,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 24
+#define ENUMBRA_BASE_TEMPLATES_VERSION 25
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -143,21 +143,24 @@ namespace enumbra {
         template<class T>
         struct flags_enum_helper;
 
-        // Constexpr string compare
-        constexpr bool streq_s(const char* a, int a_len, const char* b, int b_len) noexcept {
-            if(a_len != b_len) { return false; }
-            for(int i = 0; i < a_len; ++i) { if(a[i] != b[i]) { return false; } }
-            return true;
-        }
+        // Compare strings with sizes only known at runtime
         constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {
             for(int i = 0; i < len; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
         }
+        // Compare strings with sizes known at compile time
         template<int length>
         constexpr bool streq_fixed_size(const char* a, const char* b) noexcept {
             static_assert(length > 0);
             for(int i = 0; i < length; ++i) { if(a[i] != b[i]) { return false; } }
             return true;
+        }
+        // C-style string length
+        constexpr int strlen(const char* a) noexcept {
+            if (a == nullptr) { return 0; }
+            int count = 0;
+            while (a[count] != 0) { count++; }
+            return count;
         }
     } // end namespace enumbra::detail
     template<class T>
@@ -270,6 +273,9 @@ namespace enumbra {
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
 
+    template<class T>
+    constexpr optional_value<T> from_string(const char* str) noexcept = delete;
+
     template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
     constexpr optional_value<T> from_integer(underlying_type value) noexcept = delete;
 
@@ -287,9 +293,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 24
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 25
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 24
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 25
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -356,6 +362,13 @@ return ::enumbra::optional_value<::enums::minimal_val>(::enums::detail::minimal_
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::minimal_val> enumbra::from_string<::enums::minimal_val>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::minimal_val>(str, len);
+}
+
 
 namespace enums {
 enum class big : unsigned long long {
@@ -424,6 +437,13 @@ return ::enumbra::optional_value<::enums::big>(::enums::detail::big::values_arr[
 }
 return {};
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::big> enumbra::from_string<::enums::big>(const char* str) noexcept {
+const int len = ::enumbra::detail::strlen(str);
+return ::enumbra::from_string<::enums::big>(str, len);
+}
+
 
 
 namespace enums {

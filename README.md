@@ -43,9 +43,10 @@ Functions live in the enumbra:: namespace, which is omitted below for brevity.
 | ```int bits_required_storage<T>()``` | Returns the minimum number of bits required to store the maximum valid value in a bitfield. | 
 | ```int bits_required_transmission<T>()``` | Returns the number of bits required to transmit any value in the enum where both sides know the range of valid values. This is distinct from the number of storage bits since we can just send the difference between (max - min).<br>TODO: Might remove, benefit is questionable. |
 | ```const T[]& values<T>()``` | Returns a C-style array containing all valid values for the enum.
-| ```from_integer_result<T> from_integer<T>(underlying_type value)``` | Returns an Optional-like type which indicates if the conversion from a raw integer failed or succeeded. |
+| ```optional_value_<T> from_integer<T>(underlying_type value)``` | Returns an Optional-like type which indicates if the conversion from a raw integer failed or succeeded. |
 | ```T from_integer_unsafe<T>(underlying_type s)``` | Cast an integer value to T. |
-| ```from_string_result<T> from_string<T>(const char* str, int len)``` | Returns an Optional-like type which indicates if the conversion from string failed or succeeded. |
+| ```optional_value_<T> from_string<T>(const char* str, int len)``` | Returns an Optional-like type which indicates if the conversion from string failed or succeeded. |
+| ```optional_value_<T> from_string<T>(const char* str)``` | Returns an Optional-like type which indicates if the conversion from string failed or succeeded. |
 | ```underlying_type to_underlying<T>(T v)``` | Cast T to its underlying integer type. |
 | ```const char* to_string<T>(T v)``` | Get the string value for T. Returns nullptr on failure. |
 | ```bool is_valid<T>(T v)``` | Returns true if ```v``` contains a valid value in the enum.  Useful for asserts. |
