@@ -324,8 +324,7 @@ return ::enums::detail::minimal_val::values_arr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::minimal_val> enumbra::from_integer<::enums::minimal_val>(unsigned int v) noexcept { 
-using result_type = ::enumbra::optional_value<::enums::minimal_val>;
-if((1 <= v) && (v <= 2)) { return result_type(static_cast<::enums::minimal_val>(v)); }
+if((1 <= v) && (v <= 2)) { return ::enumbra::optional_value<::enums::minimal_val>(static_cast<::enums::minimal_val>(v)); }
 return {};
 }
 
@@ -346,14 +345,13 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::minimal_val> enumbra::from_string<::enums::minimal_val>(const char* str, int len) noexcept {
-using result_type = ::enumbra::optional_value<::enums::minimal_val>;
 if(len != 1) { return {}; }
 constexpr int offset_str = 0;
 constexpr int offset_enum = 0;
 constexpr int count = 2;
 for (int i = 0; i < count; i++) {
 if (::enumbra::detail::streq_fixed_size<1>(::enums::detail::minimal_val::enum_strings + offset_str + (i * (len + 1)), str)) {
-return result_type(::enums::detail::minimal_val::values_arr[offset_enum + i]);
+return ::enumbra::optional_value<::enums::minimal_val>(::enums::detail::minimal_val::values_arr[offset_enum + i]);
 }
 }
 return {};
@@ -389,9 +387,8 @@ return ::enums::detail::big::values_arr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::big> enumbra::from_integer<::enums::big>(unsigned long long v) noexcept { 
-using result_type = ::enumbra::optional_value<::enums::big>;
 for(auto value : values<::enums::big>()) {
-if(value == static_cast<::enums::big>(v)) { return result_type(static_cast<::enums::big>(v)); }
+if(value == static_cast<::enums::big>(v)) { return ::enumbra::optional_value<::enums::big>(static_cast<::enums::big>(v)); }
 }
 return {};
 }
@@ -416,14 +413,13 @@ return nullptr;
 
 template<>
 constexpr ::enumbra::optional_value<::enums::big> enumbra::from_string<::enums::big>(const char* str, int len) noexcept {
-using result_type = ::enumbra::optional_value<::enums::big>;
 if(len != 1) { return {}; }
 constexpr int offset_str = 0;
 constexpr int offset_enum = 0;
 constexpr int count = 2;
 for (int i = 0; i < count; i++) {
 if (::enumbra::detail::streq_fixed_size<1>(::enums::detail::big::enum_strings + offset_str + (i * (len + 1)), str)) {
-return result_type(::enums::detail::big::values_arr[offset_enum + i]);
+return ::enumbra::optional_value<::enums::big>(::enums::detail::big::values_arr[offset_enum + i]);
 }
 }
 return {};

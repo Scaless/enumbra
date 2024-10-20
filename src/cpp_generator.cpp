@@ -1026,25 +1026,24 @@ void cpp_generator::emit_ve_func_from_integer(const value_enum_context &e) {
     // from_integer variations
     wvl("template<>");
     wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> enumbra::from_integer<{enum_name_fq}>({size_type} v) noexcept {{ ");
-    wvl("using result_type = ::enumbra::optional_value<{enum_name_fq}>;");
     if (e.values.size() == 1) {
-        wvl("if({max_v} == v) {{ return result_type(static_cast<{enum_name_fq}>(v)); }}");
+        wvl("if({max_v} == v) {{ return ::enumbra::optional_value<{enum_name_fq}>(static_cast<{enum_name_fq}>(v)); }}");
         wvl("return {{}};");
         wvl("}}");
     } else if (e.is_range_contiguous) {
         // Unsigned values can't go below 0 so we just need to check that we're <= max
         if ((e.min_entry.p_value == 0) && !e.is_size_type_signed) {
-            wvl("if(v <= {max_v}) {{ return result_type(static_cast<{enum_name_fq}>(v)); }}");
+            wvl("if(v <= {max_v}) {{ return ::enumbra::optional_value<{enum_name_fq}>(static_cast<{enum_name_fq}>(v)); }}");
             wvl("return {{}};");
             wvl("}}");
         } else {
-            wvl("if(({min_v} <= v) && (v <= {max_v})) {{ return result_type(static_cast<{enum_name_fq}>(v)); }}");
+            wvl("if(({min_v} <= v) && (v <= {max_v})) {{ return ::enumbra::optional_value<{enum_name_fq}>(static_cast<{enum_name_fq}>(v)); }}");
             wvl("return {{}};");
             wvl("}}");
         }
     } else {
         wvl("for(auto value : values<{enum_name_fq}>()) {{");
-        wvl("if(value == static_cast<{enum_name_fq}>(v)) {{ return result_type(static_cast<{enum_name_fq}>(v)); }}");
+        wvl("if(value == static_cast<{enum_name_fq}>(v)) {{ return ::enumbra::optional_value<{enum_name_fq}>(static_cast<{enum_name_fq}>(v)); }}");
         wvl("}}");
         wvl("return {{}};");
         wvl("}}");
@@ -1124,9 +1123,8 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
         push("entry_name_len", std::to_string(v.name.length()));
         wvl("template<>");
         wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
-        wvl("using result_type = ::enumbra::optional_value<{enum_name_fq}>;");
         wvl("if (::enumbra::detail::streq_s(\"{entry_name}\", {entry_name_len}, str, len)) {{");
-        wvl("return result_type({enum_name_fq}::{entry_name});");
+        wvl("return ::enumbra::optional_value<{enum_name_fq}>({enum_name_fq}::{entry_name});");
         wvl("}}");
         wvl("return {{}};");
         wvl("}}");
@@ -1135,7 +1133,6 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
     } else {
         wvl("template<>");
         wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> enumbra::from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
-        wvl("using result_type = ::enumbra::optional_value<{enum_name_fq}>;");
         if (e.string_tables.tables.size() == 1) {
             auto &first = e.string_tables.tables.front();
             push("entry_name_len", std::to_string(first.size));
@@ -1162,9 +1159,9 @@ void cpp_generator::emit_ve_func_from_string(const value_enum_context &e) {
         }
 
         if (e.is_one_string_table) {
-            wvl("return result_type({enum_detail_ns}::values_arr[offset_enum + i]);");
+            wvl("return ::enumbra::optional_value<{enum_name_fq}>({enum_detail_ns}::values_arr[offset_enum + i]);");
         } else {
-            wvl("return result_type({enum_detail_ns}::enum_string_values[offset_enum + i]);");
+            wvl("return ::enumbra::optional_value<{enum_name_fq}>({enum_detail_ns}::enum_string_values[offset_enum + i]);");
         }
         wvl("}}");
         wvl("}}");
