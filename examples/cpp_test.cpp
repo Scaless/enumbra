@@ -171,10 +171,46 @@ int main()
 	test_nodefault vv{};
 	vv = ~vv;
 
+	{
+		constexpr test_nodefault cz{};
+		static_assert(enumbra::has_none(cz));
+		static_assert(!enumbra::has_single(cz));
+		static_assert(!enumbra::has_any(cz));
+		static_assert(!enumbra::has_all(cz));
+		static_assert(enumbra::is_valid(cz));
+	}
+	{
+		constexpr test_nodefault cz = test_nodefault::B;
+		static_assert(!enumbra::has_none(cz));
+		static_assert(enumbra::has_single(cz));
+		static_assert(enumbra::has_any(cz));
+		static_assert(!enumbra::has_all(cz));
+		static_assert(enumbra::is_valid(cz));
+	}
+	{
+		constexpr test_nodefault cz = test_nodefault::B | test_nodefault::C;
+		static_assert(!enumbra::has_none(cz));
+		static_assert(!enumbra::has_single(cz));
+		static_assert(enumbra::has_any(cz));
+		static_assert(enumbra::has_all(cz));
+		static_assert(enumbra::is_valid(cz));
+	}
+	{
+		// Invalid
+		constexpr test_nodefault cz =  enumbra::from_integer_unsafe<test_nodefault>(4);
+		static_assert(enumbra::has_none(cz));
+		static_assert(!enumbra::has_single(cz));
+		static_assert(!enumbra::has_any(cz));
+		static_assert(!enumbra::has_all(cz));
+		static_assert(!enumbra::is_valid(cz));
+	}
+	
+
     TestSingleFlag zz{};
     TestSingleFlag z{};
 	const bool q = z == zz;
 	UNUSED(q);
+	
 
 	z |= TestSingleFlag::C;
 	z = z | zz;

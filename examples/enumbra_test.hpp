@@ -2042,7 +2042,7 @@ return ::enums::detail::test_flags::flags_arr;
 
 template<>
 constexpr bool is_valid<::enums::test_flags>(::enums::test_flags e) noexcept { 
-return (static_cast<uint32_t>(e) | 140) == 140;
+return (static_cast<uint32_t>(e) | static_cast<uint32_t>(0x3)) == static_cast<uint32_t>(0x3);
 }
 
 constexpr void clear(::enums::test_flags& value) noexcept { value = static_cast<::enums::test_flags>(0); }
@@ -2050,10 +2050,10 @@ constexpr bool test(::enums::test_flags value, ::enums::test_flags flags) noexce
 constexpr void set(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
 constexpr void unset(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
 constexpr void toggle(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
-constexpr bool has_all(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) | 0x3) == 0x3; }
-constexpr bool has_any(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) | 0x3) > 0; }
-constexpr bool has_none(::enums::test_flags value) noexcept { return static_cast<uint32_t>(value) == 0; }
-constexpr bool has_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(value); return n && !(n & (n - 1)); }
+constexpr bool has_all(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == static_cast<uint32_t>(0x3); }
+constexpr bool has_any(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) > 0; }
+constexpr bool has_none(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == 0; }
+constexpr bool has_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
 } // enumbra
 
@@ -2092,7 +2092,7 @@ return ::enums::detail::test_nodefault::flags_arr;
 
 template<>
 constexpr bool is_valid<::enums::test_nodefault>(::enums::test_nodefault e) noexcept { 
-return (static_cast<uint16_t>(e) | 140) == 140;
+return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x3)) == static_cast<uint16_t>(0x3);
 }
 
 constexpr void clear(::enums::test_nodefault& value) noexcept { value = static_cast<::enums::test_nodefault>(0); }
@@ -2100,10 +2100,10 @@ constexpr bool test(::enums::test_nodefault value, ::enums::test_nodefault flags
 constexpr void set(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
 constexpr void unset(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
 constexpr void toggle(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) | 0x3) == 0x3; }
-constexpr bool has_any(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) | 0x3) > 0; }
-constexpr bool has_none(::enums::test_nodefault value) noexcept { return static_cast<uint16_t>(value) == 0; }
-constexpr bool has_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+constexpr bool has_all(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == static_cast<uint16_t>(0x3); }
+constexpr bool has_any(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) > 0; }
+constexpr bool has_none(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == 0; }
+constexpr bool has_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
 } // enumbra
 
@@ -2144,7 +2144,7 @@ return ::enums::detail::TestSparseFlags::flags_arr;
 
 template<>
 constexpr bool is_valid<::enums::TestSparseFlags>(::enums::TestSparseFlags e) noexcept { 
-return (static_cast<uint16_t>(e) | 140) == 140;
+return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x15)) == static_cast<uint16_t>(0x15);
 }
 
 constexpr void clear(::enums::TestSparseFlags& value) noexcept { value = static_cast<::enums::TestSparseFlags>(0); }
@@ -2152,10 +2152,10 @@ constexpr bool test(::enums::TestSparseFlags value, ::enums::TestSparseFlags fla
 constexpr void set(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
 constexpr void unset(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
 constexpr void toggle(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) | 0x15) == 0x15; }
-constexpr bool has_any(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) | 0x15) > 0; }
-constexpr bool has_none(::enums::TestSparseFlags value) noexcept { return static_cast<uint16_t>(value) == 0; }
-constexpr bool has_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+constexpr bool has_all(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == static_cast<uint16_t>(0x15); }
+constexpr bool has_any(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) > 0; }
+constexpr bool has_none(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == 0; }
+constexpr bool has_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x15); return n && !(n & (n - 1)); }
 
 } // enumbra
 
@@ -2192,7 +2192,7 @@ return ::enums::detail::TestSingleFlag::flags_arr;
 
 template<>
 constexpr bool is_valid<::enums::TestSingleFlag>(::enums::TestSingleFlag e) noexcept { 
-return (static_cast<uint16_t>(e) | 140) == 140;
+return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x4)) == static_cast<uint16_t>(0x4);
 }
 
 constexpr void clear(::enums::TestSingleFlag& value) noexcept { value = static_cast<::enums::TestSingleFlag>(0); }
@@ -2200,10 +2200,10 @@ constexpr bool test(::enums::TestSingleFlag value, ::enums::TestSingleFlag flags
 constexpr void set(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
 constexpr void unset(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
 constexpr void toggle(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) | 0x4) == 0x4; }
-constexpr bool has_any(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) | 0x4) > 0; }
-constexpr bool has_none(::enums::TestSingleFlag value) noexcept { return static_cast<uint16_t>(value) == 0; }
-constexpr bool has_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(value); return n && !(n & (n - 1)); }
+constexpr bool has_all(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == static_cast<uint16_t>(0x4); }
+constexpr bool has_any(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) > 0; }
+constexpr bool has_none(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == 0; }
+constexpr bool has_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x4); return n && !(n & (n - 1)); }
 
 } // enumbra
 

@@ -120,7 +120,10 @@ private:
             }
         }
     }
-    void clear_store() { store_.clear(); }
+    void clear_store() { 
+        store_map_.clear(); 
+        store_.clear(); 
+    }
 
     // Write functions
 	template <typename... Args>

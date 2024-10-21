@@ -511,7 +511,7 @@ const std::string &cpp_generator::generate_cpp_output() {
 
         wvl("template<>");
         wvl("constexpr bool is_valid<{enum_name_fq}>({enum_name_fq} e) noexcept {{ ");
-        wvl("return (static_cast<{size_type}>(e) | {max_v}) == {max_v};");
+        wvl("return (static_cast<{size_type}>(e) | static_cast<{size_type}>({max_value})) == static_cast<{size_type}>({max_value});");
         wvl("}}");
         wlf();
 
@@ -522,10 +522,10 @@ const std::string &cpp_generator::generate_cpp_output() {
         wvl("constexpr void unset({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) & (~static_cast<{size_type}>(flags))); }}");
         wvl("constexpr void toggle({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) ^ static_cast<{size_type}>(flags)); }}");
         
-        wvl("constexpr bool has_all({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) | {max_value}) == {max_value}; }}");
-        wvl("constexpr bool has_any({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) | {max_value}) > 0; }}");
-        wvl("constexpr bool has_none({enum_name_fq} value) noexcept {{ return static_cast<{size_type}>(value) == 0; }}");
-        wvl("constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(value); return n && !(n & (n - 1)); }}");
+        wvl("constexpr bool has_all({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == static_cast<{size_type}>({max_value}); }}");
+        wvl("constexpr bool has_any({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) > 0; }}");
+        wvl("constexpr bool has_none({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == 0; }}");
+        wvl("constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(static_cast<{size_type}>(value) & {max_value}); return n && !(n & (n - 1)); }}");
         wlf();
 
         // Helper specializations
