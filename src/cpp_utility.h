@@ -20,7 +20,7 @@ struct fmt::formatter<Int128Format> {
         return ctx.begin();
     }
 
-    auto format(Int128Format c, format_context &ctx) {
+    auto format(Int128Format c, format_context &ctx) const {
         if (c.bIsSigned) {
             // If a value is the exact minimum of its storage type, we need to output it as an expression
             // because negative literals are actually a positive literal with a unary minus applied to them.
