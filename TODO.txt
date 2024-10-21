@@ -1,6 +1,3 @@
-BUG-CODEGEN: Sparse flags have wonky behavior that should be defined. 
-    see: TestSparseFlags
-    is_X functions should compare against valid flags only
 BUG-CODEGEN: User-Default templates in user namespace may conflict if multiple files use the same namespace.
     Investigate moving/renaming/guard macro.
 
@@ -8,10 +5,6 @@ ENUMBRA: Move pre-condition checking to a function outside of generator to be ab
 ENUMBRA: Split cpp generator into more reasonable sections rather than one giant function.
 
 BUILD: Update kEnumbraVersion with automatic numbers
-
-CODEGEN: Add option for split compilation of Header and Implementation vs. Header-Only.
-    output_implementation = header_only / header_and_implementation
-    add/edit command line parameters: remove cppout, add cppouthpp/cppoutheader/cppoutimpl
 
 CODEGEN: Add option for alignment/padding for strings to allow for SIMD lookups
 CODEGEN: Support for generating and optimizing layouts for SIMD instructions
@@ -25,5 +18,6 @@ FEATURE: how to do name aliasing to allow multiple names for the same value?
     maybe require the user to specify which is the preferred name
 FEATURE: improve warning/errors. Currently any tiny issue will immediately fail out of the process
     continue_on_error to get a list of all warnings/errors, but tool should NOT generate code if there are any
+    add an option to overwrite the output file on error to prevent stale data?
 
 GITHUB: Set up actions for automating builds on several compilers (preferably: Windows/MSVC2022, Windows/Clang, Linux/GCC, Linux/Clang).
