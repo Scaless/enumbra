@@ -237,6 +237,7 @@ int main()
 		{
 			constexpr auto Hex = enumbra::from_string<HexDiagonal>("NORTH");
 			static_assert(Hex.has_value());
+			static_assert(sizeof(Hex) == sizeof(HexDiagonal));
 			UNUSED(Hex);
 		}
 

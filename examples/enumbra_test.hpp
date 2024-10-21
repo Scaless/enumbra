@@ -76,7 +76,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 25
+#define ENUMBRA_BASE_TEMPLATES_VERSION 26
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -94,8 +94,12 @@ namespace enumbra {
         template<bool B, class T, class F>
         using conditional_t = typename conditional<B, T, F>::type;
 
-        // Supported on clang/gcc/MSVC, but we don't use it anywhere yet. 
-        // constexpr bool is_constant_evaluated() noexcept { return __builtin_is_constant_evaluated(); }
+ #if defined(__cpp_lib_is_constant_evaluated)
+        // Supported on clang/gcc/MSVC in C++17, even though it's only in the C++20 standard. 
+        constexpr bool is_constant_evaluated() noexcept { return __builtin_is_constant_evaluated(); }
+#else
+        constexpr bool is_constant_evaluated() noexcept { return false; }
+#endif
 
         // Type info
         template<bool is_enumbra, bool is_value_enum, bool is_flags_enum>
@@ -235,18 +239,23 @@ namespace enumbra {
     constexpr underlying_type to_underlying(T e) noexcept = delete;
 
     namespace detail {
-        struct optional_result_base_inplace {
-            constexpr optional_result_base_inplace() = default;
-        };
-        struct optional_result_base_bool {
-            constexpr optional_result_base_bool() = default;
+        template<class T>
+        struct optional_result_base_bool 
+        {
+        private:
+            using bool_type = 
+                detail::conditional_t<sizeof(T) == 1, uint8_t,
+                detail::conditional_t<sizeof(T) == 2, uint16_t,
+                detail::conditional_t<sizeof(T) == 4, uint32_t, uint64_t>>>;
         protected:
-            bool success = false;
+            bool_type success = 0;
         };
+        
+        struct optional_result_base_inplace { };
     }
 
     template<class T, bool use_invalid_sentinel = detail::value_enum_helper<T>::has_invalid_sentinel>
-    struct optional_value : detail::conditional_t<use_invalid_sentinel, detail::optional_result_base_inplace, detail::optional_result_base_bool>
+    struct optional_value : detail::conditional_t<use_invalid_sentinel, detail::optional_result_base_inplace, detail::optional_result_base_bool<T>>
     {
     private:
         T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
@@ -255,7 +264,7 @@ namespace enumbra {
 
         constexpr explicit optional_value(T value) : v(value) {
             if constexpr(!use_invalid_sentinel) {
-                this->success = true;
+                this->success = 1;
             }
         }
 
@@ -263,7 +272,7 @@ namespace enumbra {
             if constexpr (use_invalid_sentinel) {
                 return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
             } else {
-                return this->success;
+                return this->success > 0;
             }
         }
 
@@ -296,9 +305,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 25
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 26
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 25
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 26
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
