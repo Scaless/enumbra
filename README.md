@@ -183,12 +183,12 @@ The #1 reason is if you care about compile times enough to put up with a separat
 
 |Compiler|C++ Version|Test|Compile Time (ms) [1][2]|
 |-|-|-|-|
-|MSVC|C++17|enumbra|11|
-|MSVC|C++20|enumbra|15|
-|MSVC|C++latest|enumbra|14|
 |MSVC|C++17|enumbra_minimal|9|
 |MSVC|C++20|enumbra_minimal|11|
 |MSVC|C++latest|enumbra_minimal|12|
+|MSVC|C++17|enumbra|11|
+|MSVC|C++20|enumbra|15|
+|MSVC|C++latest|enumbra|14|
 |MSVC|C++17|magic_enum|456|
 |MSVC|C++20|magic_enum|625|
 |MSVC|C++latest|magic_enum|665|
