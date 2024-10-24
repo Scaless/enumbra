@@ -42,13 +42,13 @@
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
-#define ENUMBRA_OPTIONAL_MACROS_VERSION 7
+#define ENUMBRA_OPTIONAL_MACROS_VERSION 8
 
 // Bitfield convenience functions
-#define ENUMBRA_CLEAR(Field) { decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; }
-#define ENUMBRA_SET(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }
-#define ENUMBRA_UNSET(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }
-#define ENUMBRA_TOGGLE(Field, Value) { decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }
+#define ENUMBRA_CLEAR(Field) do { decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; } while (0)
+#define ENUMBRA_SET(Field, Value) do { decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; } while (0)
+#define ENUMBRA_UNSET(Field, Value) do { decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; } while (0)
+#define ENUMBRA_TOGGLE(Field, Value) do { decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; } while (0)
 
 // Bit field storage helper
 #define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
@@ -65,9 +65,9 @@
 #else // check existing version supported
 #if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0
 #error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 7
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 8
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 7
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 8
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION

@@ -682,16 +682,16 @@ void cpp_generator::emit_includes() {
 void cpp_generator::emit_optional_macros() {
     if (cpp_cfg.enumbra_bitfield_macros) {
         // Increment this if macros below are modified.
-        const int enumbra_optional_macros_version = 7;
+        const int enumbra_optional_macros_version = 8;
         std::string macro_strings = R"(
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
 #define ENUMBRA_OPTIONAL_MACROS_VERSION {0}
 
 // Bitfield convenience functions
-#define ENUMBRA_CLEAR(Field) {{ decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; }}
-#define ENUMBRA_SET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }}
-#define ENUMBRA_UNSET(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }}
-#define ENUMBRA_TOGGLE(Field, Value) {{ decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }}
+#define ENUMBRA_CLEAR(Field) do {{ decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; }} while (0)
+#define ENUMBRA_SET(Field, Value) do {{ decltype(Field) _field_ = Field; ::enumbra::set(_field_, Value); (Field) = _field_; }} while (0)
+#define ENUMBRA_UNSET(Field, Value) do {{ decltype(Field) _field_ = Field; ::enumbra::unset(_field_, Value); (Field) = _field_; }} while (0)
+#define ENUMBRA_TOGGLE(Field, Value) do {{ decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }} while (0)
 
 // Bit field storage helper
 #define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
