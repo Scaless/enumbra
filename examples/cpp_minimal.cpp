@@ -1,6 +1,10 @@
 
 #include "enumbra_minimal.hpp"
 
+// Make clang happy by declaring prototypes
+void test_minimal();
+void test_together();
+
 void test_minimal() {
 
 }

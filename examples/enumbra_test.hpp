@@ -76,7 +76,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 28
+#define ENUMBRA_BASE_TEMPLATES_VERSION 29
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -283,11 +283,13 @@ namespace enumbra {
         [[nodiscard]] constexpr T value_or(T default_value) const { return operator bool() ? v : default_value; }
     };
 
-    struct to_string_result {
+    struct string_view {
         using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
 
         const char* str = nullptr;
         size_type size = 0;
+
+        constexpr bool empty() const { return size == 0; }
     };
 
     // Begin Default Templates
@@ -309,14 +311,23 @@ namespace enumbra {
     template<class T>
     constexpr bool is_valid(T e) noexcept = delete;
 
+    template<class T>
+    constexpr string_view enum_name() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_name_with_namespace() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_namespace() noexcept = delete;
+
     // End Default Templates
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 28
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 29
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 28
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 29
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -367,15 +378,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::test_string_parse>(::enums::test_string_parse e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::test_string_parse>(::enums::test_string_parse e) noexcept { 
 for(auto value : values<::enums::test_string_parse>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::test_string_parse>() noexcept { 
+return { "test_string_parse", 17 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::test_string_parse>() noexcept { 
+return { "enums::test_string_parse", 24 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::test_string_parse>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::test_string_parse v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::test_string_parse v) noexcept {
 switch (v) {
 case ::enums::test_string_parse::C: return { &::enums::detail::test_string_parse::enum_strings[0], 1 };
 case ::enums::test_string_parse::B: return { &::enums::detail::test_string_parse::enum_strings[2], 1 };
@@ -457,15 +483,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::Unsigned64Test>(::enums::Unsigned64Test e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::Unsigned64Test>(::enums::Unsigned64Test e) noexcept { 
 for(auto value : values<::enums::Unsigned64Test>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::Unsigned64Test>() noexcept { 
+return { "Unsigned64Test", 14 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::Unsigned64Test>() noexcept { 
+return { "enums::Unsigned64Test", 21 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::Unsigned64Test>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::Unsigned64Test v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::Unsigned64Test v) noexcept {
 switch (v) {
 case ::enums::Unsigned64Test::MIN: return { &::enums::detail::Unsigned64Test::enum_strings[0], 3 };
 case ::enums::Unsigned64Test::MAX: return { &::enums::detail::Unsigned64Test::enum_strings[4], 3 };
@@ -546,15 +587,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::Signed64Test>(::enums::Signed64Test e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::Signed64Test>(::enums::Signed64Test e) noexcept { 
 for(auto value : values<::enums::Signed64Test>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::Signed64Test>() noexcept { 
+return { "Signed64Test", 12 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::Signed64Test>() noexcept { 
+return { "enums::Signed64Test", 19 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::Signed64Test>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::Signed64Test v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::Signed64Test v) noexcept {
 switch (v) {
 case ::enums::Signed64Test::MIN: return { &::enums::detail::Signed64Test::enum_strings[0], 3 };
 case ::enums::Signed64Test::MAX: return { &::enums::detail::Signed64Test::enum_strings[4], 3 };
@@ -634,15 +690,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::Signed32Test>(::enums::Signed32Test e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::Signed32Test>(::enums::Signed32Test e) noexcept { 
 for(auto value : values<::enums::Signed32Test>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::Signed32Test>() noexcept { 
+return { "Signed32Test", 12 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::Signed32Test>() noexcept { 
+return { "enums::Signed32Test", 19 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::Signed32Test>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::Signed32Test v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::Signed32Test v) noexcept {
 switch (v) {
 case ::enums::Signed32Test::MIN: return { &::enums::detail::Signed32Test::enum_strings[0], 3 };
 case ::enums::Signed32Test::MAX: return { &::enums::detail::Signed32Test::enum_strings[4], 3 };
@@ -722,15 +793,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::Signed16Test>(::enums::Signed16Test e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::Signed16Test>(::enums::Signed16Test e) noexcept { 
 for(auto value : values<::enums::Signed16Test>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::Signed16Test>() noexcept { 
+return { "Signed16Test", 12 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::Signed16Test>() noexcept { 
+return { "enums::Signed16Test", 19 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::Signed16Test>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::Signed16Test v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::Signed16Test v) noexcept {
 switch (v) {
 case ::enums::Signed16Test::MIN: return { &::enums::detail::Signed16Test::enum_strings[0], 3 };
 case ::enums::Signed16Test::MAX: return { &::enums::detail::Signed16Test::enum_strings[4], 3 };
@@ -805,15 +891,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::Signed8Test>(::enums::Signed8Test e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::Signed8Test>(::enums::Signed8Test e) noexcept { 
 for(auto value : values<::enums::Signed8Test>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::Signed8Test>() noexcept { 
+return { "Signed8Test", 11 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::Signed8Test>() noexcept { 
+return { "enums::Signed8Test", 18 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::Signed8Test>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::Signed8Test v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::Signed8Test v) noexcept {
 switch (v) {
 case ::enums::Signed8Test::V_INT_MIN: return { &::enums::detail::Signed8Test::enum_strings[0], 9 };
 case ::enums::Signed8Test::V_NEG_ONE: return { &::enums::detail::Signed8Test::enum_strings[10], 9 };
@@ -882,12 +983,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::test_value>(::enums::test_value e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::test_value>(::enums::test_value e) noexcept { 
 return (0 <= static_cast<int32_t>(e)) && (static_cast<int32_t>(e) <= 2);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::test_value>() noexcept { 
+return { "test_value", 10 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::test_value>() noexcept { 
+return { "enums::test_value", 17 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::test_value>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::test_value v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::test_value v) noexcept {
 switch (v) {
 case ::enums::test_value::A: return { &::enums::detail::test_value::enum_strings[0], 1 };
 case ::enums::test_value::B: return { &::enums::detail::test_value::enum_strings[2], 1 };
@@ -973,12 +1089,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::HexDiagonal>(::enums::HexDiagonal e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::HexDiagonal>(::enums::HexDiagonal e) noexcept { 
 return static_cast<uint8_t>(e) <= 5;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::HexDiagonal>() noexcept { 
+return { "HexDiagonal", 11 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::HexDiagonal>() noexcept { 
+return { "enums::HexDiagonal", 18 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::HexDiagonal>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::HexDiagonal v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::HexDiagonal v) noexcept {
 switch (v) {
 case ::enums::HexDiagonal::NORTH: return { &::enums::detail::HexDiagonal::enum_strings[0], 5 };
 case ::enums::HexDiagonal::SOUTH: return { &::enums::detail::HexDiagonal::enum_strings[6], 5 };
@@ -1057,12 +1188,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::NegativeTest1>(::enums::NegativeTest1 e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::NegativeTest1>(::enums::NegativeTest1 e) noexcept { 
 return (-2 <= static_cast<int8_t>(e)) && (static_cast<int8_t>(e) <= 1);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::NegativeTest1>() noexcept { 
+return { "NegativeTest1", 13 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::NegativeTest1>() noexcept { 
+return { "enums::NegativeTest1", 20 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::NegativeTest1>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest1 v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::NegativeTest1 v) noexcept {
 switch (v) {
 case ::enums::NegativeTest1::A: return { &::enums::detail::NegativeTest1::enum_strings[0], 1 };
 case ::enums::NegativeTest1::B: return { &::enums::detail::NegativeTest1::enum_strings[2], 1 };
@@ -1135,12 +1281,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::NegativeTest2>(::enums::NegativeTest2 e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::NegativeTest2>(::enums::NegativeTest2 e) noexcept { 
 return (-3 <= static_cast<int8_t>(e)) && (static_cast<int8_t>(e) <= 0);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::NegativeTest2>() noexcept { 
+return { "NegativeTest2", 13 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::NegativeTest2>() noexcept { 
+return { "enums::NegativeTest2", 20 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::NegativeTest2>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest2 v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::NegativeTest2 v) noexcept {
 switch (v) {
 case ::enums::NegativeTest2::A: return { &::enums::detail::NegativeTest2::enum_strings[0], 1 };
 case ::enums::NegativeTest2::B: return { &::enums::detail::NegativeTest2::enum_strings[2], 1 };
@@ -1209,15 +1370,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::NegativeTest3>(::enums::NegativeTest3 e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::NegativeTest3>(::enums::NegativeTest3 e) noexcept { 
 for(auto value : values<::enums::NegativeTest3>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::NegativeTest3>() noexcept { 
+return { "NegativeTest3", 13 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::NegativeTest3>() noexcept { 
+return { "enums::NegativeTest3", 20 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::NegativeTest3>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest3 v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::NegativeTest3 v) noexcept {
 switch (v) {
 case ::enums::NegativeTest3::A: return { &::enums::detail::NegativeTest3::enum_strings[0], 1 };
 case ::enums::NegativeTest3::B: return { &::enums::detail::NegativeTest3::enum_strings[2], 1 };
@@ -1284,15 +1460,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::NegativeTest4>(::enums::NegativeTest4 e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::NegativeTest4>(::enums::NegativeTest4 e) noexcept { 
 for(auto value : values<::enums::NegativeTest4>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::NegativeTest4>() noexcept { 
+return { "NegativeTest4", 13 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::NegativeTest4>() noexcept { 
+return { "enums::NegativeTest4", 20 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::NegativeTest4>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest4 v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::NegativeTest4 v) noexcept {
 switch (v) {
 case ::enums::NegativeTest4::A: return { &::enums::detail::NegativeTest4::enum_strings[0], 1 };
 case ::enums::NegativeTest4::B: return { &::enums::detail::NegativeTest4::enum_strings[2], 1 };
@@ -1351,12 +1542,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::EmptyTest1Unsigned>(::enums::EmptyTest1Unsigned e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::EmptyTest1Unsigned>(::enums::EmptyTest1Unsigned e) noexcept { 
 return 0 == static_cast<uint8_t>(e);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::EmptyTest1Unsigned>() noexcept { 
+return { "EmptyTest1Unsigned", 18 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::EmptyTest1Unsigned>() noexcept { 
+return { "enums::EmptyTest1Unsigned", 25 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::EmptyTest1Unsigned>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::EmptyTest1Unsigned v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::EmptyTest1Unsigned v) noexcept {
 switch (v) {
 case ::enums::EmptyTest1Unsigned::A: return { "A", 1 };
 }
@@ -1408,12 +1614,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::EmptyTest1Signed>(::enums::EmptyTest1Signed e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::EmptyTest1Signed>(::enums::EmptyTest1Signed e) noexcept { 
 return 0 == static_cast<int8_t>(e);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::EmptyTest1Signed>() noexcept { 
+return { "EmptyTest1Signed", 16 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::EmptyTest1Signed>() noexcept { 
+return { "enums::EmptyTest1Signed", 23 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::EmptyTest1Signed>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::EmptyTest1Signed v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::EmptyTest1Signed v) noexcept {
 switch (v) {
 case ::enums::EmptyTest1Signed::A: return { "A", 1 };
 }
@@ -1465,12 +1686,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::SingleTest1Unsigned>(::enums::SingleTest1Unsigned e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::SingleTest1Unsigned>(::enums::SingleTest1Unsigned e) noexcept { 
 return 4 == static_cast<uint8_t>(e);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::SingleTest1Unsigned>() noexcept { 
+return { "SingleTest1Unsigned", 19 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::SingleTest1Unsigned>() noexcept { 
+return { "enums::SingleTest1Unsigned", 26 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::SingleTest1Unsigned>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::SingleTest1Unsigned v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::SingleTest1Unsigned v) noexcept {
 switch (v) {
 case ::enums::SingleTest1Unsigned::A: return { "A", 1 };
 }
@@ -1522,12 +1758,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::SingleTest1Signed>(::enums::SingleTest1Signed e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::SingleTest1Signed>(::enums::SingleTest1Signed e) noexcept { 
 return 4 == static_cast<int8_t>(e);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::SingleTest1Signed>() noexcept { 
+return { "SingleTest1Signed", 17 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::SingleTest1Signed>() noexcept { 
+return { "enums::SingleTest1Signed", 24 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::SingleTest1Signed>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::SingleTest1Signed v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::SingleTest1Signed v) noexcept {
 switch (v) {
 case ::enums::SingleTest1Signed::A: return { "A", 1 };
 }
@@ -1895,15 +2146,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::errc>(::enums::errc e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::errc>(::enums::errc e) noexcept { 
 for(auto value : values<::enums::errc>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::errc>() noexcept { 
+return { "errc", 4 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::errc>() noexcept { 
+return { "enums::errc", 11 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::errc>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::errc v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::errc v) noexcept {
 switch (v) {
 case ::enums::errc::no_link: return { &::enums::detail::errc::enum_strings[0], 7 };
 case ::enums::errc::io_error: return { &::enums::detail::errc::enum_strings[8], 8 };

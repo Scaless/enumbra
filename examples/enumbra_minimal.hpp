@@ -73,7 +73,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 28
+#define ENUMBRA_BASE_TEMPLATES_VERSION 29
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -280,11 +280,13 @@ namespace enumbra {
         [[nodiscard]] constexpr T value_or(T default_value) const { return operator bool() ? v : default_value; }
     };
 
-    struct to_string_result {
+    struct string_view {
         using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
 
         const char* str = nullptr;
         size_type size = 0;
+
+        constexpr bool empty() const { return size == 0; }
     };
 
     // Begin Default Templates
@@ -306,14 +308,23 @@ namespace enumbra {
     template<class T>
     constexpr bool is_valid(T e) noexcept = delete;
 
+    template<class T>
+    constexpr string_view enum_name() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_name_with_namespace() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_namespace() noexcept = delete;
+
     // End Default Templates
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 28
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 29
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 28
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 29
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -353,12 +364,27 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::minimal_val>(::enums::minimal_val e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::minimal_val>(::enums::minimal_val e) noexcept { 
 return (1 <= static_cast<unsigned int>(e)) && (static_cast<unsigned int>(e) <= 2);
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::minimal_val>() noexcept { 
+return { "minimal_val", 11 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::minimal_val>() noexcept { 
+return { "enums::minimal_val", 18 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::minimal_val>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::minimal_val v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::minimal_val v) noexcept {
 switch (v) {
 case ::enums::minimal_val::B: return { &::enums::detail::minimal_val::enum_strings[0], 1 };
 case ::enums::minimal_val::C: return { &::enums::detail::minimal_val::enum_strings[2], 1 };
@@ -425,15 +451,30 @@ return {};
 }
 
 template<>
-constexpr bool enumbra::is_valid<::enums::big>(::enums::big e) noexcept { 
+constexpr bool ::enumbra::is_valid<::enums::big>(::enums::big e) noexcept { 
 for(auto value : values<::enums::big>()) {
 if(value == e) { return true; }
 }
 return false;
 }
 
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name<::enums::big>() noexcept { 
+return { "big", 3 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<::enums::big>() noexcept { 
+return { "enums::big", 10 };
+}
+
+template<>
+constexpr ::enumbra::string_view enumbra::enum_namespace<::enums::big>() noexcept { 
+return { "enums", 5 };
+}
+
 namespace enumbra {
-constexpr ::enumbra::to_string_result to_string(const ::enums::big v) noexcept {
+constexpr ::enumbra::string_view to_string(const ::enums::big v) noexcept {
 switch (v) {
 case ::enums::big::B: return { &::enums::detail::big::enum_strings[0], 1 };
 case ::enums::big::C: return { &::enums::detail::big::enum_strings[2], 1 };

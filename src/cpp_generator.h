@@ -87,6 +87,7 @@ private:
     void emit_ve_func_values(const value_enum_context& e);
     void emit_ve_func_from_integer(const value_enum_context& e);
     void emit_ve_func_is_valid(const value_enum_context& e);
+    void emit_ve_func_enum_name(const value_enum_context& e);
     void emit_ve_func_to_string(const value_enum_context& e);
     void emit_ve_func_from_string_with_size(const value_enum_context& e);
     void emit_ve_func_from_string_cstr(const value_enum_context& e);

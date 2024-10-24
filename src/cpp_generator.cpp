@@ -374,9 +374,14 @@ const std::string &cpp_generator::generate_cpp_output() {
 
         // Build fmt args
         push("enum_ns", ctx.enum_ns);
+        push("enum_ns_size", std::to_string(ctx.enum_ns.size()));
         push("enum_name", e.enum_name);
+        push("enum_name_size", std::to_string(e.enum_name.size()));
         push("enum_detail_ns", fmt::format("::{}::detail::{}", ctx.enum_ns, e.enum_name));
         push("enum_name_fq", fmt::format("::{}::{}", ctx.enum_ns, e.enum_name));
+        push("enum_name_fq_size", std::to_string(fmt::format("::{}::{}", ctx.enum_ns, e.enum_name).size()));
+        push("enum_name_fq_no_global", fmt::format("{}::{}", ctx.enum_ns, e.enum_name));
+        push("enum_name_fq_no_global_size", std::to_string(fmt::format("{}::{}", ctx.enum_ns, e.enum_name).size()));
         push("size_type", e.size_type_str);
         push("entry_count", std::to_string(e.entry_count));
         push("max_v", format_int128({e.max_entry.p_value, e.size_type_bits, e.is_size_type_signed}));
@@ -410,6 +415,7 @@ const std::string &cpp_generator::generate_cpp_output() {
         emit_ve_func_values(e);
         emit_ve_func_from_integer(e);
         emit_ve_func_is_valid(e);
+        emit_ve_func_enum_name(e);
 
         emit_ve_func_to_string(e);
         emit_ve_func_from_string_with_size(e);
@@ -722,7 +728,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 28;
+    const int enumbra_templates_version = 29;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -932,11 +938,13 @@ namespace enumbra {{
         [[nodiscard]] constexpr T value_or(T default_value) const {{ return operator bool() ? v : default_value; }}
     }};
 
-    struct to_string_result {{
+    struct string_view {{
         using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
 
         const char* str = nullptr;
         size_type size = 0;
+
+        constexpr bool empty() const {{ return size == 0; }}
     }};
 
     // Begin Default Templates
@@ -957,6 +965,15 @@ namespace enumbra {{
 
     template<class T>
     constexpr bool is_valid(T e) noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_name() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_name_with_namespace() noexcept = delete;
+
+    template<class T>
+    constexpr string_view enum_namespace() noexcept = delete;
 
     // End Default Templates
 }} // end namespace enumbra
@@ -1082,7 +1099,7 @@ void cpp_generator::emit_ve_func_is_valid(const value_enum_context& e)
     // NOTE: If you modify this function, also check if changes are needed for emit_ve_func_from_integer
 
     wvl("template<>");
-    wvl("constexpr bool enumbra::is_valid<{enum_name_fq}>({enum_name_fq} e) noexcept {{ ");
+    wvl("constexpr bool ::enumbra::is_valid<{enum_name_fq}>({enum_name_fq} e) noexcept {{ ");
     
     if (e.values.size() == 1) {
         wvl("return {max_v} == static_cast<{size_type}>(e);");
@@ -1102,6 +1119,30 @@ void cpp_generator::emit_ve_func_is_valid(const value_enum_context& e)
         wvl("}}");
         wvl("return false;");
     }
+    
+    wvl("}}");
+    wlf();
+}
+
+void cpp_generator::emit_ve_func_enum_name(const value_enum_context& /*e*/)
+{
+    wvl("template<>");
+    wvl("constexpr ::enumbra::string_view enumbra::enum_name<{enum_name_fq}>() noexcept {{ ");
+    wvl("return {{ \"{enum_name}\", {enum_name_size} }};");
+    wvl("}}");
+    
+    wlf();
+
+    wvl("template<>");
+    wvl("constexpr ::enumbra::string_view enumbra::enum_name_with_namespace<{enum_name_fq}>() noexcept {{ ");
+    wvl("return {{ \"{enum_name_fq_no_global}\", {enum_name_fq_no_global_size} }};");
+    wvl("}}");
+
+    wlf();
+
+    wvl("template<>");
+    wvl("constexpr ::enumbra::string_view enumbra::enum_namespace<{enum_name_fq}>() noexcept {{ ");
+    wvl("return {{ \"{enum_ns}\", {enum_ns_size} }};");
     wvl("}}");
 
     wlf();
@@ -1111,7 +1152,7 @@ void cpp_generator::emit_ve_func_to_string(const value_enum_context &e) {
     // START NAMESPACE
     wvl("namespace enumbra {{");
 
-    wvl("constexpr ::enumbra::to_string_result to_string(const {enum_name_fq} v) noexcept {{");
+    wvl("constexpr ::enumbra::string_view to_string(const {enum_name_fq} v) noexcept {{");
     wvl("switch (v) {{");
     if (e.string_tables.entries.size() == 1) {
         for (auto &v: e.values) {
