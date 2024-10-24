@@ -722,7 +722,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 26;
+    const int enumbra_templates_version = 27;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -893,9 +893,11 @@ namespace enumbra {{
         {{
         private:
             using bool_type = 
-                detail::conditional_t<sizeof(T) == 1, uint8_t,
-                detail::conditional_t<sizeof(T) == 2, uint16_t,
-                detail::conditional_t<sizeof(T) == 4, uint32_t, uint64_t>>>;
+                detail::conditional_t<sizeof(T) == 1, char,
+                detail::conditional_t<sizeof(T) == 2, short,
+                detail::conditional_t<sizeof(T) == 4, int,
+                detail::conditional_t<sizeof(T) == 8, long long,
+                void /* invalid size */>>>>;
         protected:
             bool_type success = 0;
         }};
