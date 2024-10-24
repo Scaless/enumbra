@@ -76,7 +76,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 27
+#define ENUMBRA_BASE_TEMPLATES_VERSION 28
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -283,6 +283,13 @@ namespace enumbra {
         [[nodiscard]] constexpr T value_or(T default_value) const { return operator bool() ? v : default_value; }
     };
 
+    struct to_string_result {
+        using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
+
+        const char* str = nullptr;
+        size_type size = 0;
+    };
+
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
@@ -307,9 +314,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 27
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 28
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 27
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 28
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -368,15 +375,15 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::test_string_parse v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::test_string_parse v) noexcept {
 switch (v) {
-case ::enums::test_string_parse::C: return &::enums::detail::test_string_parse::enum_strings[0];
-case ::enums::test_string_parse::B: return &::enums::detail::test_string_parse::enum_strings[2];
-case ::enums::test_string_parse::F: return &::enums::detail::test_string_parse::enum_strings[4];
-case ::enums::test_string_parse::D: return &::enums::detail::test_string_parse::enum_strings[6];
-case ::enums::test_string_parse::E: return &::enums::detail::test_string_parse::enum_strings[8];
+case ::enums::test_string_parse::C: return { &::enums::detail::test_string_parse::enum_strings[0], 1 };
+case ::enums::test_string_parse::B: return { &::enums::detail::test_string_parse::enum_strings[2], 1 };
+case ::enums::test_string_parse::F: return { &::enums::detail::test_string_parse::enum_strings[4], 1 };
+case ::enums::test_string_parse::D: return { &::enums::detail::test_string_parse::enum_strings[6], 1 };
+case ::enums::test_string_parse::E: return { &::enums::detail::test_string_parse::enum_strings[8], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -458,14 +465,14 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::Unsigned64Test v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::Unsigned64Test v) noexcept {
 switch (v) {
-case ::enums::Unsigned64Test::MIN: return &::enums::detail::Unsigned64Test::enum_strings[0];
-case ::enums::Unsigned64Test::MAX: return &::enums::detail::Unsigned64Test::enum_strings[4];
-case ::enums::Unsigned64Test::V_UINT16_MAX: return &::enums::detail::Unsigned64Test::enum_strings[8];
-case ::enums::Unsigned64Test::V_UINT32_MAX: return &::enums::detail::Unsigned64Test::enum_strings[21];
+case ::enums::Unsigned64Test::MIN: return { &::enums::detail::Unsigned64Test::enum_strings[0], 3 };
+case ::enums::Unsigned64Test::MAX: return { &::enums::detail::Unsigned64Test::enum_strings[4], 3 };
+case ::enums::Unsigned64Test::V_UINT16_MAX: return { &::enums::detail::Unsigned64Test::enum_strings[8], 12 };
+case ::enums::Unsigned64Test::V_UINT32_MAX: return { &::enums::detail::Unsigned64Test::enum_strings[21], 12 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -547,13 +554,13 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::Signed64Test v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::Signed64Test v) noexcept {
 switch (v) {
-case ::enums::Signed64Test::MIN: return &::enums::detail::Signed64Test::enum_strings[0];
-case ::enums::Signed64Test::MAX: return &::enums::detail::Signed64Test::enum_strings[4];
-case ::enums::Signed64Test::NEG_ONE: return &::enums::detail::Signed64Test::enum_strings[8];
+case ::enums::Signed64Test::MIN: return { &::enums::detail::Signed64Test::enum_strings[0], 3 };
+case ::enums::Signed64Test::MAX: return { &::enums::detail::Signed64Test::enum_strings[4], 3 };
+case ::enums::Signed64Test::NEG_ONE: return { &::enums::detail::Signed64Test::enum_strings[8], 7 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -635,13 +642,13 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::Signed32Test v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::Signed32Test v) noexcept {
 switch (v) {
-case ::enums::Signed32Test::MIN: return &::enums::detail::Signed32Test::enum_strings[0];
-case ::enums::Signed32Test::MAX: return &::enums::detail::Signed32Test::enum_strings[4];
-case ::enums::Signed32Test::NEG_ONE: return &::enums::detail::Signed32Test::enum_strings[8];
+case ::enums::Signed32Test::MIN: return { &::enums::detail::Signed32Test::enum_strings[0], 3 };
+case ::enums::Signed32Test::MAX: return { &::enums::detail::Signed32Test::enum_strings[4], 3 };
+case ::enums::Signed32Test::NEG_ONE: return { &::enums::detail::Signed32Test::enum_strings[8], 7 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -723,13 +730,13 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::Signed16Test v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::Signed16Test v) noexcept {
 switch (v) {
-case ::enums::Signed16Test::MIN: return &::enums::detail::Signed16Test::enum_strings[0];
-case ::enums::Signed16Test::MAX: return &::enums::detail::Signed16Test::enum_strings[4];
-case ::enums::Signed16Test::NEG_ONE: return &::enums::detail::Signed16Test::enum_strings[8];
+case ::enums::Signed16Test::MIN: return { &::enums::detail::Signed16Test::enum_strings[0], 3 };
+case ::enums::Signed16Test::MAX: return { &::enums::detail::Signed16Test::enum_strings[4], 3 };
+case ::enums::Signed16Test::NEG_ONE: return { &::enums::detail::Signed16Test::enum_strings[8], 7 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -806,13 +813,13 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::Signed8Test v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::Signed8Test v) noexcept {
 switch (v) {
-case ::enums::Signed8Test::V_INT_MIN: return &::enums::detail::Signed8Test::enum_strings[0];
-case ::enums::Signed8Test::V_NEG_ONE: return &::enums::detail::Signed8Test::enum_strings[10];
-case ::enums::Signed8Test::V_INT_MAX: return &::enums::detail::Signed8Test::enum_strings[20];
+case ::enums::Signed8Test::V_INT_MIN: return { &::enums::detail::Signed8Test::enum_strings[0], 9 };
+case ::enums::Signed8Test::V_NEG_ONE: return { &::enums::detail::Signed8Test::enum_strings[10], 9 };
+case ::enums::Signed8Test::V_INT_MAX: return { &::enums::detail::Signed8Test::enum_strings[20], 9 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -880,13 +887,13 @@ return (0 <= static_cast<int32_t>(e)) && (static_cast<int32_t>(e) <= 2);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::test_value v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::test_value v) noexcept {
 switch (v) {
-case ::enums::test_value::A: return &::enums::detail::test_value::enum_strings[0];
-case ::enums::test_value::B: return &::enums::detail::test_value::enum_strings[2];
-case ::enums::test_value::C: return &::enums::detail::test_value::enum_strings[4];
+case ::enums::test_value::A: return { &::enums::detail::test_value::enum_strings[0], 1 };
+case ::enums::test_value::B: return { &::enums::detail::test_value::enum_strings[2], 1 };
+case ::enums::test_value::C: return { &::enums::detail::test_value::enum_strings[4], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -971,16 +978,16 @@ return static_cast<uint8_t>(e) <= 5;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::HexDiagonal v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::HexDiagonal v) noexcept {
 switch (v) {
-case ::enums::HexDiagonal::NORTH: return &::enums::detail::HexDiagonal::enum_strings[0];
-case ::enums::HexDiagonal::SOUTH: return &::enums::detail::HexDiagonal::enum_strings[6];
-case ::enums::HexDiagonal::NORTH_EAST: return &::enums::detail::HexDiagonal::enum_strings[12];
-case ::enums::HexDiagonal::SOUTH_EAST: return &::enums::detail::HexDiagonal::enum_strings[23];
-case ::enums::HexDiagonal::SOUTH_WEST: return &::enums::detail::HexDiagonal::enum_strings[34];
-case ::enums::HexDiagonal::NORTH_WEST: return &::enums::detail::HexDiagonal::enum_strings[45];
+case ::enums::HexDiagonal::NORTH: return { &::enums::detail::HexDiagonal::enum_strings[0], 5 };
+case ::enums::HexDiagonal::SOUTH: return { &::enums::detail::HexDiagonal::enum_strings[6], 5 };
+case ::enums::HexDiagonal::NORTH_EAST: return { &::enums::detail::HexDiagonal::enum_strings[12], 10 };
+case ::enums::HexDiagonal::SOUTH_EAST: return { &::enums::detail::HexDiagonal::enum_strings[23], 10 };
+case ::enums::HexDiagonal::SOUTH_WEST: return { &::enums::detail::HexDiagonal::enum_strings[34], 10 };
+case ::enums::HexDiagonal::NORTH_WEST: return { &::enums::detail::HexDiagonal::enum_strings[45], 10 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1055,14 +1062,14 @@ return (-2 <= static_cast<int8_t>(e)) && (static_cast<int8_t>(e) <= 1);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::NegativeTest1 v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest1 v) noexcept {
 switch (v) {
-case ::enums::NegativeTest1::A: return &::enums::detail::NegativeTest1::enum_strings[0];
-case ::enums::NegativeTest1::B: return &::enums::detail::NegativeTest1::enum_strings[2];
-case ::enums::NegativeTest1::C: return &::enums::detail::NegativeTest1::enum_strings[4];
-case ::enums::NegativeTest1::D: return &::enums::detail::NegativeTest1::enum_strings[6];
+case ::enums::NegativeTest1::A: return { &::enums::detail::NegativeTest1::enum_strings[0], 1 };
+case ::enums::NegativeTest1::B: return { &::enums::detail::NegativeTest1::enum_strings[2], 1 };
+case ::enums::NegativeTest1::C: return { &::enums::detail::NegativeTest1::enum_strings[4], 1 };
+case ::enums::NegativeTest1::D: return { &::enums::detail::NegativeTest1::enum_strings[6], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1133,14 +1140,14 @@ return (-3 <= static_cast<int8_t>(e)) && (static_cast<int8_t>(e) <= 0);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::NegativeTest2 v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest2 v) noexcept {
 switch (v) {
-case ::enums::NegativeTest2::A: return &::enums::detail::NegativeTest2::enum_strings[0];
-case ::enums::NegativeTest2::B: return &::enums::detail::NegativeTest2::enum_strings[2];
-case ::enums::NegativeTest2::C: return &::enums::detail::NegativeTest2::enum_strings[4];
-case ::enums::NegativeTest2::D: return &::enums::detail::NegativeTest2::enum_strings[6];
+case ::enums::NegativeTest2::A: return { &::enums::detail::NegativeTest2::enum_strings[0], 1 };
+case ::enums::NegativeTest2::B: return { &::enums::detail::NegativeTest2::enum_strings[2], 1 };
+case ::enums::NegativeTest2::C: return { &::enums::detail::NegativeTest2::enum_strings[4], 1 };
+case ::enums::NegativeTest2::D: return { &::enums::detail::NegativeTest2::enum_strings[6], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1210,12 +1217,12 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::NegativeTest3 v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest3 v) noexcept {
 switch (v) {
-case ::enums::NegativeTest3::A: return &::enums::detail::NegativeTest3::enum_strings[0];
-case ::enums::NegativeTest3::B: return &::enums::detail::NegativeTest3::enum_strings[2];
+case ::enums::NegativeTest3::A: return { &::enums::detail::NegativeTest3::enum_strings[0], 1 };
+case ::enums::NegativeTest3::B: return { &::enums::detail::NegativeTest3::enum_strings[2], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1285,12 +1292,12 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::NegativeTest4 v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::NegativeTest4 v) noexcept {
 switch (v) {
-case ::enums::NegativeTest4::A: return &::enums::detail::NegativeTest4::enum_strings[0];
-case ::enums::NegativeTest4::B: return &::enums::detail::NegativeTest4::enum_strings[2];
+case ::enums::NegativeTest4::A: return { &::enums::detail::NegativeTest4::enum_strings[0], 1 };
+case ::enums::NegativeTest4::B: return { &::enums::detail::NegativeTest4::enum_strings[2], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1349,11 +1356,11 @@ return 0 == static_cast<uint8_t>(e);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::EmptyTest1Unsigned v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::EmptyTest1Unsigned v) noexcept {
 switch (v) {
-case ::enums::EmptyTest1Unsigned::A: return "A";
+case ::enums::EmptyTest1Unsigned::A: return { "A", 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1406,11 +1413,11 @@ return 0 == static_cast<int8_t>(e);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::EmptyTest1Signed v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::EmptyTest1Signed v) noexcept {
 switch (v) {
-case ::enums::EmptyTest1Signed::A: return "A";
+case ::enums::EmptyTest1Signed::A: return { "A", 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1463,11 +1470,11 @@ return 4 == static_cast<uint8_t>(e);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::SingleTest1Unsigned v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::SingleTest1Unsigned v) noexcept {
 switch (v) {
-case ::enums::SingleTest1Unsigned::A: return "A";
+case ::enums::SingleTest1Unsigned::A: return { "A", 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1520,11 +1527,11 @@ return 4 == static_cast<int8_t>(e);
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::SingleTest1Signed v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::SingleTest1Signed v) noexcept {
 switch (v) {
-case ::enums::SingleTest1Signed::A: return "A";
+case ::enums::SingleTest1Signed::A: return { "A", 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -1896,88 +1903,88 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::errc v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::errc v) noexcept {
 switch (v) {
-case ::enums::errc::no_link: return &::enums::detail::errc::enum_strings[0];
-case ::enums::errc::io_error: return &::enums::detail::errc::enum_strings[8];
-case ::enums::errc::timed_out: return &::enums::detail::errc::enum_strings[17];
-case ::enums::errc::no_message: return &::enums::detail::errc::enum_strings[27];
-case ::enums::errc::owner_dead: return &::enums::detail::errc::enum_strings[38];
-case ::enums::errc::interrupted: return &::enums::detail::errc::enum_strings[49];
-case ::enums::errc::bad_address: return &::enums::detail::errc::enum_strings[61];
-case ::enums::errc::file_exists: return &::enums::detail::errc::enum_strings[73];
-case ::enums::errc::broken_pipe: return &::enums::detail::errc::enum_strings[85];
-case ::enums::errc::bad_message: return &::enums::detail::errc::enum_strings[97];
-case ::enums::errc::invalid_seek: return &::enums::detail::errc::enum_strings[109];
-case ::enums::errc::message_size: return &::enums::detail::errc::enum_strings[122];
-case ::enums::errc::network_down: return &::enums::detail::errc::enum_strings[135];
-case ::enums::errc::not_a_stream: return &::enums::detail::errc::enum_strings[148];
-case ::enums::errc::not_a_socket: return &::enums::detail::errc::enum_strings[161];
-case ::enums::errc::network_reset: return &::enums::detail::errc::enum_strings[174];
-case ::enums::errc::not_connected: return &::enums::detail::errc::enum_strings[188];
-case ::enums::errc::not_supported: return &::enums::detail::errc::enum_strings[202];
-case ::enums::errc::no_such_device: return &::enums::detail::errc::enum_strings[216];
-case ::enums::errc::is_a_directory: return &::enums::detail::errc::enum_strings[231];
-case ::enums::errc::file_too_large: return &::enums::detail::errc::enum_strings[246];
-case ::enums::errc::too_many_links: return &::enums::detail::errc::enum_strings[261];
-case ::enums::errc::address_in_use: return &::enums::detail::errc::enum_strings[276];
-case ::enums::errc::protocol_error: return &::enums::detail::errc::enum_strings[291];
-case ::enums::errc::stream_timeout: return &::enums::detail::errc::enum_strings[306];
-case ::enums::errc::text_file_busy: return &::enums::detail::errc::enum_strings[321];
-case ::enums::errc::no_such_process: return &::enums::detail::errc::enum_strings[336];
-case ::enums::errc::not_a_directory: return &::enums::detail::errc::enum_strings[352];
-case ::enums::errc::no_buffer_space: return &::enums::detail::errc::enum_strings[368];
-case ::enums::errc::value_too_large: return &::enums::detail::errc::enum_strings[384];
-case ::enums::errc::no_child_process: return &::enums::detail::errc::enum_strings[400];
-case ::enums::errc::invalid_argument: return &::enums::detail::errc::enum_strings[417];
-case ::enums::errc::connection_reset: return &::enums::detail::errc::enum_strings[434];
-case ::enums::errc::host_unreachable: return &::enums::detail::errc::enum_strings[451];
-case ::enums::errc::not_enough_memory: return &::enums::detail::errc::enum_strings[468];
-case ::enums::errc::permission_denied: return &::enums::detail::errc::enum_strings[486];
-case ::enums::errc::cross_device_link: return &::enums::detail::errc::enum_strings[504];
-case ::enums::errc::filename_too_long: return &::enums::detail::errc::enum_strings[522];
-case ::enums::errc::no_lock_available: return &::enums::detail::errc::enum_strings[540];
-case ::enums::errc::already_connected: return &::enums::detail::errc::enum_strings[558];
-case ::enums::errc::no_space_on_device: return &::enums::detail::errc::enum_strings[576];
-case ::enums::errc::operation_canceled: return &::enums::detail::errc::enum_strings[595];
-case ::enums::errc::connection_aborted: return &::enums::detail::errc::enum_strings[614];
-case ::enums::errc::connection_refused: return &::enums::detail::errc::enum_strings[633];
-case ::enums::errc::identifier_removed: return &::enums::detail::errc::enum_strings[652];
-case ::enums::errc::no_protocol_option: return &::enums::detail::errc::enum_strings[671];
-case ::enums::errc::bad_file_descriptor: return &::enums::detail::errc::enum_strings[690];
-case ::enums::errc::too_many_files_open: return &::enums::detail::errc::enum_strings[710];
-case ::enums::errc::result_out_of_range: return &::enums::detail::errc::enum_strings[730];
-case ::enums::errc::directory_not_empty: return &::enums::detail::errc::enum_strings[750];
-case ::enums::errc::network_unreachable: return &::enums::detail::errc::enum_strings[770];
-case ::enums::errc::no_stream_resources: return &::enums::detail::errc::enum_strings[790];
-case ::enums::errc::wrong_protocol_type: return &::enums::detail::errc::enum_strings[810];
-case ::enums::errc::no_message_available: return &::enums::detail::errc::enum_strings[830];
-case ::enums::errc::read_only_file_system: return &::enums::detail::errc::enum_strings[851];
-case ::enums::errc::illegal_byte_sequence: return &::enums::detail::errc::enum_strings[873];
-case ::enums::errc::address_not_available: return &::enums::detail::errc::enum_strings[895];
-case ::enums::errc::operation_in_progress: return &::enums::detail::errc::enum_strings[917];
-case ::enums::errc::state_not_recoverable: return &::enums::detail::errc::enum_strings[939];
-case ::enums::errc::operation_would_block: return &::enums::detail::errc::enum_strings[961];
-case ::enums::errc::argument_list_too_long: return &::enums::detail::errc::enum_strings[983];
-case ::enums::errc::argument_out_of_domain: return &::enums::detail::errc::enum_strings[1006];
-case ::enums::errc::function_not_supported: return &::enums::detail::errc::enum_strings[1029];
-case ::enums::errc::protocol_not_supported: return &::enums::detail::errc::enum_strings[1052];
-case ::enums::errc::operation_not_permitted: return &::enums::detail::errc::enum_strings[1075];
-case ::enums::errc::executable_format_error: return &::enums::detail::errc::enum_strings[1099];
-case ::enums::errc::device_or_resource_busy: return &::enums::detail::errc::enum_strings[1123];
-case ::enums::errc::operation_not_supported: return &::enums::detail::errc::enum_strings[1147];
-case ::enums::errc::no_such_file_or_directory: return &::enums::detail::errc::enum_strings[1171];
-case ::enums::errc::no_such_device_or_address: return &::enums::detail::errc::enum_strings[1197];
-case ::enums::errc::address_family_not_supported: return &::enums::detail::errc::enum_strings[1223];
-case ::enums::errc::destination_address_required: return &::enums::detail::errc::enum_strings[1252];
-case ::enums::errc::too_many_files_open_in_system: return &::enums::detail::errc::enum_strings[1281];
-case ::enums::errc::resource_deadlock_would_occur: return &::enums::detail::errc::enum_strings[1311];
-case ::enums::errc::too_many_symbolic_link_levels: return &::enums::detail::errc::enum_strings[1341];
-case ::enums::errc::resource_unavailable_try_again: return &::enums::detail::errc::enum_strings[1371];
-case ::enums::errc::connection_already_in_progress: return &::enums::detail::errc::enum_strings[1402];
-case ::enums::errc::inappropriate_io_control_operation: return &::enums::detail::errc::enum_strings[1433];
+case ::enums::errc::no_link: return { &::enums::detail::errc::enum_strings[0], 7 };
+case ::enums::errc::io_error: return { &::enums::detail::errc::enum_strings[8], 8 };
+case ::enums::errc::timed_out: return { &::enums::detail::errc::enum_strings[17], 9 };
+case ::enums::errc::no_message: return { &::enums::detail::errc::enum_strings[27], 10 };
+case ::enums::errc::owner_dead: return { &::enums::detail::errc::enum_strings[38], 10 };
+case ::enums::errc::interrupted: return { &::enums::detail::errc::enum_strings[49], 11 };
+case ::enums::errc::bad_address: return { &::enums::detail::errc::enum_strings[61], 11 };
+case ::enums::errc::file_exists: return { &::enums::detail::errc::enum_strings[73], 11 };
+case ::enums::errc::broken_pipe: return { &::enums::detail::errc::enum_strings[85], 11 };
+case ::enums::errc::bad_message: return { &::enums::detail::errc::enum_strings[97], 11 };
+case ::enums::errc::invalid_seek: return { &::enums::detail::errc::enum_strings[109], 12 };
+case ::enums::errc::message_size: return { &::enums::detail::errc::enum_strings[122], 12 };
+case ::enums::errc::network_down: return { &::enums::detail::errc::enum_strings[135], 12 };
+case ::enums::errc::not_a_stream: return { &::enums::detail::errc::enum_strings[148], 12 };
+case ::enums::errc::not_a_socket: return { &::enums::detail::errc::enum_strings[161], 12 };
+case ::enums::errc::network_reset: return { &::enums::detail::errc::enum_strings[174], 13 };
+case ::enums::errc::not_connected: return { &::enums::detail::errc::enum_strings[188], 13 };
+case ::enums::errc::not_supported: return { &::enums::detail::errc::enum_strings[202], 13 };
+case ::enums::errc::no_such_device: return { &::enums::detail::errc::enum_strings[216], 14 };
+case ::enums::errc::is_a_directory: return { &::enums::detail::errc::enum_strings[231], 14 };
+case ::enums::errc::file_too_large: return { &::enums::detail::errc::enum_strings[246], 14 };
+case ::enums::errc::too_many_links: return { &::enums::detail::errc::enum_strings[261], 14 };
+case ::enums::errc::address_in_use: return { &::enums::detail::errc::enum_strings[276], 14 };
+case ::enums::errc::protocol_error: return { &::enums::detail::errc::enum_strings[291], 14 };
+case ::enums::errc::stream_timeout: return { &::enums::detail::errc::enum_strings[306], 14 };
+case ::enums::errc::text_file_busy: return { &::enums::detail::errc::enum_strings[321], 14 };
+case ::enums::errc::no_such_process: return { &::enums::detail::errc::enum_strings[336], 15 };
+case ::enums::errc::not_a_directory: return { &::enums::detail::errc::enum_strings[352], 15 };
+case ::enums::errc::no_buffer_space: return { &::enums::detail::errc::enum_strings[368], 15 };
+case ::enums::errc::value_too_large: return { &::enums::detail::errc::enum_strings[384], 15 };
+case ::enums::errc::no_child_process: return { &::enums::detail::errc::enum_strings[400], 16 };
+case ::enums::errc::invalid_argument: return { &::enums::detail::errc::enum_strings[417], 16 };
+case ::enums::errc::connection_reset: return { &::enums::detail::errc::enum_strings[434], 16 };
+case ::enums::errc::host_unreachable: return { &::enums::detail::errc::enum_strings[451], 16 };
+case ::enums::errc::not_enough_memory: return { &::enums::detail::errc::enum_strings[468], 17 };
+case ::enums::errc::permission_denied: return { &::enums::detail::errc::enum_strings[486], 17 };
+case ::enums::errc::cross_device_link: return { &::enums::detail::errc::enum_strings[504], 17 };
+case ::enums::errc::filename_too_long: return { &::enums::detail::errc::enum_strings[522], 17 };
+case ::enums::errc::no_lock_available: return { &::enums::detail::errc::enum_strings[540], 17 };
+case ::enums::errc::already_connected: return { &::enums::detail::errc::enum_strings[558], 17 };
+case ::enums::errc::no_space_on_device: return { &::enums::detail::errc::enum_strings[576], 18 };
+case ::enums::errc::operation_canceled: return { &::enums::detail::errc::enum_strings[595], 18 };
+case ::enums::errc::connection_aborted: return { &::enums::detail::errc::enum_strings[614], 18 };
+case ::enums::errc::connection_refused: return { &::enums::detail::errc::enum_strings[633], 18 };
+case ::enums::errc::identifier_removed: return { &::enums::detail::errc::enum_strings[652], 18 };
+case ::enums::errc::no_protocol_option: return { &::enums::detail::errc::enum_strings[671], 18 };
+case ::enums::errc::bad_file_descriptor: return { &::enums::detail::errc::enum_strings[690], 19 };
+case ::enums::errc::too_many_files_open: return { &::enums::detail::errc::enum_strings[710], 19 };
+case ::enums::errc::result_out_of_range: return { &::enums::detail::errc::enum_strings[730], 19 };
+case ::enums::errc::directory_not_empty: return { &::enums::detail::errc::enum_strings[750], 19 };
+case ::enums::errc::network_unreachable: return { &::enums::detail::errc::enum_strings[770], 19 };
+case ::enums::errc::no_stream_resources: return { &::enums::detail::errc::enum_strings[790], 19 };
+case ::enums::errc::wrong_protocol_type: return { &::enums::detail::errc::enum_strings[810], 19 };
+case ::enums::errc::no_message_available: return { &::enums::detail::errc::enum_strings[830], 20 };
+case ::enums::errc::read_only_file_system: return { &::enums::detail::errc::enum_strings[851], 21 };
+case ::enums::errc::illegal_byte_sequence: return { &::enums::detail::errc::enum_strings[873], 21 };
+case ::enums::errc::address_not_available: return { &::enums::detail::errc::enum_strings[895], 21 };
+case ::enums::errc::operation_in_progress: return { &::enums::detail::errc::enum_strings[917], 21 };
+case ::enums::errc::state_not_recoverable: return { &::enums::detail::errc::enum_strings[939], 21 };
+case ::enums::errc::operation_would_block: return { &::enums::detail::errc::enum_strings[961], 21 };
+case ::enums::errc::argument_list_too_long: return { &::enums::detail::errc::enum_strings[983], 22 };
+case ::enums::errc::argument_out_of_domain: return { &::enums::detail::errc::enum_strings[1006], 22 };
+case ::enums::errc::function_not_supported: return { &::enums::detail::errc::enum_strings[1029], 22 };
+case ::enums::errc::protocol_not_supported: return { &::enums::detail::errc::enum_strings[1052], 22 };
+case ::enums::errc::operation_not_permitted: return { &::enums::detail::errc::enum_strings[1075], 23 };
+case ::enums::errc::executable_format_error: return { &::enums::detail::errc::enum_strings[1099], 23 };
+case ::enums::errc::device_or_resource_busy: return { &::enums::detail::errc::enum_strings[1123], 23 };
+case ::enums::errc::operation_not_supported: return { &::enums::detail::errc::enum_strings[1147], 23 };
+case ::enums::errc::no_such_file_or_directory: return { &::enums::detail::errc::enum_strings[1171], 25 };
+case ::enums::errc::no_such_device_or_address: return { &::enums::detail::errc::enum_strings[1197], 25 };
+case ::enums::errc::address_family_not_supported: return { &::enums::detail::errc::enum_strings[1223], 28 };
+case ::enums::errc::destination_address_required: return { &::enums::detail::errc::enum_strings[1252], 28 };
+case ::enums::errc::too_many_files_open_in_system: return { &::enums::detail::errc::enum_strings[1281], 29 };
+case ::enums::errc::resource_deadlock_would_occur: return { &::enums::detail::errc::enum_strings[1311], 29 };
+case ::enums::errc::too_many_symbolic_link_levels: return { &::enums::detail::errc::enum_strings[1341], 29 };
+case ::enums::errc::resource_unavailable_try_again: return { &::enums::detail::errc::enum_strings[1371], 30 };
+case ::enums::errc::connection_already_in_progress: return { &::enums::detail::errc::enum_strings[1402], 30 };
+case ::enums::errc::inappropriate_io_control_operation: return { &::enums::detail::errc::enum_strings[1433], 34 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 

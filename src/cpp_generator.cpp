@@ -722,7 +722,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 27;
+    const int enumbra_templates_version = 28;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -932,6 +932,13 @@ namespace enumbra {{
         [[nodiscard]] constexpr T value_or(T default_value) const {{ return operator bool() ? v : default_value; }}
     }};
 
+    struct to_string_result {{
+        using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
+
+        const char* str = nullptr;
+        size_type size = 0;
+    }};
+
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
@@ -1104,12 +1111,14 @@ void cpp_generator::emit_ve_func_to_string(const value_enum_context &e) {
     // START NAMESPACE
     wvl("namespace enumbra {{");
 
-    wvl("constexpr const char* to_string(const {enum_name_fq} v) noexcept {{");
+    wvl("constexpr ::enumbra::to_string_result to_string(const {enum_name_fq} v) noexcept {{");
     wvl("switch (v) {{");
     if (e.string_tables.entries.size() == 1) {
         for (auto &v: e.values) {
             push("val_name", v.name);
-            wvl("case {enum_name_fq}::{val_name}: return \"{val_name}\";");
+            push("val_size", std::to_string(v.name.size()));
+            wvl("case {enum_name_fq}::{val_name}: return {{ \"{val_name}\", {val_size} }};");
+            pop("val_size");
             pop("val_name");
         }
     } else {
@@ -1117,16 +1126,18 @@ void cpp_generator::emit_ve_func_to_string(const value_enum_context &e) {
             size_t offset = entry.offset_str;
             for (auto &e_name: entry.names) {
                 push("val_name", e_name);
+                push("val_size", std::to_string(e_name.size()));
                 push("offset", std::to_string(offset));
-                wvl("case {enum_name_fq}::{val_name}: return &::{enum_ns}::detail::{enum_name}::enum_strings[{offset}];");
+                wvl("case {enum_name_fq}::{val_name}: return {{ &::{enum_ns}::detail::{enum_name}::enum_strings[{offset}], {val_size} }};");
                 offset += entry.size + 1;
                 pop("offset");
+                pop("val_size");
                 pop("val_name");
             }
         }
     }
     wvl("}}");
-    wvl("return nullptr;");
+    wvl("return {{ nullptr, 0 }};");
     wvl("}}");
 
     // END NAMESPACE

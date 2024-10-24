@@ -259,8 +259,12 @@ int main()
 	// Range-for
 	for (auto& key : arr)
 	{
-		const auto str = enumbra::to_string(key);
+		auto str = enumbra::to_string(key);
 		UNUSED(str);
+		
+		constexpr auto res = enumbra::to_string(::enums::errc::bad_address);
+		static_assert(res.size == 11);
+		static_assert(::enumbra::detail::streq_fixed_size<res.size>(res.str, "bad_address"));
 
 		constexpr auto x = enumbra::min<test_string_parse>();
 		UNUSED(x);

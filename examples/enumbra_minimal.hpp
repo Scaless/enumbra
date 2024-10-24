@@ -73,7 +73,7 @@
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 27
+#define ENUMBRA_BASE_TEMPLATES_VERSION 28
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -280,6 +280,13 @@ namespace enumbra {
         [[nodiscard]] constexpr T value_or(T default_value) const { return operator bool() ? v : default_value; }
     };
 
+    struct to_string_result {
+        using size_type = detail::conditional_t<sizeof(void*) == 4, int, long long>;
+
+        const char* str = nullptr;
+        size_type size = 0;
+    };
+
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
@@ -304,9 +311,9 @@ namespace enumbra {
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 27
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 28
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 27
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 28
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -351,12 +358,12 @@ return (1 <= static_cast<unsigned int>(e)) && (static_cast<unsigned int>(e) <= 2
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::minimal_val v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::minimal_val v) noexcept {
 switch (v) {
-case ::enums::minimal_val::B: return &::enums::detail::minimal_val::enum_strings[0];
-case ::enums::minimal_val::C: return &::enums::detail::minimal_val::enum_strings[2];
+case ::enums::minimal_val::B: return { &::enums::detail::minimal_val::enum_strings[0], 1 };
+case ::enums::minimal_val::C: return { &::enums::detail::minimal_val::enum_strings[2], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
@@ -426,12 +433,12 @@ return false;
 }
 
 namespace enumbra {
-constexpr const char* to_string(const ::enums::big v) noexcept {
+constexpr ::enumbra::to_string_result to_string(const ::enums::big v) noexcept {
 switch (v) {
-case ::enums::big::B: return &::enums::detail::big::enum_strings[0];
-case ::enums::big::C: return &::enums::detail::big::enum_strings[2];
+case ::enums::big::B: return { &::enums::detail::big::enum_strings[0], 1 };
+case ::enums::big::C: return { &::enums::detail::big::enum_strings[2], 1 };
 }
-return nullptr;
+return { nullptr, 0 };
 }
 }
 
