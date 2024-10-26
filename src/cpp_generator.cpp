@@ -150,7 +150,14 @@ void cpp_generator::build_contexts() {
     ctx = output_context();
 
     // Include Guard Name
-    ctx.def_macro = fmt::format("ENUMBRA_{}_H", to_upper(enum_meta.block_name));
+    if (!is_valid_macro_name(enum_meta.block_name)) {
+        throw std::logic_error(
+            fmt::format("Block name ({}) contains invalid characters (Allowed: a-z A-Z 0-9 _)",
+                enum_meta.block_name)
+        );
+    }
+
+    ctx.def_macro = fmt::format("ENUMBRA_{}_H", to_upper_ascii(enum_meta.block_name));
 
     // Construct the full namespace for templates
     for (size_t i = 0; i < cpp_cfg.output_namespace.size(); i++) {

@@ -28,10 +28,28 @@ std::string format_int128(Int128Format c) {
     }
 }
 
-std::string to_upper(const std::string &str) {
+bool is_valid_macro_name(const std::string& str)
+{
+    for (auto c : str) {
+        const bool is_valid =
+            ((c >= 'a') && (c <= 'z')) ||
+            ((c >= 'A') && (c <= 'Z')) ||
+            ((c >= '0') && (c <= '9')) ||
+            (c == '_');
+        if (!is_valid) { return false; }
+    }
+    return true;
+}
+
+std::string to_upper_ascii(const std::string &str) {
+    // Note: This previously used std::toupper, but calling that on Windows 
+    // causes some locale initialization that takes 10ms! We only care about
+    // ASCII so just do it the simple way:
     std::string copy = str;
     for (auto &c: copy) {
-        c = std::toupper(c, std::locale("en_US.utf8"));
+        if ((c >= 'a') && (c <= 'z')) {
+            c = c - ('a' - 'A');
+        }
     }
     return copy;
 }
