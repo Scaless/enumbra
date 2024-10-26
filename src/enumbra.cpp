@@ -48,15 +48,15 @@ int main(int argc, char **argv) {
 
         cxxopts::Options options("enumbra", "An enum code generator. https://github.com/Scaless/enumbra");
         options
-                .custom_help("-c enumbra_config.json -s enum.json")
-                .add_options()
-                        ("h,help", "You are here.")
-                        ("c,config", "[Required] Path to enumbra config file (enumbra_config.json).",
-                         cxxopts::value<std::string>())
-                        ("s,source", "[Required] Path to enum config file (enum.json).", cxxopts::value<std::string>())
-                        ("cppout", "[Required] Path to output C++ header file.", cxxopts::value<std::string>())
-                        ("version", "Prints version information.")
-                        ("p,print", "Prints output to the console.");
+            .custom_help("-c enumbra_config.json -s enum.json")
+            .add_options()
+                ("h,help", "You are here.")
+                ("c,config", "[Required] Path to enumbra config file (enumbra_config.json).", cxxopts::value<std::string>())
+                ("s,source", "[Required] Path to enum config file (enum.json).", cxxopts::value<std::string>())
+                ("cppout", "[Required] Path to output C++ header file.", cxxopts::value<std::string>())
+                ("version", "Prints version information.")
+                ("showtime", "Print out total time taken to generate")
+                ("p,print", "Prints output to the console.");
 
         auto result = options.parse(argc, argv);
 
@@ -102,9 +102,11 @@ int main(int argc, char **argv) {
             std::ofstream file(cppout_file_path);
             file << generated_cpp;
 
-            auto end = std::chrono::system_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            printf("The cpp file was successfully output in (%s ms) to: %s\n", std::to_string(elapsed.count()).c_str(), cppout_file_path.c_str());
+            if (result.count("showtime")) {
+                auto end = std::chrono::system_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                printf("The cpp file was successfully output in (%s ms) to: %s\n", std::to_string(elapsed.count()).c_str(), cppout_file_path.c_str());
+            }
         }
         if (loaded_enumbra_config.generate_csharp) {
             // TODO
