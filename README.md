@@ -200,7 +200,7 @@ The #1 reason is if you care about compile times enough to put up with a separat
 
 Baseline runs the same compile command with a file containing ```int main() { return 0; }```.
 
-[2] enumbra is run once to generate headers, which took ```32 ms```. If your enums don't change, you don't need to re-generate! 
+[2] enumbra is run once to generate headers, which took ```2 ms```!
 
 See the [benchmark](/benchmark) directory.
 

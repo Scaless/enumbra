@@ -103,11 +103,7 @@ private:
     void push(std::string_view key, std::string_view value)
     {
         store_map_.insert_or_assign(std::string(key), std::string(value));
-        store_.clear();
-        for(auto& kv : store_map_)
-        {
-            store_.push_back(fmt::arg(kv.first.c_str(), kv.second.c_str()));
-        }
+        store_.push_back(fmt::arg(key.data(), value.data()));
     }
     void pop(std::string_view key)
     {
@@ -135,7 +131,7 @@ private:
     // write line feed
 	void wlf(int count = 1) {
 		for (int i = 0; i < count; i++)
-			write("\n");
+			Output += "\n";
 	}
 
     // write line - user provides args and doesn't use parameter store
@@ -145,13 +141,13 @@ private:
         wlf();
 	}
 
-    // write line unformatted - for pre-formatted strings which contain fmt characters
-    void wl_unformatted(std::string_view str) {
+    // write line unformatted - for pre-formatted strings
+    void wlu(std::string_view str) {
         Output += str;
         wlf();
     }
 
-    // write line using parameter store
+    // write virtual line - using parameter store
     void wvl(std::string_view fmt) {
         fmt::vformat_to(std::back_inserter(Output), fmt, store_);
         wlf();
