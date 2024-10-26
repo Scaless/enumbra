@@ -44,8 +44,9 @@
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
+#ifndef ENUMBRA_NO_OPTIONAL_MACROS
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
-#define ENUMBRA_OPTIONAL_MACROS_VERSION 8
+#define ENUMBRA_OPTIONAL_MACROS_VERSION 9
 
 // Bitfield convenience functions
 #define ENUMBRA_CLEAR(Field) do { decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; } while (0)
@@ -58,6 +59,12 @@
 #define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())
 #define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())
 
+// Iterate flags in a switch
+#define ENUMBRA_FLAGS_SWITCH_BEGIN(var) \
+		do { static_assert(::enumbra::is_enumbra_flags_enum<decltype(var)>, #var " is not an enumbra flags enum"); \
+		for (const auto flag : enumbra::flags<decltype(var)>()) { if (::enumbra::has_any(var & flag)) { switch (var & flag)
+#define ENUMBRA_FLAGS_SWITCH_END } } } while (0)
+
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization
 #define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() { InitValue };
@@ -68,15 +75,16 @@
 #else // check existing version supported
 #if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0
 #error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 8
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 9
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 8
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 9
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
+#endif
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 29
+#define ENUMBRA_BASE_TEMPLATES_VERSION 30
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -320,14 +328,51 @@ namespace enumbra {
     template<class T>
     constexpr string_view enum_namespace() noexcept = delete;
 
+    template<class T>
+    constexpr void clear(T& value) noexcept = delete;
+
+    template<class T>
+    constexpr bool test(T value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void set(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void unset(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void toggle(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_all(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_any(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_none(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_single(T value) noexcept = delete;
+
+    template<typename Value, typename Func>
+    constexpr void flags_switch(Value v, Func&& func) {
+        static_assert(::enumbra::is_enumbra_flags_enum<Value>, "Value is not an enumbra flags enum");
+        for (const Value flag : ::enumbra::flags<Value>()) {
+            if (::enumbra::has_any(v & flag)) {
+                func(v & flag);
+            }
+        }
+    }
+
     // End Default Templates
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 29
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 30
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 29
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 30
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -2329,18 +2374,19 @@ constexpr bool is_valid<::enums::test_flags>(::enums::test_flags e) noexcept {
 return (static_cast<uint32_t>(e) | static_cast<uint32_t>(0x3)) == static_cast<uint32_t>(0x3);
 }
 
-constexpr void clear(::enums::test_flags& value) noexcept { value = static_cast<::enums::test_flags>(0); }
-constexpr bool test(::enums::test_flags value, ::enums::test_flags flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
-constexpr void set(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
-constexpr void unset(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
-constexpr void toggle(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
-constexpr bool has_all(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == static_cast<uint32_t>(0x3); }
-constexpr bool has_any(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) > 0; }
-constexpr bool has_none(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == 0; }
-constexpr bool has_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x3); return n && !(n & (n - 1)); }
+template<> constexpr void clear(::enums::test_flags& value) noexcept { value = static_cast<::enums::test_flags>(0); }
+template<> constexpr bool test(::enums::test_flags value, ::enums::test_flags flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
+template<> constexpr void set(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
+template<> constexpr void unset(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
+template<> constexpr void toggle(::enums::test_flags& value, ::enums::test_flags flags) noexcept { value = static_cast<::enums::test_flags>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
+template<> constexpr bool has_all(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == static_cast<uint32_t>(0x3); }
+template<> constexpr bool has_any(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) > 0; }
+template<> constexpr bool has_none(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == 0; }
+template<> constexpr bool has_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
 } // enumbra
 
+namespace enums {
 // ::enums::test_flags Operator Overloads
 constexpr ::enums::test_flags operator~(const ::enums::test_flags a) noexcept { return static_cast<::enums::test_flags>(~static_cast<uint32_t>(a)); }
 constexpr ::enums::test_flags operator|(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
@@ -2349,6 +2395,7 @@ constexpr ::enums::test_flags operator^(const ::enums::test_flags a, const ::enu
 constexpr ::enums::test_flags& operator|=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a | b; }
 constexpr ::enums::test_flags& operator&=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a & b; }
 constexpr ::enums::test_flags& operator^=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a ^ b; }
+} // namespace enums
 
 namespace enums {
 // test_nodefault Definition
@@ -2379,18 +2426,19 @@ constexpr bool is_valid<::enums::test_nodefault>(::enums::test_nodefault e) noex
 return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x3)) == static_cast<uint16_t>(0x3);
 }
 
-constexpr void clear(::enums::test_nodefault& value) noexcept { value = static_cast<::enums::test_nodefault>(0); }
-constexpr bool test(::enums::test_nodefault value, ::enums::test_nodefault flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-constexpr void set(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-constexpr void unset(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-constexpr void toggle(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == static_cast<uint16_t>(0x3); }
-constexpr bool has_any(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) > 0; }
-constexpr bool has_none(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == 0; }
-constexpr bool has_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x3); return n && !(n & (n - 1)); }
+template<> constexpr void clear(::enums::test_nodefault& value) noexcept { value = static_cast<::enums::test_nodefault>(0); }
+template<> constexpr bool test(::enums::test_nodefault value, ::enums::test_nodefault flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+template<> constexpr void set(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+template<> constexpr void unset(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+template<> constexpr void toggle(::enums::test_nodefault& value, ::enums::test_nodefault flags) noexcept { value = static_cast<::enums::test_nodefault>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+template<> constexpr bool has_all(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == static_cast<uint16_t>(0x3); }
+template<> constexpr bool has_any(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) > 0; }
+template<> constexpr bool has_none(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == 0; }
+template<> constexpr bool has_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
 } // enumbra
 
+namespace enums {
 // ::enums::test_nodefault Operator Overloads
 constexpr ::enums::test_nodefault operator~(const ::enums::test_nodefault a) noexcept { return static_cast<::enums::test_nodefault>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::test_nodefault operator|(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2399,6 +2447,7 @@ constexpr ::enums::test_nodefault operator^(const ::enums::test_nodefault a, con
 constexpr ::enums::test_nodefault& operator|=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a | b; }
 constexpr ::enums::test_nodefault& operator&=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a & b; }
 constexpr ::enums::test_nodefault& operator^=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a ^ b; }
+} // namespace enums
 
 namespace enums {
 // TestSparseFlags Definition
@@ -2431,18 +2480,19 @@ constexpr bool is_valid<::enums::TestSparseFlags>(::enums::TestSparseFlags e) no
 return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x15)) == static_cast<uint16_t>(0x15);
 }
 
-constexpr void clear(::enums::TestSparseFlags& value) noexcept { value = static_cast<::enums::TestSparseFlags>(0); }
-constexpr bool test(::enums::TestSparseFlags value, ::enums::TestSparseFlags flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-constexpr void set(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-constexpr void unset(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-constexpr void toggle(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == static_cast<uint16_t>(0x15); }
-constexpr bool has_any(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) > 0; }
-constexpr bool has_none(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == 0; }
-constexpr bool has_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x15); return n && !(n & (n - 1)); }
+template<> constexpr void clear(::enums::TestSparseFlags& value) noexcept { value = static_cast<::enums::TestSparseFlags>(0); }
+template<> constexpr bool test(::enums::TestSparseFlags value, ::enums::TestSparseFlags flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+template<> constexpr void set(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+template<> constexpr void unset(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+template<> constexpr void toggle(::enums::TestSparseFlags& value, ::enums::TestSparseFlags flags) noexcept { value = static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+template<> constexpr bool has_all(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == static_cast<uint16_t>(0x15); }
+template<> constexpr bool has_any(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) > 0; }
+template<> constexpr bool has_none(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == 0; }
+template<> constexpr bool has_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x15); return n && !(n & (n - 1)); }
 
 } // enumbra
 
+namespace enums {
 // ::enums::TestSparseFlags Operator Overloads
 constexpr ::enums::TestSparseFlags operator~(const ::enums::TestSparseFlags a) noexcept { return static_cast<::enums::TestSparseFlags>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSparseFlags operator|(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2451,6 +2501,7 @@ constexpr ::enums::TestSparseFlags operator^(const ::enums::TestSparseFlags a, c
 constexpr ::enums::TestSparseFlags& operator|=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a | b; }
 constexpr ::enums::TestSparseFlags& operator&=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a & b; }
 constexpr ::enums::TestSparseFlags& operator^=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a ^ b; }
+} // namespace enums
 
 namespace enums {
 // TestSingleFlag Definition
@@ -2479,18 +2530,19 @@ constexpr bool is_valid<::enums::TestSingleFlag>(::enums::TestSingleFlag e) noex
 return (static_cast<uint16_t>(e) | static_cast<uint16_t>(0x4)) == static_cast<uint16_t>(0x4);
 }
 
-constexpr void clear(::enums::TestSingleFlag& value) noexcept { value = static_cast<::enums::TestSingleFlag>(0); }
-constexpr bool test(::enums::TestSingleFlag value, ::enums::TestSingleFlag flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
-constexpr void set(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
-constexpr void unset(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
-constexpr void toggle(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
-constexpr bool has_all(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == static_cast<uint16_t>(0x4); }
-constexpr bool has_any(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) > 0; }
-constexpr bool has_none(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == 0; }
-constexpr bool has_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x4); return n && !(n & (n - 1)); }
+template<> constexpr void clear(::enums::TestSingleFlag& value) noexcept { value = static_cast<::enums::TestSingleFlag>(0); }
+template<> constexpr bool test(::enums::TestSingleFlag value, ::enums::TestSingleFlag flags) noexcept { return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(value)) == static_cast<uint16_t>(flags); }
+template<> constexpr void set(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) | static_cast<uint16_t>(flags)); }
+template<> constexpr void unset(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) & (~static_cast<uint16_t>(flags))); }
+template<> constexpr void toggle(::enums::TestSingleFlag& value, ::enums::TestSingleFlag flags) noexcept { value = static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(value) ^ static_cast<uint16_t>(flags)); }
+template<> constexpr bool has_all(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == static_cast<uint16_t>(0x4); }
+template<> constexpr bool has_any(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) > 0; }
+template<> constexpr bool has_none(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == 0; }
+template<> constexpr bool has_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x4); return n && !(n & (n - 1)); }
 
 } // enumbra
 
+namespace enums {
 // ::enums::TestSingleFlag Operator Overloads
 constexpr ::enums::TestSingleFlag operator~(const ::enums::TestSingleFlag a) noexcept { return static_cast<::enums::TestSingleFlag>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSingleFlag operator|(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2499,6 +2551,7 @@ constexpr ::enums::TestSingleFlag operator^(const ::enums::TestSingleFlag a, con
 constexpr ::enums::TestSingleFlag& operator|=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a | b; }
 constexpr ::enums::TestSingleFlag& operator&=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a & b; }
 constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a ^ b; }
+} // namespace enums
 
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };

@@ -522,16 +522,17 @@ const std::string &cpp_generator::generate_cpp_output() {
         wlf();
 
         //// Functions
-        wvl("constexpr void clear({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
-        wvl("constexpr bool test({enum_name_fq} value, {enum_name_fq} flags) noexcept {{ return (static_cast<{size_type}>(flags) & static_cast<{size_type}>(value)) == static_cast<{size_type}>(flags); }}");
-        wvl("constexpr void set({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) | static_cast<{size_type}>(flags)); }}");
-        wvl("constexpr void unset({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) & (~static_cast<{size_type}>(flags))); }}");
-        wvl("constexpr void toggle({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) ^ static_cast<{size_type}>(flags)); }}");
         
-        wvl("constexpr bool has_all({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == static_cast<{size_type}>({max_value}); }}");
-        wvl("constexpr bool has_any({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) > 0; }}");
-        wvl("constexpr bool has_none({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == 0; }}");
-        wvl("constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(static_cast<{size_type}>(value) & {max_value}); return n && !(n & (n - 1)); }}");
+        wvl("template<> constexpr void clear({enum_name_fq}& value) noexcept {{ value = static_cast<{enum_name_fq}>(0); }}");
+        wvl("template<> constexpr bool test({enum_name_fq} value, {enum_name_fq} flags) noexcept {{ return (static_cast<{size_type}>(flags) & static_cast<{size_type}>(value)) == static_cast<{size_type}>(flags); }}");
+        wvl("template<> constexpr void set({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) | static_cast<{size_type}>(flags)); }}");
+        wvl("template<> constexpr void unset({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) & (~static_cast<{size_type}>(flags))); }}");
+        wvl("template<> constexpr void toggle({enum_name_fq}& value, {enum_name_fq} flags) noexcept {{ value = static_cast<{enum_name_fq}>(static_cast<{size_type}>(value) ^ static_cast<{size_type}>(flags)); }}");
+        
+        wvl("template<> constexpr bool has_all({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == static_cast<{size_type}>({max_value}); }}");
+        wvl("template<> constexpr bool has_any({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) > 0; }}");
+        wvl("template<> constexpr bool has_none({enum_name_fq} value) noexcept {{ return (static_cast<{size_type}>(value) & static_cast<{size_type}>({max_value})) == 0; }}");
+        wvl("template<> constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(static_cast<{size_type}>(value) & {max_value}); return n && !(n & (n - 1)); }}");
         wlf();
 
         // Helper specializations
@@ -557,6 +558,10 @@ const std::string &cpp_generator::generate_cpp_output() {
         wlf();
 
         // Operator Overloads need to be outside of enumbra::
+        // START NAMESPACE
+        for (const auto& ns : cpp_cfg.output_namespace) {
+            wl("namespace {} {{", ns);
+        }
         std::vector<const char*> operator_strings = {
             "// {enum_name_fq} Operator Overloads",
 
@@ -571,6 +576,9 @@ const std::string &cpp_generator::generate_cpp_output() {
         };
         for (auto& str : operator_strings) {
             wvl(str);
+        }
+        for (auto ns = cpp_cfg.output_namespace.rbegin(); ns != cpp_cfg.output_namespace.rend(); ++ns) {
+            wl("}} // namespace {}", *ns);
         }
 
         wlf();
@@ -688,8 +696,9 @@ void cpp_generator::emit_includes() {
 void cpp_generator::emit_optional_macros() {
     if (cpp_cfg.enumbra_bitfield_macros) {
         // Increment this if macros below are modified.
-        const int enumbra_optional_macros_version = 8;
+        const int enumbra_optional_macros_version = 9;
         std::string macro_strings = R"(
+#ifndef ENUMBRA_NO_OPTIONAL_MACROS
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
 #define ENUMBRA_OPTIONAL_MACROS_VERSION {0}
 
@@ -703,6 +712,12 @@ void cpp_generator::emit_optional_macros() {
 #define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
 #define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())
 #define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())
+
+// Iterate flags in a switch
+#define ENUMBRA_FLAGS_SWITCH_BEGIN(var) \
+		do {{ static_assert(::enumbra::is_enumbra_flags_enum<decltype(var)>, #var " is not an enumbra flags enum"); \
+		for (const auto flag : enumbra::flags<decltype(var)>()) {{ if (::enumbra::has_any(var & flag)) {{ switch (var & flag)
+#define ENUMBRA_FLAGS_SWITCH_END }} }} }} while (0)
 
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization
@@ -719,7 +734,8 @@ void cpp_generator::emit_optional_macros() {
 #elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > {0}
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
-#endif // ENUMBRA_OPTIONAL_MACROS_VERSION)";
+#endif // ENUMBRA_OPTIONAL_MACROS_VERSION
+#endif)";
 
         write(macro_strings, enumbra_optional_macros_version);
         wlf();
@@ -728,7 +744,7 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 29;
+    const int enumbra_templates_version = 30;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
@@ -974,6 +990,43 @@ namespace enumbra {{
 
     template<class T>
     constexpr string_view enum_namespace() noexcept = delete;
+
+    template<class T>
+    constexpr void clear(T& value) noexcept = delete;
+
+    template<class T>
+    constexpr bool test(T value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void set(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void unset(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void toggle(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_all(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_any(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_none(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_single(T value) noexcept = delete;
+
+    template<typename Value, typename Func>
+    constexpr void flags_switch(Value v, Func&& func) {{
+        static_assert(::enumbra::is_enumbra_flags_enum<Value>, "Value is not an enumbra flags enum");
+        for (const Value flag : ::enumbra::flags<Value>()) {{
+            if (::enumbra::has_any(v & flag)) {{
+                func(v & flag);
+            }}
+        }}
+    }}
 
     // End Default Templates
 }} // end namespace enumbra

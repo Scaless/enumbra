@@ -1,39 +1,44 @@
 #include "enumbra_test.hpp"
 
-// Include second header with the same namespace to test that include macros are working
-//#include "enumbra_minimal.hpp"
-
 #include <type_traits>
-
-enum class NonEnumbraEnum
-{
-    A = 4,
-    B = 5
-};
 
 #define UNUSED(x) (void)x
 
+enum NonEnumbraEnum
+{
+	A = 4,
+	B = 5
+};
+
+enum class NonEnumbraEnumClass
+{
+	A = 4,
+	B = 5
+};
+
+// Make sure macros work while without full namespace
 static void TestMacroWithUsingNamespace()
 {
-    using namespace enums;
-    struct NSV
-    {
-        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
-        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
-        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
-        ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
+	using namespace enums;
+	struct NSV
+	{
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
 
-        NSV()
-            : ENUMBRA_INIT_DEFAULT(W)
-            , ENUMBRA_INIT(X, test_nodefault::B)
-            , Y(enums::test_nodefault())
-            , Z(enums::test_nodefault())
-        { }
-    };
-    NSV v;
-    UNUSED(v);
+		NSV()
+			: ENUMBRA_INIT_DEFAULT(W)
+			, ENUMBRA_INIT(X, test_nodefault::B)
+			, Y(test_nodefault())
+			, Z(test_nodefault())
+		{ }
+	};
+	NSV v;
+	UNUSED(v);
 }
 
+// Verify bitfield packing, clang/gcc/msvc *should* pack these, other compilers might not
 struct PackedStruct
 {
 	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
@@ -48,211 +53,245 @@ struct PackedStruct
 		Z(enums::test_nodefault())
 	{ }
 };
-static_assert(sizeof(PackedStruct) == 2);
+static_assert(sizeof(PackedStruct) == 2, "PackedStruct bitfield packing failed");
 
 // Type Checks
-static_assert(enumbra::is_enumbra_enum<NonEnumbraEnum> == false);
-static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnum> == false);
-static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnum> == false);
+static_assert(enumbra::is_enumbra_enum<NonEnumbraEnum> == false, "is_enumbra_enum failed");
+static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnum> == false, "is_enumbra_flags_enum failed");
+static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnum> == false, "is_enumbra_value_enum failed");
 
-static_assert(enumbra::is_enumbra_enum<enums::Signed8Test> == true);
-static_assert(enumbra::is_enumbra_flags_enum<enums::Signed8Test> == false);
-static_assert(enumbra::is_enumbra_value_enum<enums::Signed8Test> == true);
+static_assert(enumbra::is_enumbra_enum<NonEnumbraEnumClass> == false, "is_enumbra_enum failed");
+static_assert(enumbra::is_enumbra_flags_enum<NonEnumbraEnumClass> == false, "is_enumbra_flags_enum failed");
+static_assert(enumbra::is_enumbra_value_enum<NonEnumbraEnumClass> == false, "is_enumbra_value_enum failed");
 
-static_assert(enumbra::is_enumbra_enum<enums::TestSingleFlag> == true);
-static_assert(enumbra::is_enumbra_flags_enum<enums::TestSingleFlag> == true);
-static_assert(enumbra::is_enumbra_value_enum<enums::TestSingleFlag> == false);
+static_assert(enumbra::is_enumbra_enum<enums::Signed8Test> == true, "is_enumbra_enum failed");
+static_assert(enumbra::is_enumbra_flags_enum<enums::Signed8Test> == false, "is_enumbra_flags_enum failed");
+static_assert(enumbra::is_enumbra_value_enum<enums::Signed8Test> == true, "is_enumbra_value_enum failed");
 
-static_assert(std::is_enum_v<NonEnumbraEnum> == true);
-static_assert(std::is_enum_v<enums::Signed8Test> == true);
-static_assert(std::is_enum_v<enums::TestSingleFlag> == true);
+static_assert(enumbra::is_enumbra_enum<enums::TestSingleFlag> == true, "is_enumbra_enum failed");
+static_assert(enumbra::is_enumbra_flags_enum<enums::TestSingleFlag> == true, "is_enumbra_flags_enum failed");
+static_assert(enumbra::is_enumbra_value_enum<enums::TestSingleFlag> == false, "is_enumbra_value_enum failed");
 
+static_assert(std::is_enum_v<NonEnumbraEnum> == true, "std::is_enum_v failed");
+static_assert(std::is_enum_v<NonEnumbraEnumClass> == true, "std::is_enum_v failed");
+static_assert(std::is_enum_v<enums::Signed8Test> == true, "std::is_enum_v failed");
+static_assert(std::is_enum_v<enums::TestSingleFlag> == true, "std::is_enum_v failed");
 
-//using namespace enumbra;
+#if ENUMBRA_CPP_VERSION >= 23
+static_assert(std::is_scoped_enum_v<NonEnumbraEnum> == false, "std::is_scoped_enum_v failed");
+static_assert(std::is_scoped_enum_v<NonEnumbraEnumClass> == true, "std::is_scoped_enum_v failed");
+static_assert(std::is_scoped_enum_v<enums::Signed8Test> == true, "std::is_scoped_enum_v failed");
+static_assert(std::is_scoped_enum_v<enums::TestSingleFlag> == true, "std::is_scoped_enum_v failed");
+#endif
 
 #if ENUMBRA_CPP_VERSION >= 20
-struct Struct20
+struct StructWithPackedBitfields
 {
 	// Correct usage
 	ENUMBRA_PACK_INIT(enums::test_nodefault, A, enums::test_nodefault::B | enums::test_nodefault::C)
 	ENUMBRA_PACK_INIT(enums::test_nodefault, B, enumbra::default_value<enums::test_nodefault>())
 	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, C)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
+
+	StructWithPackedBitfields() : ENUMBRA_INIT_DEFAULT(W) {}
 
 	// Not allowed
 	// ENUMBRA_PACK_INIT(test_nodefault, Ab, 4)
-	// ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnum::A)
+	// ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnumClass::A)
 	// ENUMBRA_PACK_INIT(test_nodefault, C, test_flags::B)
 };
 #endif
 
-int main()
+static void TestBitOps()
 {
-    TestMacroWithUsingNamespace();
+	using namespace enums;
 
-    using namespace enums;
+	test_nodefault b = test_nodefault::B;
+	test_nodefault c = test_nodefault::C;
 
-	test_nodefault d;
-    test_nodefault c = test_nodefault::C;
+	b = test_nodefault::B | test_nodefault::C;
+	b = test_nodefault::B & test_nodefault::C;
+	b = test_nodefault::B ^ test_nodefault::C;
 
-	d = test_nodefault::B;
-	d = test_nodefault::B | test_nodefault::C;
-	d = test_nodefault::B & test_nodefault::C;
-	d = test_nodefault::B ^ test_nodefault::C;
-	d |= test_nodefault::B | test_nodefault::C;
-	d &= test_nodefault::B & test_nodefault::C;
-	d ^= test_nodefault::B ^ test_nodefault::C;
-	d |= test_nodefault::B;
-	d &= test_nodefault::B;
-	d ^= test_nodefault::B;
-	d = ~d;
-	d = d | c;
-	d = d & c;
-	d = d ^ c;
-	d = d | test_nodefault::B;
-	d = d & test_nodefault::B;
-	d = d ^ test_nodefault::B;
-	d = test_nodefault::B | d;
-	d = test_nodefault::B & d;
-	d = test_nodefault::B ^ d;
+	b |= test_nodefault::B;
+	b &= test_nodefault::B;
+	b ^= test_nodefault::B;
 
-	switch (d) {
-	case test_nodefault::B:
-	case test_nodefault::C:
-        break;
-	}
+	b |= test_nodefault::B | test_nodefault::C;
+	b &= test_nodefault::B & test_nodefault::C;
+	b ^= test_nodefault::B ^ test_nodefault::C;
 
-	bool b;
-	b = (d == c);
-	b = (d != c);
-	b = (d == test_nodefault::B);
-	b = (d != test_nodefault::B);
-	b = (test_nodefault::B == d);
-	b = (test_nodefault::B != d);
-	d = b ? d : c;
+	b = ~b;
+	b = ~test_nodefault::B;
 
-	HexDiagonal f{};
-    HexDiagonal g{};
-	b = (f == g);
-	b = (f != g);
-	b = (f == HexDiagonal::NORTH);
-	b = (f != HexDiagonal::NORTH);
-	b = (HexDiagonal::NORTH == f);
-	b = (HexDiagonal::NORTH != f);
-	f = b ? f : g;
+	b = b | c;
+	b = b & c;
+	b = b ^ c;
 
-	// Test packed bitfields
+	b = b | test_nodefault::B;
+	b = b & test_nodefault::B;
+	b = b ^ test_nodefault::B;
+
+	b = test_nodefault::B | b;
+	b = test_nodefault::B & b;
+	b = test_nodefault::B ^ b;
+}
+
+static constexpr bool TestFlagsSwitch()
+{
+	using enums::TestSparseFlags;
+
+	int callCount = 0;
+	int count = 0;
+	TestSparseFlags b = TestSparseFlags::B | TestSparseFlags::D;
+
+	// Lambda is called once per matching flag, in this case 2 times for B and D
+	enumbra::flags_switch(b, [&](auto val) {
+		switch (val) {
+		case TestSparseFlags::B: count += 1; break;
+		case TestSparseFlags::C: count += 2; break;
+		case TestSparseFlags::D: count += 3; break;
+		}
+		callCount++;
+	});
+
+	// Switch executes once per matching flag, in this case 2 times for B and D
+	ENUMBRA_FLAGS_SWITCH_BEGIN(b) {
+		case TestSparseFlags::B: count += 1; break;
+		case TestSparseFlags::C: count += 2; break;
+		case TestSparseFlags::D: count += 3; break;
+	} ENUMBRA_FLAGS_SWITCH_END;
+
+	return (callCount == 2) && (count == 8);
+}
+
+static void TestPackedBitfields()
+{
+	using enums::test_nodefault;
+
 	PackedStruct v;
+	test_nodefault d = test_nodefault::B;
 	v.X = test_nodefault::B;
 	v.Y = test_nodefault::B | test_nodefault::C;
 	v.Z = d;
 	v.X = v.X | d;
+	d = v.X;
+}
 
-	struct D {
-		ENUMBRA_PACK_UNINITIALIZED(NegativeTest3, dd)
-	};
+static void TestBoolConversions()
+{
+	using namespace enums;
 
-#if 0
-	D bigD{};
-	NegativeTest3::to_string(bigD.dd);
+	{
+		test_nodefault d = test_nodefault::B;
+		test_nodefault c = test_nodefault::C;
+		bool b = false;
+		b = (d == c);
+		b = (d != c);
+		b = (d == test_nodefault::B);
+		b = (d != test_nodefault::B);
+		b = (test_nodefault::B == d);
+		b = (test_nodefault::B != d);
+		d = b ? d : c;
+	}
 
-	constexpr NegativeTest3 t3 = NegativeTest3::A;
-	NegativeTest3::to_string(t3);
-	NegativeTest3::to_string(t3.value());
+	{
+		HexDiagonal f{};
+		HexDiagonal g{};
+		bool b = false;
+		b = (f == g);
+		b = (f != g);
+		b = (f == HexDiagonal::NORTH);
+		b = (f != HexDiagonal::NORTH);
+		b = (HexDiagonal::NORTH == f);
+		b = (HexDiagonal::NORTH != f);
+		f = b ? f : g;
+	}
+}
 
-	constexpr auto res1 = NegativeTest3::from_string(NegativeTest3::to_string(t3));
-	static_assert(res1.first);
-
-	constexpr auto res2 = NegativeTest3::from_string("");
-	bigD.dd = res2.second;
-#endif
-
-	d = v.X; // uses implicit constructor
-
-	test_nodefault vv{};
-	vv = ~vv;
+static void TestFlagsFunctions()
+{
+	using namespace enums;
 
 	{
 		constexpr test_nodefault cz{};
-		static_assert(enumbra::has_none(cz));
-		static_assert(!enumbra::has_single(cz));
-		static_assert(!enumbra::has_any(cz));
-		static_assert(!enumbra::has_all(cz));
-		static_assert(enumbra::is_valid(cz));
+		static_assert(enumbra::has_none(cz), "failed");
+		static_assert(!enumbra::has_single(cz), "failed");
+		static_assert(!enumbra::has_any(cz), "failed");
+		static_assert(!enumbra::has_all(cz), "failed");
+		static_assert(enumbra::is_valid(cz), "failed");
 	}
 	{
 		constexpr test_nodefault cz = test_nodefault::B;
-		static_assert(!enumbra::has_none(cz));
-		static_assert(enumbra::has_single(cz));
-		static_assert(enumbra::has_any(cz));
-		static_assert(!enumbra::has_all(cz));
-		static_assert(enumbra::is_valid(cz));
+		static_assert(!enumbra::has_none(cz), "failed");
+		static_assert(enumbra::has_single(cz), "failed");
+		static_assert(enumbra::has_any(cz), "failed");
+		static_assert(!enumbra::has_all(cz), "failed");
+		static_assert(enumbra::is_valid(cz), "failed");
 	}
 	{
 		constexpr test_nodefault cz = test_nodefault::B | test_nodefault::C;
-		static_assert(!enumbra::has_none(cz));
-		static_assert(!enumbra::has_single(cz));
-		static_assert(enumbra::has_any(cz));
-		static_assert(enumbra::has_all(cz));
-		static_assert(enumbra::is_valid(cz));
+		static_assert(!enumbra::has_none(cz), "failed");
+		static_assert(!enumbra::has_single(cz), "failed");
+		static_assert(enumbra::has_any(cz), "failed");
+		static_assert(enumbra::has_all(cz), "failed");
+		static_assert(enumbra::is_valid(cz), "failed");
 	}
 	{
 		// Invalid
-		constexpr test_nodefault cz =  enumbra::from_integer_unsafe<test_nodefault>(4);
-		static_assert(enumbra::has_none(cz));
-		static_assert(!enumbra::has_single(cz));
-		static_assert(!enumbra::has_any(cz));
-		static_assert(!enumbra::has_all(cz));
-		static_assert(!enumbra::is_valid(cz));
+		constexpr test_nodefault cz = enumbra::from_integer_unsafe<test_nodefault>(4);
+		static_assert(enumbra::has_none(cz), "failed");
+		static_assert(!enumbra::has_single(cz), "failed");
+		static_assert(!enumbra::has_any(cz), "failed");
+		static_assert(!enumbra::has_all(cz), "failed");
+		static_assert(!enumbra::is_valid(cz), "failed");
 	}
-	
+}
 
-    TestSingleFlag zz{};
-    TestSingleFlag z{};
-	const bool q = z == zz;
-	UNUSED(q);
-	
+static void TestStringConversions()
+{
+	using namespace enums;
 
-	z |= TestSingleFlag::C;
-	z = z | zz;
+	constexpr Unsigned64Test Max = Unsigned64Test::MAX;
+	static_assert(enumbra::to_underlying(Max) == UINT64_MAX, "failed");
+	UNUSED(Max);
 
-	// Large integers
+	constexpr auto m = enumbra::min<HexDiagonal>();
+	UNUSED(m);
+
 	{
-		constexpr Unsigned64Test Max = Unsigned64Test::MAX;
-        static_assert(enumbra::to_underlying(Max) == UINT64_MAX);
-		UNUSED(Max);
-
-		constexpr auto m = enumbra::min<HexDiagonal>();
-		UNUSED(m);
-
-		{
-			constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN", 3);
-			static_assert(NANFail.has_value() == false);
-			UNUSED(NANFail);
-		}
-		{
-			constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN");
-			static_assert(NANFail.has_value() == false);
-			UNUSED(NANFail);
-		}
-		{
-			constexpr auto Hex = enumbra::from_string<HexDiagonal>("NORTH");
-			static_assert(Hex.has_value());
-			static_assert(sizeof(Hex) == sizeof(HexDiagonal));
-			UNUSED(Hex);
-		}
-
-		constexpr auto MAXSuccess = enumbra::from_string<Unsigned64Test>("V_UINT32_MAX", 12);
-        static_assert(MAXSuccess.has_value() == true);
-        UNUSED(MAXSuccess);
-
-        constexpr auto SP = enumbra::from_string<test_string_parse>("C", 1);
-        static_assert(SP.has_value() == true);
-        UNUSED(SP);
-
-        constexpr auto SPN = enumbra::from_string<test_string_parse>("EEE", 3);
-        static_assert(SPN.has_value() == false);
-        UNUSED(SPN);
+		constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN", 3);
+		static_assert(NANFail.has_value() == false, "failed");
+		UNUSED(NANFail);
 	}
+	{
+		constexpr auto NANFail = enumbra::from_string<Unsigned64Test>("NAN");
+		static_assert(NANFail.has_value() == false, "failed");
+		UNUSED(NANFail);
+	}
+	{
+		constexpr auto Hex = enumbra::from_string<HexDiagonal>("NORTH");
+		static_assert(Hex.has_value(), "failed");
+		static_assert(sizeof(Hex) == sizeof(HexDiagonal), "failed");
+		UNUSED(Hex);
+	}
+
+	constexpr auto MAXSuccess = enumbra::from_string<Unsigned64Test>("V_UINT32_MAX", 12);
+	static_assert(MAXSuccess.has_value() == true, "failed");
+	UNUSED(MAXSuccess);
+
+	constexpr auto SP = enumbra::from_string<test_string_parse>("C", 1);
+	static_assert(SP.has_value() == true, "failed");
+	UNUSED(SP);
+
+	constexpr auto SPN = enumbra::from_string<test_string_parse>("EEE", 3);
+	static_assert(SPN.has_value() == false, "failed");
+	UNUSED(SPN);
+}
+
+static void TestRange()
+{
+	using namespace enums;
 
 	auto& arr = enumbra::values<test_string_parse>();
 
@@ -261,47 +300,58 @@ int main()
 	{
 		auto str = enumbra::to_string(key);
 		UNUSED(str);
-		
+
 		constexpr auto res = enumbra::to_string(::enums::errc::bad_address);
-		static_assert(res.size == 11);
-		static_assert(::enumbra::detail::streq_fixed_size<res.size>(res.str, "bad_address"));
+		static_assert(res.size == 11, "failed");
+		static_assert(::enumbra::detail::streq_fixed_size<res.size>(res.str, "bad_address"), "failed");
 
 		constexpr auto x = enumbra::min<test_string_parse>();
 		UNUSED(x);
 		constexpr auto y = enumbra::max<test_string_parse>();
 		UNUSED(y);
 	}
+}
 
+static void TestIsValid()
+{
+	using namespace enums;
+	
 	// is_valid
 	{
 		constexpr int64_t raw = 1;
 		constexpr int64_t raw2 = 0;
 
-        constexpr auto result = enumbra::from_integer<test_string_parse>(raw);
-		static_assert(result);
-		static_assert(result.has_value());
-        static_assert(result.value() == test_string_parse::B);
+		constexpr auto result = enumbra::from_integer<test_string_parse>(raw);
+		static_assert(result, "failed");
+		static_assert(result.has_value(), "failed");
+		static_assert(result.value() == test_string_parse::B, "failed");
 
-        constexpr auto result2 = enumbra::from_integer<test_string_parse>(raw2);
-		static_assert(!result2);
-		static_assert(result2.has_value() == false);
-        UNUSED(result2);
+		constexpr auto result2 = enumbra::from_integer<test_string_parse>(raw2);
+		static_assert(!result2, "failed");
+		static_assert(result2.has_value() == false, "failed");
+		UNUSED(result2);
 	}
 	{
 		constexpr uint8_t raw = 0;
 		constexpr auto valid = enumbra::from_integer<HexDiagonal>(raw);
-        static_assert(valid);
+		static_assert(valid, "failed");
 		UNUSED(valid);
 
 		constexpr uint8_t raw2 = 6;
 		constexpr auto valid2 = enumbra::from_integer<HexDiagonal>(raw2);
-        static_assert(valid2.has_value() == false);
+		static_assert(valid2.has_value() == false, "failed");
 		UNUSED(valid2);
 
 		HexDiagonal hd = enumbra::from_integer_unsafe<HexDiagonal>(raw2);
 		UNUSED(hd);
 	}
+}
 
+static void TestBitMacros()
+{
+	using namespace enums;
+
+	// Bit Macros
 	{
 		struct q_t {
 			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags)
@@ -328,15 +378,18 @@ int main()
 		enumbra::toggle(tf, test_flags::B);
 		enumbra::unset(tf, test_flags::B);
 	}
+}
 
-	{
-		test_string_parse zzz = enumbra::from_integer_unsafe<test_string_parse>(-1);
-		test_string_parse eee = enumbra::from_integer_unsafe<test_string_parse>(1);
-		zzz = eee;
-        UNUSED(zzz);
-
-		auto ccc = enumbra::to_underlying(eee);
-		UNUSED(ccc);
-	}
-
+int main()
+{
+	TestMacroWithUsingNamespace();
+	TestBitOps();
+	TestFlagsSwitch();
+	TestPackedBitfields();
+	TestBoolConversions();
+	TestFlagsFunctions();
+	TestStringConversions();
+	TestRange();
+	TestIsValid();
+	TestBitMacros();
 }

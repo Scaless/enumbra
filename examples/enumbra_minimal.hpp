@@ -41,8 +41,9 @@
 #endif // end check existing version supported
 #endif // ENUMBRA_REQUIRED_MACROS_VERSION
 
+#ifndef ENUMBRA_NO_OPTIONAL_MACROS
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
-#define ENUMBRA_OPTIONAL_MACROS_VERSION 8
+#define ENUMBRA_OPTIONAL_MACROS_VERSION 9
 
 // Bitfield convenience functions
 #define ENUMBRA_CLEAR(Field) do { decltype(Field) _field_ = Field; ::enumbra::clear(_field_); (Field) = _field_; } while (0)
@@ -55,6 +56,12 @@
 #define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())
 #define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())
 
+// Iterate flags in a switch
+#define ENUMBRA_FLAGS_SWITCH_BEGIN(var) \
+		do { static_assert(::enumbra::is_enumbra_flags_enum<decltype(var)>, #var " is not an enumbra flags enum"); \
+		for (const auto flag : enumbra::flags<decltype(var)>()) { if (::enumbra::has_any(var & flag)) { switch (var & flag)
+#define ENUMBRA_FLAGS_SWITCH_END } } } while (0)
+
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization
 #define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() { InitValue };
@@ -65,15 +72,16 @@
 #else // check existing version supported
 #if (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) == 0
 #error ENUMBRA_OPTIONAL_MACROS_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 8
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) < 9
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using the same version.
-#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 8
+#elif (ENUMBRA_OPTIONAL_MACROS_VERSION + 0) > 9
 #error An included header was generated using an older version of enumbra. Regenerate your headers using the same version.
 #endif // end check existing version supported
 #endif // ENUMBRA_OPTIONAL_MACROS_VERSION
+#endif
 
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
-#define ENUMBRA_BASE_TEMPLATES_VERSION 29
+#define ENUMBRA_BASE_TEMPLATES_VERSION 30
 namespace enumbra {
     namespace detail {
         // Re-Implementation of std:: features to avoid including std headers
@@ -317,14 +325,51 @@ namespace enumbra {
     template<class T>
     constexpr string_view enum_namespace() noexcept = delete;
 
+    template<class T>
+    constexpr void clear(T& value) noexcept = delete;
+
+    template<class T>
+    constexpr bool test(T value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void set(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void unset(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr void toggle(T& value, T flags) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_all(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_any(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_none(T value) noexcept = delete;
+
+    template<class T>
+    constexpr bool has_single(T value) noexcept = delete;
+
+    template<typename Value, typename Func>
+    constexpr void flags_switch(Value v, Func&& func) {
+        static_assert(::enumbra::is_enumbra_flags_enum<Value>, "Value is not an enumbra flags enum");
+        for (const Value flag : ::enumbra::flags<Value>()) {
+            if (::enumbra::has_any(v & flag)) {
+                func(v & flag);
+            }
+        }
+    }
+
     // End Default Templates
 } // end namespace enumbra
 #else // check existing version supported
 #if (ENUMBRA_BASE_TEMPLATES_VERSION + 0) == 0
 #error ENUMBRA_BASE_TEMPLATES_VERSION has been defined without a proper version number. Check your build system.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 29
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) < 30
 #error An included header was generated using a newer version of enumbra. Regenerate your headers using same version of enumbra.
-#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 29
+#elif (ENUMBRA_BASE_TEMPLATES_VERSION + 0) > 30
 #error An included header was generated using an older version of enumbra. Regenerate your headers using same version of enumbra.
 #endif // check existing version supported
 #endif // ENUMBRA_BASE_TEMPLATES_VERSION
@@ -534,18 +579,19 @@ constexpr bool is_valid<::enums::minimal>(::enums::minimal e) noexcept {
 return (static_cast<unsigned int>(e) | static_cast<unsigned int>(0x3)) == static_cast<unsigned int>(0x3);
 }
 
-constexpr void clear(::enums::minimal& value) noexcept { value = static_cast<::enums::minimal>(0); }
-constexpr bool test(::enums::minimal value, ::enums::minimal flags) noexcept { return (static_cast<unsigned int>(flags) & static_cast<unsigned int>(value)) == static_cast<unsigned int>(flags); }
-constexpr void set(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) | static_cast<unsigned int>(flags)); }
-constexpr void unset(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) & (~static_cast<unsigned int>(flags))); }
-constexpr void toggle(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) ^ static_cast<unsigned int>(flags)); }
-constexpr bool has_all(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) == static_cast<unsigned int>(0x3); }
-constexpr bool has_any(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) > 0; }
-constexpr bool has_none(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) == 0; }
-constexpr bool has_single(::enums::minimal value) noexcept { unsigned int n = static_cast<unsigned int>(static_cast<unsigned int>(value) & 0x3); return n && !(n & (n - 1)); }
+template<> constexpr void clear(::enums::minimal& value) noexcept { value = static_cast<::enums::minimal>(0); }
+template<> constexpr bool test(::enums::minimal value, ::enums::minimal flags) noexcept { return (static_cast<unsigned int>(flags) & static_cast<unsigned int>(value)) == static_cast<unsigned int>(flags); }
+template<> constexpr void set(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) | static_cast<unsigned int>(flags)); }
+template<> constexpr void unset(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) & (~static_cast<unsigned int>(flags))); }
+template<> constexpr void toggle(::enums::minimal& value, ::enums::minimal flags) noexcept { value = static_cast<::enums::minimal>(static_cast<unsigned int>(value) ^ static_cast<unsigned int>(flags)); }
+template<> constexpr bool has_all(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) == static_cast<unsigned int>(0x3); }
+template<> constexpr bool has_any(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) > 0; }
+template<> constexpr bool has_none(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) == 0; }
+template<> constexpr bool has_single(::enums::minimal value) noexcept { unsigned int n = static_cast<unsigned int>(static_cast<unsigned int>(value) & 0x3); return n && !(n & (n - 1)); }
 
 } // enumbra
 
+namespace enums {
 // ::enums::minimal Operator Overloads
 constexpr ::enums::minimal operator~(const ::enums::minimal a) noexcept { return static_cast<::enums::minimal>(~static_cast<unsigned int>(a)); }
 constexpr ::enums::minimal operator|(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b)); }
@@ -554,6 +600,7 @@ constexpr ::enums::minimal operator^(const ::enums::minimal a, const ::enums::mi
 constexpr ::enums::minimal& operator|=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a | b; }
 constexpr ::enums::minimal& operator&=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a & b; }
 constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a ^ b; }
+} // namespace enums
 
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };
