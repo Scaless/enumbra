@@ -7,13 +7,14 @@ project ("enumbra")
 find_package(nlohmann_json)
 find_package(cxxopts)
 find_package(fmt)
+find_package(absl REQUIRED)
 
 # Add source to this project's executable.
 add_executable (enumbra
 		"src/enumbra.cpp"
 		"src/cpp_generator.cpp"
 		"src/cpp_utility.cpp"
- "benchmark/benchmark_shared.h")
+ )
 target_compile_features(enumbra PRIVATE cxx_std_17)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -34,6 +35,7 @@ endif()
 target_link_libraries(enumbra PRIVATE 
 	cxxopts::cxxopts
 	fmt::fmt
+	absl::int128
 )
 
 add_subdirectory(examples)

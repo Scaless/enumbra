@@ -9,6 +9,7 @@
 #include <cxxopts.hpp>
 #include <absl/strings/strip.h>
 #include "cpp_generator.h"
+#include "cpp_parser.h"
 
 namespace {
     bool contains_whitespace(const std::string_view str)
@@ -43,6 +44,10 @@ void print_version() {
 }
 
 int main(int argc, char **argv) {
+    /*if (parse_cpp_for_enums("").fail) {
+        return 0;
+    }*/
+
     try {
         auto start = std::chrono::system_clock::now();
 
