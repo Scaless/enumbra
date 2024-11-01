@@ -108,12 +108,20 @@ namespace enumbra {
             static constexpr bool enumbra_flags_enum = is_flags_enum;
         };
 
-        // Value enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, int count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v,
-            bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
-        struct value_enum_info {
+        // Enum info
+        template<
+            typename underlying_type,
+            underlying_type min_v,
+            underlying_type max_v,
+            underlying_type default_v,
+            int count_v,
+            bool is_contiguous_v,
+            int bits_required_storage_v,
+            int bits_required_transmission_v,
+            bool has_invalid_sentinel_v,
+            underlying_type invalid_sentinel_v
+        >
+        struct enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
@@ -126,28 +134,11 @@ namespace enumbra {
             static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         };
 
-        // Flags enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, int count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
-        struct flags_enum_info {
-            using underlying_t = underlying_type;
-            static constexpr underlying_type min = min_v;
-            static constexpr underlying_type max = max_v;
-            static constexpr underlying_type default_value = default_v;
-            static constexpr int count = count_v;
-            static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr int bits_required_storage = bits_required_storage_v;
-            static constexpr int bits_required_transmission = bits_required_transmission_v;
-        };
-
         // Default template for non-enumbra types
         template<class T>
         struct base_helper : type_info<false, false, false> { };
         template<class T>
-        struct value_enum_helper;
-        template<class T>
-        struct flags_enum_helper;
+        struct enum_helper;
 
         // Compare strings with sizes only known at runtime
         constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {
@@ -169,6 +160,7 @@ namespace enumbra {
             return count;
         }
     } // end namespace enumbra::detail
+
     template<class T>
     constexpr bool is_enumbra_enum = detail::base_helper<T>::enumbra_type;
     template<class T>
@@ -179,78 +171,43 @@ namespace enumbra {
     template<class T>
     constexpr T min() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::min);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::min);
-        }
+        return static_cast<T>(detail::enum_helper<T>::min);
     }
 
     template<class T>
     constexpr T max() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::max);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::max);
-        }
+        return static_cast<T>(detail::enum_helper<T>::max);
     }
 
     template<class T>
     constexpr T default_value() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::default_value);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::default_value);
-        }
+        return static_cast<T>(detail::enum_helper<T>::default_value);
     }
 
     template<class T>
     constexpr int count() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::count;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::count;
-        }
+        return detail::enum_helper<T>::count;
     }
 
     template<class T>
     constexpr bool is_contiguous() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::is_contiguous;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::is_contiguous;
-        }
+        return detail::enum_helper<T>::is_contiguous;
     }
 
     template<class T>
     constexpr int bits_required_storage() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::bits_required_storage;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::bits_required_storage;
-        }
+        return detail::enum_helper<T>::bits_required_storage;
     }
  
     template<class T>
     constexpr int bits_required_transmission() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::bits_required_transmission;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::bits_required_transmission;
-        }
+        return detail::enum_helper<T>::bits_required_transmission;
     }
 
     template<class T, class underlying_type>
@@ -262,12 +219,7 @@ namespace enumbra {
     template<class T>
     constexpr auto to_underlying(T e) noexcept {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<detail::value_enum_helper<T>::underlying_t>(e);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<detail::flags_enum_helper<T>::underlying_t>(e);
-        }
+        return static_cast<detail::enum_helper<T>::underlying_t>(e);
     }
 
     namespace detail {
@@ -288,13 +240,13 @@ namespace enumbra {
         struct optional_result_base_inplace { };
     }
 
-    template<class T, bool use_invalid_sentinel = detail::value_enum_helper<T>::has_invalid_sentinel>
+    template<class T, bool use_invalid_sentinel = detail::enum_helper<T>::has_invalid_sentinel>
     struct optional_value : detail::conditional_t<use_invalid_sentinel, detail::optional_result_base_inplace, detail::optional_result_base_bool<T>>
     {
     private:
-        T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+        T v = static_cast<T>(detail::enum_helper<T>::invalid_sentinel);
     public:
-        constexpr optional_value() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) { }
+        constexpr optional_value() : v(static_cast<T>(detail::enum_helper<T>::invalid_sentinel)) { }
 
         constexpr explicit optional_value(T value) : v(value) {
             if constexpr(!use_invalid_sentinel) {
@@ -304,7 +256,7 @@ namespace enumbra {
 
         constexpr explicit operator bool() const noexcept {
             if constexpr (use_invalid_sentinel) {
-                return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+                return v != static_cast<T>(detail::enum_helper<T>::invalid_sentinel);
             } else {
                 return this->success > 0;
             }
@@ -331,7 +283,7 @@ namespace enumbra {
     template<class T>
     constexpr optional_value<T> from_string(const char* str) noexcept = delete;
 
-    template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
+    template<class T, class underlying_type>
     constexpr optional_value<T> from_integer(underlying_type value) noexcept = delete;
 
     template<class T>
@@ -412,7 +364,7 @@ E = 9223372036854775807,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::test_string_parse> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::test_string_parse> : enumbra::detail::value_enum_info<int64_t, -1, 9223372036854775807, -1, 5, false, 64, 64, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::test_string_parse> : enumbra::detail::enum_info<int64_t, -1, 9223372036854775807, -1, 5, false, 64, 64, true, 0> { };
 
 namespace enums::detail::test_string_parse {
 constexpr ::enums::test_string_parse values_arr[5] =
@@ -513,7 +465,7 @@ MAX = 0xFFFFFFFFFFFFFFFF,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::Unsigned64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::Unsigned64Test> : enumbra::detail::value_enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, 0, 4, false, 64, 64, false, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::Unsigned64Test> : enumbra::detail::enum_info<uint64_t, 0, 0xFFFFFFFFFFFFFFFF, 0, 4, false, 64, 64, false, 0> { };
 
 namespace enums::detail::Unsigned64Test {
 constexpr ::enums::Unsigned64Test values_arr[4] =
@@ -620,7 +572,7 @@ MAX = 9223372036854775807,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::Signed64Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::Signed64Test> : enumbra::detail::value_enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, (-9223372036854775807 - 1), 3, false, 64, 64, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::Signed64Test> : enumbra::detail::enum_info<int64_t, (-9223372036854775807 - 1), 9223372036854775807, (-9223372036854775807 - 1), 3, false, 64, 64, true, 0> { };
 
 namespace enums::detail::Signed64Test {
 constexpr ::enums::Signed64Test values_arr[3] =
@@ -723,7 +675,7 @@ MAX = 2147483647,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::Signed32Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::Signed32Test> : enumbra::detail::value_enum_info<int32_t, (-2147483647 - 1), 2147483647, (-2147483647 - 1), 3, false, 32, 32, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::Signed32Test> : enumbra::detail::enum_info<int32_t, (-2147483647 - 1), 2147483647, (-2147483647 - 1), 3, false, 32, 32, true, 0> { };
 
 namespace enums::detail::Signed32Test {
 constexpr ::enums::Signed32Test values_arr[3] =
@@ -826,7 +778,7 @@ MAX = 32767,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::Signed16Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::Signed16Test> : enumbra::detail::value_enum_info<int16_t, (-32767 - 1), 32767, (-32767 - 1), 3, false, 16, 16, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::Signed16Test> : enumbra::detail::enum_info<int16_t, (-32767 - 1), 32767, (-32767 - 1), 3, false, 16, 16, true, 0> { };
 
 namespace enums::detail::Signed16Test {
 constexpr ::enums::Signed16Test values_arr[3] =
@@ -929,7 +881,7 @@ V_INT_MAX = 127,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::Signed8Test> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::Signed8Test> : enumbra::detail::value_enum_info<int8_t, (-127 - 1), 127, (-127 - 1), 3, false, 8, 8, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::Signed8Test> : enumbra::detail::enum_info<int8_t, (-127 - 1), 127, (-127 - 1), 3, false, 8, 8, true, 0> { };
 
 namespace enums::detail::Signed8Test {
 constexpr ::enums::Signed8Test values_arr[3] =
@@ -1023,7 +975,7 @@ C = 2,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::test_value> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::test_value> : enumbra::detail::value_enum_info<int32_t, 0, 2, 0, 3, true, 3, 2, true, -1> { };
+template<> struct enumbra::detail::enum_helper<::enums::test_value> : enumbra::detail::enum_info<int32_t, 0, 2, 0, 3, true, 3, 2, true, -1> { };
 
 namespace enums::detail::test_value {
 constexpr ::enums::test_value values_arr[3] =
@@ -1115,7 +1067,7 @@ NORTH_WEST = 5,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::HexDiagonal> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::HexDiagonal> : enumbra::detail::value_enum_info<uint8_t, 0, 5, 0, 6, true, 3, 3, true, 255> { };
+template<> struct enumbra::detail::enum_helper<::enums::HexDiagonal> : enumbra::detail::enum_info<uint8_t, 0, 5, 0, 6, true, 3, 3, true, 255> { };
 
 namespace enums::detail::HexDiagonal {
 constexpr ::enums::HexDiagonal values_arr[6] =
@@ -1226,7 +1178,7 @@ D = 1,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::NegativeTest1> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::NegativeTest1> : enumbra::detail::value_enum_info<int8_t, -2, 1, -2, 4, true, 2, 2, false, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::NegativeTest1> : enumbra::detail::enum_info<int8_t, -2, 1, -2, 4, true, 2, 2, false, 0> { };
 
 namespace enums::detail::NegativeTest1 {
 constexpr ::enums::NegativeTest1 values_arr[4] =
@@ -1319,7 +1271,7 @@ D = 0,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::NegativeTest2> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::NegativeTest2> : enumbra::detail::value_enum_info<int8_t, -3, 0, -3, 4, true, 3, 2, false, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::NegativeTest2> : enumbra::detail::enum_info<int8_t, -3, 0, -3, 4, true, 3, 2, false, 0> { };
 
 namespace enums::detail::NegativeTest2 {
 constexpr ::enums::NegativeTest2 values_arr[4] =
@@ -1410,7 +1362,7 @@ B = 4,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::NegativeTest3> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::NegativeTest3> : enumbra::detail::value_enum_info<int8_t, -3, 4, -3, 2, false, 4, 3, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::NegativeTest3> : enumbra::detail::enum_info<int8_t, -3, 4, -3, 2, false, 4, 3, true, 0> { };
 
 namespace enums::detail::NegativeTest3 {
 constexpr ::enums::NegativeTest3 values_arr[2] =
@@ -1500,7 +1452,7 @@ B = 3,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::NegativeTest4> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::NegativeTest4> : enumbra::detail::value_enum_info<int8_t, -4, 3, -4, 2, false, 3, 3, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::NegativeTest4> : enumbra::detail::enum_info<int8_t, -4, 3, -4, 2, false, 3, 3, true, 0> { };
 
 namespace enums::detail::NegativeTest4 {
 constexpr ::enums::NegativeTest4 values_arr[2] =
@@ -1589,7 +1541,7 @@ A = 0,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::EmptyTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::EmptyTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 0, 0, 0, 1, true, 1, 0, true, 255> { };
+template<> struct enumbra::detail::enum_helper<::enums::EmptyTest1Unsigned> : enumbra::detail::enum_info<uint8_t, 0, 0, 0, 1, true, 1, 0, true, 255> { };
 
 namespace enums::detail::EmptyTest1Unsigned {
 constexpr ::enums::EmptyTest1Unsigned values_arr[1] =
@@ -1661,7 +1613,7 @@ A = 0,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::EmptyTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::EmptyTest1Signed> : enumbra::detail::value_enum_info<int8_t, 0, 0, 0, 1, true, 1, 0, true, -1> { };
+template<> struct enumbra::detail::enum_helper<::enums::EmptyTest1Signed> : enumbra::detail::enum_info<int8_t, 0, 0, 0, 1, true, 1, 0, true, -1> { };
 
 namespace enums::detail::EmptyTest1Signed {
 constexpr ::enums::EmptyTest1Signed values_arr[1] =
@@ -1733,7 +1685,7 @@ A = 4,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::SingleTest1Unsigned> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::SingleTest1Unsigned> : enumbra::detail::value_enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::SingleTest1Unsigned> : enumbra::detail::enum_info<uint8_t, 4, 4, 4, 1, true, 3, 0, true, 0> { };
 
 namespace enums::detail::SingleTest1Unsigned {
 constexpr ::enums::SingleTest1Unsigned values_arr[1] =
@@ -1805,7 +1757,7 @@ A = 4,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::SingleTest1Signed> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::SingleTest1Signed> : enumbra::detail::value_enum_info<int8_t, 4, 4, 4, 1, true, 4, 0, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::SingleTest1Signed> : enumbra::detail::enum_info<int8_t, 4, 4, 4, 1, true, 4, 0, true, 0> { };
 
 namespace enums::detail::SingleTest1Signed {
 constexpr ::enums::SingleTest1Signed values_arr[1] =
@@ -1954,7 +1906,7 @@ operation_would_block = 140,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::errc> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::errc> : enumbra::detail::value_enum_info<int32_t, 1, 140, 1, 78, false, 9, 8, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::errc> : enumbra::detail::enum_info<int32_t, 1, 140, 1, 78, false, 9, 8, true, 0> { };
 
 namespace enums::detail::errc {
 constexpr ::enums::errc values_arr[78] =
@@ -2579,11 +2531,11 @@ constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const 
 
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::test_flags> : enumbra::detail::flags_enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2> { };
+template<> struct enumbra::detail::enum_helper<enums::test_flags> : enumbra::detail::enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
 template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::test_nodefault> : enumbra::detail::flags_enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2> { };
+template<> struct enumbra::detail::enum_helper<enums::test_nodefault> : enumbra::detail::enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
 template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::TestSparseFlags> : enumbra::detail::flags_enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5> { };
+template<> struct enumbra::detail::enum_helper<enums::TestSparseFlags> : enumbra::detail::enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5, false, 0> { };
 template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::TestSingleFlag> : enumbra::detail::flags_enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3> { };
+template<> struct enumbra::detail::enum_helper<enums::TestSingleFlag> : enumbra::detail::enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3, false, 0> { };
 // Template Specializations End

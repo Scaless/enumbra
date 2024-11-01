@@ -105,12 +105,20 @@ namespace enumbra {
             static constexpr bool enumbra_flags_enum = is_flags_enum;
         };
 
-        // Value enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, int count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v,
-            bool has_invalid_sentinel_v, underlying_type invalid_sentinel_v>
-        struct value_enum_info {
+        // Enum info
+        template<
+            typename underlying_type,
+            underlying_type min_v,
+            underlying_type max_v,
+            underlying_type default_v,
+            int count_v,
+            bool is_contiguous_v,
+            int bits_required_storage_v,
+            int bits_required_transmission_v,
+            bool has_invalid_sentinel_v,
+            underlying_type invalid_sentinel_v
+        >
+        struct enum_info {
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
@@ -123,28 +131,11 @@ namespace enumbra {
             static constexpr underlying_type invalid_sentinel = invalid_sentinel_v;
         };
 
-        // Flags enum info
-        template<typename underlying_type, underlying_type min_v, underlying_type max_v,
-            underlying_type default_v, int count_v,
-            bool is_contiguous_v, int bits_required_storage_v, int bits_required_transmission_v>
-        struct flags_enum_info {
-            using underlying_t = underlying_type;
-            static constexpr underlying_type min = min_v;
-            static constexpr underlying_type max = max_v;
-            static constexpr underlying_type default_value = default_v;
-            static constexpr int count = count_v;
-            static constexpr bool is_contiguous = is_contiguous_v;
-            static constexpr int bits_required_storage = bits_required_storage_v;
-            static constexpr int bits_required_transmission = bits_required_transmission_v;
-        };
-
         // Default template for non-enumbra types
         template<class T>
         struct base_helper : type_info<false, false, false> { };
         template<class T>
-        struct value_enum_helper;
-        template<class T>
-        struct flags_enum_helper;
+        struct enum_helper;
 
         // Compare strings with sizes only known at runtime
         constexpr bool streq_known_size(const char* a, const char* b, int len) noexcept {
@@ -166,6 +157,7 @@ namespace enumbra {
             return count;
         }
     } // end namespace enumbra::detail
+
     template<class T>
     constexpr bool is_enumbra_enum = detail::base_helper<T>::enumbra_type;
     template<class T>
@@ -176,78 +168,43 @@ namespace enumbra {
     template<class T>
     constexpr T min() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::min);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::min);
-        }
+        return static_cast<T>(detail::enum_helper<T>::min);
     }
 
     template<class T>
     constexpr T max() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::max);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::max);
-        }
+        return static_cast<T>(detail::enum_helper<T>::max);
     }
 
     template<class T>
     constexpr T default_value() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<T>(detail::value_enum_helper<T>::default_value);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<T>(detail::flags_enum_helper<T>::default_value);
-        }
+        return static_cast<T>(detail::enum_helper<T>::default_value);
     }
 
     template<class T>
     constexpr int count() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::count;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::count;
-        }
+        return detail::enum_helper<T>::count;
     }
 
     template<class T>
     constexpr bool is_contiguous() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::is_contiguous;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::is_contiguous;
-        }
+        return detail::enum_helper<T>::is_contiguous;
     }
 
     template<class T>
     constexpr int bits_required_storage() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::bits_required_storage;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::bits_required_storage;
-        }
+        return detail::enum_helper<T>::bits_required_storage;
     }
  
     template<class T>
     constexpr int bits_required_transmission() {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return detail::value_enum_helper<T>::bits_required_transmission;
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return detail::flags_enum_helper<T>::bits_required_transmission;
-        }
+        return detail::enum_helper<T>::bits_required_transmission;
     }
 
     template<class T, class underlying_type>
@@ -259,12 +216,7 @@ namespace enumbra {
     template<class T>
     constexpr auto to_underlying(T e) noexcept {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        if constexpr (is_enumbra_value_enum<T>) {
-            return static_cast<detail::value_enum_helper<T>::underlying_t>(e);
-        }
-        else if constexpr (is_enumbra_flags_enum<T>) {
-            return static_cast<detail::flags_enum_helper<T>::underlying_t>(e);
-        }
+        return static_cast<detail::enum_helper<T>::underlying_t>(e);
     }
 
     namespace detail {
@@ -285,13 +237,13 @@ namespace enumbra {
         struct optional_result_base_inplace { };
     }
 
-    template<class T, bool use_invalid_sentinel = detail::value_enum_helper<T>::has_invalid_sentinel>
+    template<class T, bool use_invalid_sentinel = detail::enum_helper<T>::has_invalid_sentinel>
     struct optional_value : detail::conditional_t<use_invalid_sentinel, detail::optional_result_base_inplace, detail::optional_result_base_bool<T>>
     {
     private:
-        T v = static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+        T v = static_cast<T>(detail::enum_helper<T>::invalid_sentinel);
     public:
-        constexpr optional_value() : v(static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel)) { }
+        constexpr optional_value() : v(static_cast<T>(detail::enum_helper<T>::invalid_sentinel)) { }
 
         constexpr explicit optional_value(T value) : v(value) {
             if constexpr(!use_invalid_sentinel) {
@@ -301,7 +253,7 @@ namespace enumbra {
 
         constexpr explicit operator bool() const noexcept {
             if constexpr (use_invalid_sentinel) {
-                return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
+                return v != static_cast<T>(detail::enum_helper<T>::invalid_sentinel);
             } else {
                 return this->success > 0;
             }
@@ -328,7 +280,7 @@ namespace enumbra {
     template<class T>
     constexpr optional_value<T> from_string(const char* str) noexcept = delete;
 
-    template<class T, class underlying_type = typename detail::base_helper<T>::base_type>
+    template<class T, class underlying_type>
     constexpr optional_value<T> from_integer(underlying_type value) noexcept = delete;
 
     template<class T>
@@ -406,7 +358,7 @@ C = 2,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::minimal_val> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::minimal_val> : enumbra::detail::value_enum_info<unsigned int, 1, 2, 1, 2, true, 2, 1, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::minimal_val> : enumbra::detail::enum_info<unsigned int, 1, 2, 1, 2, true, 2, 1, true, 0> { };
 
 namespace enums::detail::minimal_val {
 constexpr ::enums::minimal_val values_arr[2] =
@@ -491,7 +443,7 @@ C = 0x54F9338,
 }
 
 template<> struct enumbra::detail::base_helper<::enums::big> : enumbra::detail::type_info<true, true, false> { };
-template<> struct enumbra::detail::value_enum_helper<::enums::big> : enumbra::detail::value_enum_info<unsigned long long, 0x12D687, 0x54F9338, 0x12D687, 2, false, 27, 27, true, 0> { };
+template<> struct enumbra::detail::enum_helper<::enums::big> : enumbra::detail::enum_info<unsigned long long, 0x12D687, 0x54F9338, 0x12D687, 2, false, 27, 27, true, 0> { };
 
 namespace enums::detail::big {
 constexpr ::enums::big values_arr[2] =
@@ -628,5 +580,5 @@ constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minim
 
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::flags_enum_helper<enums::minimal> : enumbra::detail::flags_enum_info<unsigned int, 0, 3, 0, 2, true, 2, 2> { };
+template<> struct enumbra::detail::enum_helper<enums::minimal> : enumbra::detail::enum_info<unsigned int, 0, 3, 0, 2, true, 2, 2, false, 0> { };
 // Template Specializations End
