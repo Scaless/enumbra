@@ -704,7 +704,7 @@ void cpp_generator::emit_includes() {
 void cpp_generator::emit_optional_macros() {
     if (cpp_cfg.enumbra_bitfield_macros) {
         // Increment this if macros below are modified.
-        const int enumbra_optional_macros_version = 9;
+        const int enumbra_optional_macros_version = 10;
         std::string macro_strings = R"(
 #ifndef ENUMBRA_NO_OPTIONAL_MACROS
 #if !defined(ENUMBRA_OPTIONAL_MACROS_VERSION)
@@ -717,21 +717,19 @@ void cpp_generator::emit_optional_macros() {
 #define ENUMBRA_TOGGLE(Field, Value) do {{ decltype(Field) _field_ = Field; ::enumbra::toggle(_field_, Value); (Field) = _field_; }} while (0)
 
 // Bit field storage helper
-#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>();
+#define ENUMBRA_PACK_UNINITIALIZED(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>()
 #define ENUMBRA_INIT(Name, InitValue) Name(::enumbra::default_value<decltype(Name)>())
 #define ENUMBRA_INIT_DEFAULT(Name) Name(::enumbra::default_value<decltype(Name)>())
 
 // Iterate flags in a switch
-#define ENUMBRA_FLAGS_SWITCH_BEGIN(var) \
-		do {{ static_assert(::enumbra::is_enumbra_flags_enum<decltype(var)>, #var " is not an enumbra flags enum"); \
-		for (const auto flag : enumbra::flags<decltype(var)>()) {{ if (::enumbra::has_any(var & flag)) {{ switch (var & flag)
+#define ENUMBRA_FLAGS_SWITCH_BEGIN(var) do {{ for (const auto flag : ::enumbra::flags<decltype(var)>()) {{ if (::enumbra::has_any(var & flag)) {{ switch (var & flag)
 #define ENUMBRA_FLAGS_SWITCH_END }} }} }} while (0)
 
 #if ENUMBRA_CPP_VERSION >= 20
 // Bit field storage helper with type-checked member initialization
-#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ InitValue }};
+#define ENUMBRA_PACK_INIT(Enum, Name, InitValue) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ InitValue }}
 // Bit field storage helper with default value initialization
-#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ ::enumbra::default_value<Enum>() }};
+#define ENUMBRA_PACK_INIT_DEFAULT(Enum, Name) Enum Name : ::enumbra::bits_required_storage<Enum>() {{ ::enumbra::default_value<Enum>() }}
 #endif
 
 #else // check existing version supported
@@ -752,20 +750,13 @@ void cpp_generator::emit_optional_macros() {
 
 void cpp_generator::emit_templates() {
     // Increment this if templates below are modified.
-    const int enumbra_templates_version = 30;
+    const int enumbra_templates_version = 31;
     const std::string str_templates = R"(
 #if !defined(ENUMBRA_BASE_TEMPLATES_VERSION)
 #define ENUMBRA_BASE_TEMPLATES_VERSION {0}
 namespace enumbra {{
     namespace detail {{
         // Re-Implementation of std:: features to avoid including std headers
-        template<bool B, class T = void>
-        struct enable_if {{}};
-        template<class T>
-        struct enable_if<true, T> {{ typedef T type; }};
-        template<bool B, class T = void>
-        using enable_if_t = typename enable_if<B, T>::type;
-
         template<bool B, class T, class F>
         struct conditional {{ using type = T; }};
         template<class T, class F>
@@ -797,7 +788,7 @@ namespace enumbra {{
             using underlying_t = underlying_type;
             static constexpr underlying_type min = min_v;
             static constexpr underlying_type max = max_v;
-            static constexpr underlying_type def = default_v;
+            static constexpr underlying_type default_value = default_v;
             static constexpr int count = count_v;
             static constexpr bool is_contiguous = is_contiguous_v;
             static constexpr int bits_required_storage = bits_required_storage_v;
@@ -852,70 +843,103 @@ namespace enumbra {{
     template<class T>
     constexpr bool is_enumbra_enum = detail::base_helper<T>::enumbra_type;
     template<class T>
-    constexpr bool is_enumbra_value_enum = is_enumbra_enum<T> && detail::base_helper<T>::enumbra_value_enum;
+    constexpr bool is_enumbra_value_enum = detail::base_helper<T>::enumbra_value_enum;
     template<class T>
-    constexpr bool is_enumbra_flags_enum = is_enumbra_enum<T> && detail::base_helper<T>::enumbra_flags_enum;
+    constexpr bool is_enumbra_flags_enum = detail::base_helper<T>::enumbra_flags_enum;
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr T min() noexcept {{ return static_cast<T>(detail::value_enum_helper<T>::min); }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr T min() noexcept {{ return static_cast<T>(detail::flags_enum_helper<T>::min); }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr T min() noexcept = delete;
+    template<class T>
+    constexpr T min() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return static_cast<T>(detail::value_enum_helper<T>::min);
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return static_cast<T>(detail::flags_enum_helper<T>::min);
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr T max() noexcept {{ return static_cast<T>(detail::value_enum_helper<T>::max); }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr T max() noexcept {{ return static_cast<T>(detail::flags_enum_helper<T>::max); }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr T max() noexcept = delete;
+    template<class T>
+    constexpr T max() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return static_cast<T>(detail::value_enum_helper<T>::max);
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return static_cast<T>(detail::flags_enum_helper<T>::max);
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr T default_value() noexcept {{ return static_cast<T>(detail::value_enum_helper<T>::default_value); }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr T default_value() noexcept {{ return static_cast<T>(detail::flags_enum_helper<T>::default_value); }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr T default_value() noexcept = delete;
+    template<class T>
+    constexpr T default_value() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return static_cast<T>(detail::value_enum_helper<T>::default_value);
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return static_cast<T>(detail::flags_enum_helper<T>::default_value);
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr int count() noexcept {{ return detail::value_enum_helper<T>::count; }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr int count() noexcept {{ return detail::flags_enum_helper<T>::count; }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr int count() noexcept = delete;
+    template<class T>
+    constexpr int count() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return detail::value_enum_helper<T>::count;
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return detail::flags_enum_helper<T>::count;
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr bool is_contiguous() noexcept {{ return detail::value_enum_helper<T>::is_contiguous; }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr bool is_contiguous() noexcept {{ return detail::flags_enum_helper<T>::is_contiguous; }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr bool is_contiguous() noexcept = delete;
+    template<class T>
+    constexpr bool is_contiguous() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return detail::value_enum_helper<T>::is_contiguous;
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return detail::flags_enum_helper<T>::is_contiguous;
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr int bits_required_storage() noexcept {{ return detail::value_enum_helper<T>::bits_required_storage; }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr int bits_required_storage() noexcept {{ return detail::flags_enum_helper<T>::bits_required_storage; }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr int bits_required_storage() noexcept = delete;
+    template<class T>
+    constexpr int bits_required_storage() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return detail::value_enum_helper<T>::bits_required_storage;
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return detail::flags_enum_helper<T>::bits_required_storage;
+        }}
+    }}
+ 
+    template<class T>
+    constexpr int bits_required_transmission() {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return detail::value_enum_helper<T>::bits_required_transmission;
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return detail::flags_enum_helper<T>::bits_required_transmission;
+        }}
+    }}
 
-    template<class T, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr int bits_required_transmission() noexcept {{ return detail::value_enum_helper<T>::bits_required_transmission; }}
-    template<class T, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr int bits_required_transmission() noexcept {{ return detail::flags_enum_helper<T>::bits_required_transmission; }}
-    template<class T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr int bits_required_transmission() noexcept = delete;
+    template<class T, class underlying_type>
+    constexpr T from_integer_unsafe(underlying_type e) noexcept {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        return static_cast<T>(e);
+    }}
 
-    template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename detail::enable_if_t<is_enumbra_enum<T>, T>* = nullptr>
-    constexpr T from_integer_unsafe(underlying_type e) noexcept {{ return static_cast<T>(e); }}
-    template<class T, class underlying_type = typename detail::base_helper<T>::base_type, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr T from_integer_unsafe(underlying_type e) noexcept = delete;
-
-    template<class T, class underlying_type = typename detail::value_enum_helper<T>::underlying_t, typename detail::enable_if_t<is_enumbra_value_enum<T>, T>* = nullptr>
-    constexpr underlying_type to_underlying(T e) noexcept {{ return static_cast<underlying_type>(e); }}
-    template<class T, class underlying_type = typename detail::flags_enum_helper<T>::underlying_t, typename detail::enable_if_t<is_enumbra_flags_enum<T>, T>* = nullptr>
-    constexpr underlying_type to_underlying(T e) noexcept {{ return static_cast<underlying_type>(e); }}
-    template<class T, class underlying_type = T, typename detail::enable_if_t<!is_enumbra_enum<T>, T>* = nullptr>
-    constexpr underlying_type to_underlying(T e) noexcept = delete;
+    template<class T>
+    constexpr auto to_underlying(T e) noexcept {{
+        static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
+        if constexpr (is_enumbra_value_enum<T>) {{
+            return static_cast<detail::value_enum_helper<T>::underlying_t>(e);
+        }}
+        else if constexpr (is_enumbra_flags_enum<T>) {{
+            return static_cast<detail::flags_enum_helper<T>::underlying_t>(e);
+        }}
+    }}
 
     namespace detail {{
         template<class T>
@@ -949,7 +973,7 @@ namespace enumbra {{
             }}
         }}
 
-        [[nodiscard]] constexpr explicit operator bool() const noexcept {{
+        constexpr explicit operator bool() const noexcept {{
             if constexpr (use_invalid_sentinel) {{
                 return v != static_cast<T>(detail::value_enum_helper<T>::invalid_sentinel);
             }} else {{
@@ -957,9 +981,9 @@ namespace enumbra {{
             }}
         }}
 
-        [[nodiscard]] constexpr bool has_value() const {{ return operator bool(); }}
-        [[nodiscard]] constexpr T value() const {{ return v; }}
-        [[nodiscard]] constexpr T value_or(T default_value) const {{ return operator bool() ? v : default_value; }}
+        constexpr bool has_value() const {{ return operator bool(); }}
+        constexpr T value() const {{ return v; }}
+        constexpr T value_or(T default_value) const {{ return operator bool() ? v : default_value; }}
     }};
 
     struct string_view {{

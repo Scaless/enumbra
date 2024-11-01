@@ -22,10 +22,10 @@ static void TestMacroWithUsingNamespace()
 	using namespace enums;
 	struct NSV
 	{
-		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W)
-		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X)
-		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y)
-		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z)
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, W);
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, X);
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Y);
+		ENUMBRA_PACK_UNINITIALIZED(test_nodefault, Z);
 
 		NSV()
 			: ENUMBRA_INIT_DEFAULT(W)
@@ -41,10 +41,10 @@ static void TestMacroWithUsingNamespace()
 // Verify bitfield packing, clang/gcc/msvc *should* pack these, other compilers might not
 struct PackedStruct
 {
-	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
-	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, X)
-	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Y)
-	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Z)
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W);
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, X);
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Y);
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, Z);
 
 	PackedStruct() :
 		ENUMBRA_INIT_DEFAULT(W),
@@ -88,18 +88,24 @@ static_assert(std::is_scoped_enum_v<enums::TestSingleFlag> == true, "std::is_sco
 struct StructWithPackedBitfields
 {
 	// Correct usage
-	ENUMBRA_PACK_INIT(enums::test_nodefault, A, enums::test_nodefault::B | enums::test_nodefault::C)
-	ENUMBRA_PACK_INIT(enums::test_nodefault, B, enumbra::default_value<enums::test_nodefault>())
-	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, C)
-	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, W)
+	ENUMBRA_PACK_INIT(enums::test_nodefault, A, enums::test_nodefault::B | enums::test_nodefault::C);
+	ENUMBRA_PACK_INIT(enums::test_nodefault, B, enumbra::default_value<enums::test_nodefault>());
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, C);
+	ENUMBRA_PACK_UNINITIALIZED(enums::test_nodefault, D);
 
-	StructWithPackedBitfields() : ENUMBRA_INIT_DEFAULT(W) {}
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, E);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, F);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, G);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::test_nodefault, H);
 
-	// Not allowed
-	// ENUMBRA_PACK_INIT(test_nodefault, Ab, 4)
-	// ENUMBRA_PACK_INIT(test_nodefault, B, NonEnumbraEnumClass::A)
-	// ENUMBRA_PACK_INIT(test_nodefault, C, test_flags::B)
+	ENUMBRA_PACK_INIT_DEFAULT(enums::HexDiagonal, Hex1);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::HexDiagonal, Hex2);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::HexDiagonal, Hex3);
+	ENUMBRA_PACK_INIT_DEFAULT(enums::HexDiagonal, Hex4);
+
+	StructWithPackedBitfields() : ENUMBRA_INIT_DEFAULT(D) {}
 };
+static_assert(sizeof(StructWithPackedBitfields) == 4, "packing issue");
 #endif
 
 static void TestBitOps()
@@ -354,7 +360,7 @@ static void TestBitMacros()
 	// Bit Macros
 	{
 		struct q_t {
-			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags)
+			ENUMBRA_PACK_UNINITIALIZED(test_flags, flags);
 		};
 		q_t qt{};
 		ENUMBRA_CLEAR(qt.flags);
