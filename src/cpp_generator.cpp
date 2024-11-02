@@ -488,7 +488,6 @@ const std::string &cpp_generator::generate_cpp_output() {
         }
 
         // Definition
-        wvl("// {enum_name} Definition");
         {
             wvl("enum class {enum_name} : {size_type} {{");
             for (const auto &v: e.values) {
@@ -567,7 +566,7 @@ const std::string &cpp_generator::generate_cpp_output() {
 
 
 
-        wlu("} // enumbra");
+        wlu("} // namespace enumbra");
         wlf();
 
         // Operator Overloads need to be outside of enumbra::
@@ -576,8 +575,6 @@ const std::string &cpp_generator::generate_cpp_output() {
             wl("namespace {} {{", ns);
         }
         std::vector<const char*> operator_strings = {
-            "// {enum_name_fq} Operator Overloads",
-
             "constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}",
             "constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}",
             "constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}",

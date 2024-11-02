@@ -553,7 +553,6 @@ return ::enumbra::from_string<::enums::big>(str, len);
 
 
 namespace enums {
-// minimal Definition
 enum class minimal : unsigned int {
 B = 1,
 C = 2,
@@ -591,10 +590,9 @@ template<> constexpr bool has_any(::enums::minimal value) noexcept { return (sta
 template<> constexpr bool has_none(::enums::minimal value) noexcept { return (static_cast<unsigned int>(value) & static_cast<unsigned int>(0x3)) == 0; }
 template<> constexpr bool has_single(::enums::minimal value) noexcept { unsigned int n = static_cast<unsigned int>(static_cast<unsigned int>(value) & 0x3); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::minimal Operator Overloads
 constexpr ::enums::minimal operator~(const ::enums::minimal a) noexcept { return static_cast<::enums::minimal>(~static_cast<unsigned int>(a)); }
 constexpr ::enums::minimal operator|(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b)); }
 constexpr ::enums::minimal operator&(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b)); }

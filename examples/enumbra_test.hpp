@@ -2348,7 +2348,6 @@ return ::enumbra::from_string<::enums::errc>(str, len);
 
 
 namespace enums {
-// test_flags Definition
 enum class test_flags : uint32_t {
 B = 1,
 C = 2,
@@ -2386,10 +2385,9 @@ template<> constexpr bool has_any(::enums::test_flags value) noexcept { return (
 template<> constexpr bool has_none(::enums::test_flags value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x3)) == 0; }
 template<> constexpr bool has_single(::enums::test_flags value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::test_flags Operator Overloads
 constexpr ::enums::test_flags operator~(const ::enums::test_flags a) noexcept { return static_cast<::enums::test_flags>(~static_cast<uint32_t>(a)); }
 constexpr ::enums::test_flags operator|(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
 constexpr ::enums::test_flags operator&(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
@@ -2415,7 +2413,6 @@ return output;
 } // namespace enumbra
 
 namespace enums {
-// test_nodefault Definition
 enum class test_nodefault : uint16_t {
 B = 1,
 C = 2,
@@ -2453,10 +2450,9 @@ template<> constexpr bool has_any(::enums::test_nodefault value) noexcept { retu
 template<> constexpr bool has_none(::enums::test_nodefault value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x3)) == 0; }
 template<> constexpr bool has_single(::enums::test_nodefault value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x3); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::test_nodefault Operator Overloads
 constexpr ::enums::test_nodefault operator~(const ::enums::test_nodefault a) noexcept { return static_cast<::enums::test_nodefault>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::test_nodefault operator|(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
 constexpr ::enums::test_nodefault operator&(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
@@ -2482,7 +2478,6 @@ return output;
 } // namespace enumbra
 
 namespace enums {
-// TestSparseFlags Definition
 enum class TestSparseFlags : uint16_t {
 B = 1,
 C = 4,
@@ -2522,10 +2517,9 @@ template<> constexpr bool has_any(::enums::TestSparseFlags value) noexcept { ret
 template<> constexpr bool has_none(::enums::TestSparseFlags value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x15)) == 0; }
 template<> constexpr bool has_single(::enums::TestSparseFlags value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x15); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::TestSparseFlags Operator Overloads
 constexpr ::enums::TestSparseFlags operator~(const ::enums::TestSparseFlags a) noexcept { return static_cast<::enums::TestSparseFlags>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSparseFlags operator|(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
 constexpr ::enums::TestSparseFlags operator&(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
@@ -2555,7 +2549,6 @@ return output;
 } // namespace enumbra
 
 namespace enums {
-// TestSingleFlag Definition
 enum class TestSingleFlag : uint16_t {
 C = 4,
 };
@@ -2591,10 +2584,9 @@ template<> constexpr bool has_any(::enums::TestSingleFlag value) noexcept { retu
 template<> constexpr bool has_none(::enums::TestSingleFlag value) noexcept { return (static_cast<uint16_t>(value) & static_cast<uint16_t>(0x4)) == 0; }
 template<> constexpr bool has_single(::enums::TestSingleFlag value) noexcept { uint16_t n = static_cast<uint16_t>(static_cast<uint16_t>(value) & 0x4); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::TestSingleFlag Operator Overloads
 constexpr ::enums::TestSingleFlag operator~(const ::enums::TestSingleFlag a) noexcept { return static_cast<::enums::TestSingleFlag>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSingleFlag operator|(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
 constexpr ::enums::TestSingleFlag operator&(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); }
@@ -2616,7 +2608,6 @@ return output;
 } // namespace enumbra
 
 namespace enums {
-// Blorp Definition
 enum class Blorp : uint32_t {
 big = 1,
 bigger = 2,
@@ -2656,10 +2647,9 @@ template<> constexpr bool has_any(::enums::Blorp value) noexcept { return (stati
 template<> constexpr bool has_none(::enums::Blorp value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x7)) == 0; }
 template<> constexpr bool has_single(::enums::Blorp value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x7); return n && !(n & (n - 1)); }
 
-} // enumbra
+} // namespace enumbra
 
 namespace enums {
-// ::enums::Blorp Operator Overloads
 constexpr ::enums::Blorp operator~(const ::enums::Blorp a) noexcept { return static_cast<::enums::Blorp>(~static_cast<uint32_t>(a)); }
 constexpr ::enums::Blorp operator|(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
 constexpr ::enums::Blorp operator&(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
