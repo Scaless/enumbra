@@ -216,7 +216,7 @@ namespace enumbra {
     template<class T>
     constexpr auto to_underlying(T e) noexcept {
         static_assert(is_enumbra_enum<T>, "T is not an enumbra enum");
-        return static_cast<detail::enum_helper<T>::underlying_t>(e);
+        return static_cast<typename detail::enum_helper<T>::underlying_t>(e);
     }
 
     namespace detail {
