@@ -565,6 +565,8 @@ const std::string &cpp_generator::generate_cpp_output() {
                         0
             ));
 
+
+
         wlu("} // enumbra");
         wlf();
 
@@ -591,6 +593,39 @@ const std::string &cpp_generator::generate_cpp_output() {
         for (auto ns = cpp_cfg.output_namespace.rbegin(); ns != cpp_cfg.output_namespace.rend(); ++ns) {
             wl("}} // namespace {}", *ns);
         }
+
+        wlf();
+
+        // Calc max string size
+        size_t max_to_string_size = 0;
+        for (const auto& v : e.values) {
+            max_to_string_size += v.name.size();
+        }
+        max_to_string_size += (e.values.size() - 1); // Add room for separators
+
+        // We align to 16 bytes, taking into account the int32 size field
+        max_to_string_size += 4;
+        max_to_string_size += (16 - (max_to_string_size % 16)) % 16;
+        max_to_string_size -= 4;
+        push("max_to_string_size", std::to_string(max_to_string_size));
+
+        wlu("namespace enumbra {");
+        wlu("template<char separator = '|'>");
+        wvl("constexpr ::enumbra::stack_string<{max_to_string_size}> to_string(const {enum_name_fq} v) noexcept {{");
+        wvl("::enumbra::stack_string<{max_to_string_size}> output;");
+        bool first = true;
+        for (const auto& v : e.values) {
+            wl("if (static_cast<{0}>(v & {1}::{2}) > 0) {{", size_type, enum_name_fq, v.name);
+            if (!first) {
+                wlu("if (!output.empty()) { output.append(separator); }");
+            }
+            first = false;
+            wl("output.append<{0}>(\"{1}\");", v.name.size(), v.name);
+            wlu("}");
+        }
+        wlu("return output;");
+        wlu("}");
+        wlu("} // namespace enumbra");
 
         wlf();
     }
@@ -949,6 +984,32 @@ namespace enumbra {{
 
         constexpr bool empty() const {{ return size == 0; }}
     }};
+
+	template<int buf_size>
+	struct stack_string {{
+		static_assert(buf_size > 0, "invalid buf_size");
+		static_assert(((buf_size + sizeof(int)) % 16) == 0, "invalid buf_size");
+
+		template<int length>
+		constexpr void append(const char* from) {{
+			for (int i = 0; i < length; ++i) {{ 
+				buffer[data_size+i] = from[i]; 
+			}}
+			data_size += length;
+		}}
+
+		constexpr void append(char c) {{
+			buffer[data_size] = c;
+			data_size += 1;
+		}}
+
+		constexpr int size() {{ return data_size; }}
+		constexpr bool empty() {{ return data_size == 0; }}
+		constexpr string_view sv() {{ return {{ &buffer[0], data_size }}; }}
+	private:
+		int data_size = 0;
+		char buffer[buf_size] = {{}};
+	}};
 
     // Begin Default Templates
     template<class T>

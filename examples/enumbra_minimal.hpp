@@ -273,6 +273,32 @@ namespace enumbra {
         constexpr bool empty() const { return size == 0; }
     };
 
+	template<int buf_size>
+	struct stack_string {
+		static_assert(buf_size > 0, "invalid buf_size");
+		static_assert(((buf_size + sizeof(int)) % 16) == 0, "invalid buf_size");
+
+		template<int length>
+		constexpr void append(const char* from) {
+			for (int i = 0; i < length; ++i) { 
+				buffer[data_size+i] = from[i]; 
+			}
+			data_size += length;
+		}
+
+		constexpr void append(char c) {
+			buffer[data_size] = c;
+			data_size += 1;
+		}
+
+		constexpr int size() { return data_size; }
+		constexpr bool empty() { return data_size == 0; }
+		constexpr string_view sv() { return { &buffer[0], data_size }; }
+	private:
+		int data_size = 0;
+		char buffer[buf_size] = {};
+	};
+
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
@@ -577,6 +603,21 @@ constexpr ::enums::minimal& operator|=(::enums::minimal& a, const ::enums::minim
 constexpr ::enums::minimal& operator&=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a & b; }
 constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minimal b) noexcept { return a = a ^ b; }
 } // namespace enums
+
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<12> to_string(const ::enums::minimal v) noexcept {
+::enumbra::stack_string<12> output;
+if (static_cast<unsigned int>(v & ::enums::minimal::B) > 0) {
+output.append<1>("B");
+}
+if (static_cast<unsigned int>(v & ::enums::minimal::C) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<1>("C");
+}
+return output;
+}
+} // namespace enumbra
 
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };

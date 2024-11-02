@@ -386,6 +386,18 @@ static void TestBitMacros()
 	}
 }
 
+static void TestFlagsToString()
+{
+	using namespace enums;
+	
+	static_assert(enumbra::to_string(Blorp()).sv().empty(), "");
+	static_assert(enumbra::detail::streq_fixed_size<3>(enumbra::to_string(Blorp::big).sv().str, "big"), "");
+	static_assert(enumbra::detail::streq_fixed_size<10>(enumbra::to_string(Blorp::big | Blorp::bigger).sv().str, "big|bigger"), "");
+	static_assert(enumbra::detail::streq_fixed_size<11>(enumbra::to_string(Blorp::big | Blorp::biggest).sv().str, "big|biggest"), "");
+	static_assert(enumbra::detail::streq_fixed_size<14>(enumbra::to_string(Blorp::bigger | Blorp::biggest).sv().str, "bigger|biggest"), "");
+	static_assert(enumbra::detail::streq_fixed_size<18>(enumbra::to_string(enumbra::max<Blorp>()).sv().str, "big|bigger|biggest"), "");
+}
+
 int main()
 {
 	TestMacroWithUsingNamespace();
@@ -398,4 +410,5 @@ int main()
 	TestRange();
 	TestIsValid();
 	TestBitMacros();
+	TestFlagsToString();
 }

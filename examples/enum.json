@@ -61,6 +61,14 @@
             "value": 4
           }
         ]
+      },
+      {
+        "name": "Blorp",
+        "entries": [
+          { "name": "big" },
+          { "name": "bigger" },
+          { "name": "biggest" }
+        ]
       }
     ],
     "value_enums": [

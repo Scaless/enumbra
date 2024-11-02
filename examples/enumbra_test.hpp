@@ -276,6 +276,32 @@ namespace enumbra {
         constexpr bool empty() const { return size == 0; }
     };
 
+	template<int buf_size>
+	struct stack_string {
+		static_assert(buf_size > 0, "invalid buf_size");
+		static_assert(((buf_size + sizeof(int)) % 16) == 0, "invalid buf_size");
+
+		template<int length>
+		constexpr void append(const char* from) {
+			for (int i = 0; i < length; ++i) { 
+				buffer[data_size+i] = from[i]; 
+			}
+			data_size += length;
+		}
+
+		constexpr void append(char c) {
+			buffer[data_size] = c;
+			data_size += 1;
+		}
+
+		constexpr int size() { return data_size; }
+		constexpr bool empty() { return data_size == 0; }
+		constexpr string_view sv() { return { &buffer[0], data_size }; }
+	private:
+		int data_size = 0;
+		char buffer[buf_size] = {};
+	};
+
     // Begin Default Templates
     template<class T>
     constexpr optional_value<T> from_string(const char* str, int len) noexcept = delete;
@@ -2373,6 +2399,21 @@ constexpr ::enums::test_flags& operator&=(::enums::test_flags& a, const ::enums:
 constexpr ::enums::test_flags& operator^=(::enums::test_flags& a, const ::enums::test_flags b) noexcept { return a = a ^ b; }
 } // namespace enums
 
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<12> to_string(const ::enums::test_flags v) noexcept {
+::enumbra::stack_string<12> output;
+if (static_cast<uint32_t>(v & ::enums::test_flags::B) > 0) {
+output.append<1>("B");
+}
+if (static_cast<uint32_t>(v & ::enums::test_flags::C) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<1>("C");
+}
+return output;
+}
+} // namespace enumbra
+
 namespace enums {
 // test_nodefault Definition
 enum class test_nodefault : uint16_t {
@@ -2424,6 +2465,21 @@ constexpr ::enums::test_nodefault& operator|=(::enums::test_nodefault& a, const 
 constexpr ::enums::test_nodefault& operator&=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a & b; }
 constexpr ::enums::test_nodefault& operator^=(::enums::test_nodefault& a, const ::enums::test_nodefault b) noexcept { return a = a ^ b; }
 } // namespace enums
+
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<12> to_string(const ::enums::test_nodefault v) noexcept {
+::enumbra::stack_string<12> output;
+if (static_cast<uint16_t>(v & ::enums::test_nodefault::B) > 0) {
+output.append<1>("B");
+}
+if (static_cast<uint16_t>(v & ::enums::test_nodefault::C) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<1>("C");
+}
+return output;
+}
+} // namespace enumbra
 
 namespace enums {
 // TestSparseFlags Definition
@@ -2479,6 +2535,25 @@ constexpr ::enums::TestSparseFlags& operator&=(::enums::TestSparseFlags& a, cons
 constexpr ::enums::TestSparseFlags& operator^=(::enums::TestSparseFlags& a, const ::enums::TestSparseFlags b) noexcept { return a = a ^ b; }
 } // namespace enums
 
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<12> to_string(const ::enums::TestSparseFlags v) noexcept {
+::enumbra::stack_string<12> output;
+if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::B) > 0) {
+output.append<1>("B");
+}
+if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::C) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<1>("C");
+}
+if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::D) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<1>("D");
+}
+return output;
+}
+} // namespace enumbra
+
 namespace enums {
 // TestSingleFlag Definition
 enum class TestSingleFlag : uint16_t {
@@ -2529,6 +2604,90 @@ constexpr ::enums::TestSingleFlag& operator&=(::enums::TestSingleFlag& a, const 
 constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const ::enums::TestSingleFlag b) noexcept { return a = a ^ b; }
 } // namespace enums
 
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<12> to_string(const ::enums::TestSingleFlag v) noexcept {
+::enumbra::stack_string<12> output;
+if (static_cast<uint16_t>(v & ::enums::TestSingleFlag::C) > 0) {
+output.append<1>("C");
+}
+return output;
+}
+} // namespace enumbra
+
+namespace enums {
+// Blorp Definition
+enum class Blorp : uint32_t {
+big = 1,
+bigger = 2,
+biggest = 4,
+};
+
+namespace detail::Blorp {
+constexpr ::enums::Blorp flags_arr[3] =
+{
+::enums::Blorp::big,
+::enums::Blorp::bigger,
+::enums::Blorp::biggest,
+};
+}
+
+} // namespace enums
+
+namespace enumbra {
+template<>
+constexpr auto& flags<::enums::Blorp>() noexcept
+{
+return ::enums::detail::Blorp::flags_arr;
+}
+
+template<>
+constexpr bool is_valid<::enums::Blorp>(::enums::Blorp e) noexcept { 
+return (static_cast<uint32_t>(e) | static_cast<uint32_t>(0x7)) == static_cast<uint32_t>(0x7);
+}
+
+template<> constexpr void clear(::enums::Blorp& value) noexcept { value = static_cast<::enums::Blorp>(0); }
+template<> constexpr bool test(::enums::Blorp value, ::enums::Blorp flags) noexcept { return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(value)) == static_cast<uint32_t>(flags); }
+template<> constexpr void set(::enums::Blorp& value, ::enums::Blorp flags) noexcept { value = static_cast<::enums::Blorp>(static_cast<uint32_t>(value) | static_cast<uint32_t>(flags)); }
+template<> constexpr void unset(::enums::Blorp& value, ::enums::Blorp flags) noexcept { value = static_cast<::enums::Blorp>(static_cast<uint32_t>(value) & (~static_cast<uint32_t>(flags))); }
+template<> constexpr void toggle(::enums::Blorp& value, ::enums::Blorp flags) noexcept { value = static_cast<::enums::Blorp>(static_cast<uint32_t>(value) ^ static_cast<uint32_t>(flags)); }
+template<> constexpr bool has_all(::enums::Blorp value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x7)) == static_cast<uint32_t>(0x7); }
+template<> constexpr bool has_any(::enums::Blorp value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x7)) > 0; }
+template<> constexpr bool has_none(::enums::Blorp value) noexcept { return (static_cast<uint32_t>(value) & static_cast<uint32_t>(0x7)) == 0; }
+template<> constexpr bool has_single(::enums::Blorp value) noexcept { uint32_t n = static_cast<uint32_t>(static_cast<uint32_t>(value) & 0x7); return n && !(n & (n - 1)); }
+
+} // enumbra
+
+namespace enums {
+// ::enums::Blorp Operator Overloads
+constexpr ::enums::Blorp operator~(const ::enums::Blorp a) noexcept { return static_cast<::enums::Blorp>(~static_cast<uint32_t>(a)); }
+constexpr ::enums::Blorp operator|(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
+constexpr ::enums::Blorp operator&(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }
+constexpr ::enums::Blorp operator^(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }
+constexpr ::enums::Blorp& operator|=(::enums::Blorp& a, const ::enums::Blorp b) noexcept { return a = a | b; }
+constexpr ::enums::Blorp& operator&=(::enums::Blorp& a, const ::enums::Blorp b) noexcept { return a = a & b; }
+constexpr ::enums::Blorp& operator^=(::enums::Blorp& a, const ::enums::Blorp b) noexcept { return a = a ^ b; }
+} // namespace enums
+
+namespace enumbra {
+template<char separator = '|'>
+constexpr ::enumbra::stack_string<28> to_string(const ::enums::Blorp v) noexcept {
+::enumbra::stack_string<28> output;
+if (static_cast<uint32_t>(v & ::enums::Blorp::big) > 0) {
+output.append<3>("big");
+}
+if (static_cast<uint32_t>(v & ::enums::Blorp::bigger) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<6>("bigger");
+}
+if (static_cast<uint32_t>(v & ::enums::Blorp::biggest) > 0) {
+if (!output.empty()) { output.append(separator); }
+output.append<7>("biggest");
+}
+return output;
+}
+} // namespace enumbra
+
 // Template Specializations Begin
 template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::enum_helper<enums::test_flags> : enumbra::detail::enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
@@ -2538,4 +2697,6 @@ template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra
 template<> struct enumbra::detail::enum_helper<enums::TestSparseFlags> : enumbra::detail::enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5, false, 0> { };
 template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
 template<> struct enumbra::detail::enum_helper<enums::TestSingleFlag> : enumbra::detail::enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3, false, 0> { };
+template<> struct enumbra::detail::base_helper<enums::Blorp> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<enums::Blorp> : enumbra::detail::enum_info<uint32_t, 0, 7, 0, 3, true, 3, 3, false, 0> { };
 // Template Specializations End
