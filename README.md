@@ -175,43 +175,11 @@ enumbra uses vcpkg manifests for a couple of dependencies and should be automati
 
 # Q&A
 
-### Q. Why would I use enumbra instead of  [magic_enum](https://github.com/Neargye/magic_enum)?
+### Q. Why would I use enumbra instead of [magic_enum](https://github.com/Neargye/magic_enum)?
 
-The #1 reason is if you care about compile times enough to put up with a separate generation step in your build process. There's a few features unique to each library, but it cannot be overstated how convenient it is to use magic_enum. Use what makes sense for your goals.
-
-### Q. How fast does it compile?
-
-|Compiler|C++ Version|Test|Compile Time (ms) [1][2]|
-|-|-|-|-|
-|MSVC|C++17|enumbra_minimal|9|
-|MSVC|C++20|enumbra_minimal|11|
-|MSVC|C++latest|enumbra_minimal|12|
-|MSVC|C++17|enumbra|11|
-|MSVC|C++20|enumbra|15|
-|MSVC|C++latest|enumbra|14|
-|MSVC|C++17|magic_enum|456|
-|MSVC|C++20|magic_enum|625|
-|MSVC|C++latest|magic_enum|665|
-|MSVC|C++17|magic_enum_all|462|
-|MSVC|C++20|magic_enum_all|987|
-|MSVC|C++latest|magic_enum_all|1021|
-
-[1] Time = ```Test(frontend+backend+linker) - Baseline(frontend+backend+linker)```
-
-Baseline runs the same compile command with a file containing ```int main() { return 0; }```.
-
-[2] enumbra is run once to generate headers, which took ```2 ms```!
-
-See the [benchmark](/benchmark) directory.
-
-AMD 5950X - 128GB DDR4 3200MHz ECC - Samsung 980 Pro 2TB NVMe  
-Visual Studio 2022 - 17.11.3  
-cl.exe = 19.41.34120  
-Windows 10 22H2  
-
-### Q. How well does it optimize?
-
-TBD
+The #1 reason is if you care about compile times enough to put up with a separate generation step in your build process. 
+There's a few features unique to each library, but it cannot be overstated how convenient it is to use magic_enum. 
+Use what makes sense for your goals. 
 
 ### Q. How does enumbra compare to [magic_enum](https://github.com/Neargye/magic_enum)?
 
@@ -220,28 +188,24 @@ TBD
 | Including in your codebase | Code Generator -> Header for each enum group | Header Only |
 | Use external enum/enum class | No [1] | Yes |
 | Compile speed | Fast | Slow |
-| Max enum elements | Unlimited | 256 (default) [2][3] |
-| Name size limit | Unlimited | Unlimited |
+| Max enum elements | Unlimited | 256 (default) [2] |
 | Aliasing allowed | No | Partial |
 | constexpr | All the things | All the things |
 | bitwise operations | Yes (always type-safe) | bitwise_operators  (unsafe)<br>customize::enum_range\<T\>::is_flags (type-safe) |
-| Additional enum validation | During header generation | None [4] |
+| Additional enum validation | During header generation | None [3] |
 | Language required | C++17 | C++17 |
 | Enumerate values | Yes | Yes |
 | from/to_string | Yes | Yes |
 | from/to_integer | Yes | Yes |
 | i/ostream support | No | Yes |
-| **Metadata**<br>name<br>min<br>max<br>default_value<br>count<br>is_contiguous<br>bits_required_storage<br>bits_required_transmission<br> is_scoped/is_unscoped<br>index | <br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>No [5]<br>No | <br>Yes<br>No [4]<br>No [4]<br>No [4]<br>Yes<br>No [4]<br>No [4]<br>No [4]<br>Yes<br>Yes
+| **Metadata**<br>name<br>min<br>max<br>default_value<br>count<br>is_contiguous<br>bits_required_storage<br>bits_required_transmission<br> is_scoped/is_unscoped<br>index | <br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>Yes<br>No [4]<br>No | <br>Yes<br>No [3]<br>No [3]<br>No [3]<br>Yes<br>No [3]<br>No [3]<br>No [3]<br>Yes<br>Yes
 | Other Features | bitfield support | array/bitset/set containers
 
 [1] Investigating possible workarounds to ingest foreign enums  
-[2] Maximum depends on individual compiler template limits  
-[3] Hard limit of 65536  
-[4] Could be implemented by user at compile time, but cost paid on every compile  
-[5] All enums created by enumbra are scoped (enum class)
+[2] Maximum depends on individual compiler template limits, hard limit of 65536  
+[3] Could be implemented by user at compile time, but cost paid on every compile  
+[4] All enums created by enumbra are scoped (enum class)  
 
 https://github.com/Neargye/magic_enum/
 
 https://aantron.github.io/better-enums/
-
-TODO: Compile Benchmarks
