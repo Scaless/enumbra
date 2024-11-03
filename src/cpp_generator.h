@@ -54,7 +54,8 @@ struct flags_enum_context {
 };
 
 struct output_context {
-    std::string def_macro;
+    std::vector<size_t> header_guard_positions;
+
     std::string enum_ns;
 
     std::vector<value_enum_context> value_enums;
@@ -76,6 +77,7 @@ private:
     // Shared
     void emit_preamble();
     void emit_include_guard_begin();
+    void emit_include_guard_end();
     void emit_includes();
     void emit_required_macros();
     void emit_optional_macros();
@@ -94,7 +96,7 @@ private:
 
 private:
     output_context ctx;
-	std::string Output; // Final output
+	std::string output; // Final output
 
     // Argument store
     std::unordered_map<std::string, std::string> store_map_;
@@ -125,13 +127,13 @@ private:
     // Write functions
 	template <typename... Args>
 	void write(std::string_view fmt, Args&... args) {
-		fmt::vformat_to(std::back_inserter(Output), fmt, fmt::make_format_args(args...));
+		fmt::vformat_to(std::back_inserter(output), fmt, fmt::make_format_args(args...));
 	}
 
     // write line feed
 	void wlf(int count = 1) {
 		for (int i = 0; i < count; i++)
-			Output += "\n";
+			output += "\n";
 	}
 
     // write line - user provides args and doesn't use parameter store
@@ -143,13 +145,13 @@ private:
 
     // write line unformatted - for pre-formatted strings
     void wlu(std::string_view str) {
-        Output += str;
+        output += str;
         wlf();
     }
 
     // write virtual line - using parameter store
     void wvl(std::string_view fmt) {
-        fmt::vformat_to(std::back_inserter(Output), fmt, store_);
+        fmt::vformat_to(std::back_inserter(output), fmt, store_);
         wlf();
     }
 };

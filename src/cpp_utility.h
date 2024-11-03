@@ -83,3 +83,19 @@ constexpr int64_t get_transmission_bits_required(uint128 x) {
 
 	return log_2_unsigned(x) + 1;
 }
+
+// FNV-1a Hash - 64 bit
+using fnv1a_64_hash = uint64_t;
+constexpr fnv1a_64_hash fnv1a_64(const std::string_view str) noexcept {
+	constexpr fnv1a_64_hash fnv1_basis_64 = 0xcbf29ce484222325ULL;
+	constexpr fnv1a_64_hash fnv1_prime_64 = 0x00000100000001b3ULL;
+
+	fnv1a_64_hash hash = fnv1_basis_64;
+
+	for (const char c : str)
+	{
+		hash = (hash ^ static_cast<fnv1a_64_hash>(c)) * fnv1_prime_64;
+	}
+
+	return hash;
+}

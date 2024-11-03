@@ -8,7 +8,6 @@
       "preamble_text": [
         "// This is where you would put your code license!"
       ],
-      "include_guard": "pragma_once",
       "additional_includes": [
         "<cstdint>"
       ],

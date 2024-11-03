@@ -1,6 +1,5 @@
 {
   "enums": {
-    "block_name": "blockname",
     "flags_enum_default_value_style": "zero",
     "value_enum_default_value_style": "min",
     "flags_enums": [

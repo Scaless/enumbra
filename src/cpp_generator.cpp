@@ -150,16 +150,6 @@ cpp_generator::cpp_generator(const enumbra_config &cfg, const enum_meta_config &
 void cpp_generator::build_contexts() {
     ctx = output_context();
 
-    // Include Guard Name
-    if (!is_valid_macro_name(enum_meta.block_name)) {
-        throw std::logic_error(
-            fmt::format("Block name ({}) contains invalid characters (Allowed: a-z A-Z 0-9 _)",
-                enum_meta.block_name)
-        );
-    }
-
-    ctx.def_macro = fmt::format("ENUMBRA_{}_H", to_upper_ascii(enum_meta.block_name));
-
     // Construct the full namespace for templates
     for (size_t i = 0; i < cpp_cfg.output_namespace.size(); i++) {
         ctx.enum_ns += cpp_cfg.output_namespace[i];
@@ -168,7 +158,6 @@ void cpp_generator::build_contexts() {
         }
     }
 }
-
 
 const std::string &cpp_generator::generate_cpp_output() {
 
@@ -666,12 +655,16 @@ const std::string &cpp_generator::generate_cpp_output() {
         wlf();
     }
 
-    // END INCLUDE GUARD
-    if (cpp_cfg.include_guard_style == IncludeGuardStyle::CStyle) {
-        wl("#endif // {}", ctx.def_macro);
+    emit_include_guard_end();
+    
+    // Hash the whole file to generate a unique include guard
+    const fnv1a_64_hash hash = fnv1a_64(output);
+    std::string hash_str = fmt::format("ENUMBRA_{0:X}_H", hash);
+    for (const size_t location : ctx.header_guard_positions) {
+        output.replace(output.begin() + location, output.begin() + location + hash_str.size(), hash_str);
     }
 
-    return Output;
+    return output;
 }
 
 void cpp_generator::emit_required_macros() {
@@ -741,20 +734,17 @@ void cpp_generator::emit_preamble() {
 }
 
 void cpp_generator::emit_include_guard_begin() {
-    switch (cpp_cfg.include_guard_style) {
-        case enumbra::cpp::IncludeGuardStyle::PragmaOnce:
-            wlu("#pragma once");
-            wlf();
-            break;
-        case enumbra::cpp::IncludeGuardStyle::CStyle:
-            wl("#ifndef {0}", ctx.def_macro);
-            wl("#define {0}", ctx.def_macro);
-            wlf();
-            break;
-        case enumbra::cpp::IncludeGuardStyle::None:
-        default:
-            break;
-    }
+    ctx.header_guard_positions.push_back(output.size() + 8);
+    wlu("#ifndef ENUMBRA_0000000000000000_H");
+    ctx.header_guard_positions.push_back(output.size() + 8);
+    wlu("#define ENUMBRA_0000000000000000_H");
+    wlf();
+}
+
+void cpp_generator::emit_include_guard_end()
+{
+    ctx.header_guard_positions.push_back(output.size() + 10);
+    wlu("#endif // ENUMBRA_0000000000000000_H");
 }
 
 void cpp_generator::emit_includes() {

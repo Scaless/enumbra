@@ -11,24 +11,13 @@ using int128 = absl::int128;
 using uint128 = absl::uint128;
 
 namespace enumbra {
-	constexpr char kEnumbraVersion[] = "0.2.2";
+	constexpr char kEnumbraVersion[] = "0.2.3";
 
 	namespace csharp {
 		// ...
 	}
 
 	namespace cpp {
-		enum class IncludeGuardStyle {
-			None,
-			PragmaOnce,
-			CStyle
-		};
-		constexpr std::array<std::pair<std::string_view, IncludeGuardStyle>, 3> IncludeGuardStyleMapped 
-		{ {
-			{ "none", IncludeGuardStyle::None },
-			{ "pragma_once", IncludeGuardStyle::PragmaOnce },
-			{ "c_style", IncludeGuardStyle::CStyle },
-		} };
 
         enum class SIMDCodeGen {
             Scalar64,
@@ -72,7 +61,6 @@ namespace enumbra {
 			std::vector<std::string> output_namespace;
 			std::vector<std::string> preamble_text;
 			std::vector<std::string> additional_includes;
-			IncludeGuardStyle include_guard_style{ IncludeGuardStyle::PragmaOnce };
 			bool time_generated_in_header{ true };
 
 			std::vector<enum_size_type> size_types;
@@ -148,7 +136,7 @@ namespace enumbra {
 
 	struct enum_meta_config
 	{
-		std::string block_name;
+		//std::string block_name;
 		ValueEnumDefaultValueStyle value_enum_default_value_style{ ValueEnumDefaultValueStyle::Min };
 		FlagsEnumDefaultValueStyle flags_enum_default_value_style{ FlagsEnumDefaultValueStyle::Zero };
 

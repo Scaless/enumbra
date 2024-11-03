@@ -168,7 +168,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
         c.output_namespace = get_array<std::string>(cpp_cfg["output_namespace"]);
         c.time_generated_in_header = cpp_cfg["time_generated_in_header"].get<bool>();
         c.preamble_text = get_array<std::string>(cpp_cfg["preamble_text"]);
-        c.include_guard_style = get_mapped<IncludeGuardStyle>(IncludeGuardStyleMapped, cpp_cfg["include_guard"]);
         c.additional_includes = get_array<std::string>(cpp_cfg["additional_includes"]);
 
         for (auto iter: cpp_cfg["size_types"]) {
@@ -346,7 +345,6 @@ void validate_value_fits_in_size_type(const enumbra::cpp::enum_size_type &size_t
 void
 parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_config &enum_config, json &meta_config) {
 
-    enum_config.block_name = meta_config["block_name"];
     enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(
             ValueEnumDefaultValueStyleMapped, meta_config["value_enum_default_value_style"]);
     enum_config.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(
