@@ -225,39 +225,6 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
             throw std::logic_error("default_flags_enum_size_type must reference an existing size_type.");
         }
 
-        std::vector<std::string> flags_enum_smallest_unsigned_evaluation_order = get_array<std::string>(
-                cpp_cfg["flags_enum_smallest_unsigned_evaluation_order"]);
-        for (auto &str: flags_enum_smallest_unsigned_evaluation_order) {
-            auto index = c.get_size_type_index_from_name(str);
-            if (index == SIZE_MAX) {
-                throw std::logic_error(
-                        "flags_enum_smallest_unsigned_evaluation_order must reference an existing size_type.");
-            }
-            c.flags_enum_smallest_unsigned_evaluation_order.push_back(index);
-        }
-
-        std::vector<std::string> value_enum_smallest_unsigned_evaluation_order = get_array<std::string>(
-                cpp_cfg["value_enum_smallest_unsigned_evaluation_order"]);
-        for (auto &str: value_enum_smallest_unsigned_evaluation_order) {
-            auto index = c.get_size_type_index_from_name(str);
-            if (index == SIZE_MAX) {
-                throw std::logic_error(
-                        "value_enum_smallest_unsigned_evaluation_order must reference an existing size_type.");
-            }
-            c.value_enum_smallest_unsigned_evaluation_order.push_back(index);
-        }
-
-        std::vector<std::string> value_enum_smallest_signed_evaluation_order = get_array<std::string>(
-                cpp_cfg["value_enum_smallest_signed_evaluation_order"]);
-        for (auto &str: value_enum_smallest_signed_evaluation_order) {
-            auto index = c.get_size_type_index_from_name(str);
-            if (index == SIZE_MAX) {
-                throw std::logic_error(
-                        "value_enum_smallest_signed_evaluation_order must reference an existing size_type.");
-            }
-            c.value_enum_smallest_signed_evaluation_order.push_back(index);
-        }
-
         c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_cfg["string_table_layout"]);
 
         c.min_max_functions = cpp_cfg["min_max_functions"].get<bool>();

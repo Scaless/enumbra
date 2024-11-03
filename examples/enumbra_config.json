@@ -66,24 +66,6 @@
           "type_name": "int64_t",
           "is_signed": true
         }
-      ],
-      "flags_enum_smallest_unsigned_evaluation_order": [
-        "unsigned8",
-        "unsigned16",
-        "unsigned32",
-        "unsigned64"
-      ],
-      "value_enum_smallest_unsigned_evaluation_order": [
-        "unsigned8",
-        "unsigned16",
-        "unsigned32",
-        "unsigned64"
-      ],
-      "value_enum_smallest_signed_evaluation_order": [
-        "signed8",
-        "signed16",
-        "signed32",
-        "signed64"
       ]
     }
   }

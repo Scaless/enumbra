@@ -67,10 +67,6 @@ namespace enumbra {
 			size_t default_value_enum_size_type_index{ SIZE_MAX };
 			size_t default_flags_enum_size_type_index{ SIZE_MAX };
 
-			std::vector<size_t> flags_enum_smallest_unsigned_evaluation_order{};
-			std::vector<size_t> value_enum_smallest_unsigned_evaluation_order{};
-			std::vector<size_t> value_enum_smallest_signed_evaluation_order{};
-
 			StringTableLayout string_table_layout{ StringTableLayout::NameAndDescription };
 
 			bool min_max_functions{ true };

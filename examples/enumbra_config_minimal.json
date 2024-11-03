@@ -13,7 +13,6 @@
       ],
       "default_flags_enum_size_type": "unsigned32",
       "default_value_enum_size_type": "unsigned32",
-
       "string_table_layout": "name_and_description",
       "min_max_functions": true,
       "bit_info_functions": true,
@@ -67,24 +66,6 @@
           "type_name": "long long",
           "is_signed": true
         }
-      ],
-      "flags_enum_smallest_unsigned_evaluation_order": [
-        "unsigned8",
-        "unsigned16",
-        "unsigned32",
-        "unsigned64"
-      ],
-      "value_enum_smallest_unsigned_evaluation_order": [
-        "unsigned8",
-        "unsigned16",
-        "unsigned32",
-        "unsigned64"
-      ],
-      "value_enum_smallest_signed_evaluation_order": [
-        "signed8",
-        "signed16",
-        "signed32",
-        "signed64"
       ]
     }
   }
