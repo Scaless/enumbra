@@ -592,6 +592,9 @@ template<> constexpr bool has_single(::enums::minimal value) noexcept { unsigned
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::minimal> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::minimal> : enumbra::detail::enum_info<unsigned int, 0, 3, 0, 2, true, 2, 2, false, 0> { };
+
 namespace enums {
 constexpr ::enums::minimal operator~(const ::enums::minimal a) noexcept { return static_cast<::enums::minimal>(~static_cast<unsigned int>(a)); }
 constexpr ::enums::minimal operator|(const ::enums::minimal a, const ::enums::minimal b) noexcept { return static_cast<::enums::minimal>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b)); }
@@ -603,21 +606,46 @@ constexpr ::enums::minimal& operator^=(::enums::minimal& a, const ::enums::minim
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<12> to_string(const ::enums::minimal v) noexcept {
 ::enumbra::stack_string<12> output;
 if (static_cast<unsigned int>(v & ::enums::minimal::B) > 0) {
 output.append<1>("B");
 }
 if (static_cast<unsigned int>(v & ::enums::minimal::C) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<1>("C");
 }
 return output;
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::minimal> from_string<::enums::minimal>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::minimal output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 1) {
+if (::enumbra::detail::streq_fixed_size<1>(start, "B")) { output |= ::enums::minimal::B; }
+else if (::enumbra::detail::streq_fixed_size<1>(start, "C")) { output |= ::enums::minimal::C; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::minimal>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::minimal> from_string<::enums::minimal>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::minimal>(str, len);
+}
 } // namespace enumbra
 
-// Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::minimal> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::minimal> : enumbra::detail::enum_info<unsigned int, 0, 3, 0, 2, true, 2, 2, false, 0> { };
-// Template Specializations End

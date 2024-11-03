@@ -2387,6 +2387,9 @@ template<> constexpr bool has_single(::enums::test_flags value) noexcept { uint3
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::test_flags> : enumbra::detail::enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
+
 namespace enums {
 constexpr ::enums::test_flags operator~(const ::enums::test_flags a) noexcept { return static_cast<::enums::test_flags>(~static_cast<uint32_t>(a)); }
 constexpr ::enums::test_flags operator|(const ::enums::test_flags a, const ::enums::test_flags b) noexcept { return static_cast<::enums::test_flags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
@@ -2398,17 +2401,46 @@ constexpr ::enums::test_flags& operator^=(::enums::test_flags& a, const ::enums:
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<12> to_string(const ::enums::test_flags v) noexcept {
 ::enumbra::stack_string<12> output;
 if (static_cast<uint32_t>(v & ::enums::test_flags::B) > 0) {
 output.append<1>("B");
 }
 if (static_cast<uint32_t>(v & ::enums::test_flags::C) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<1>("C");
 }
 return output;
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_flags> from_string<::enums::test_flags>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::test_flags output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 1) {
+if (::enumbra::detail::streq_fixed_size<1>(start, "B")) { output |= ::enums::test_flags::B; }
+else if (::enumbra::detail::streq_fixed_size<1>(start, "C")) { output |= ::enums::test_flags::C; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::test_flags>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_flags> from_string<::enums::test_flags>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::test_flags>(str, len);
 }
 } // namespace enumbra
 
@@ -2452,6 +2484,9 @@ template<> constexpr bool has_single(::enums::test_nodefault value) noexcept { u
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::test_nodefault> : enumbra::detail::enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
+
 namespace enums {
 constexpr ::enums::test_nodefault operator~(const ::enums::test_nodefault a) noexcept { return static_cast<::enums::test_nodefault>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::test_nodefault operator|(const ::enums::test_nodefault a, const ::enums::test_nodefault b) noexcept { return static_cast<::enums::test_nodefault>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2463,17 +2498,46 @@ constexpr ::enums::test_nodefault& operator^=(::enums::test_nodefault& a, const 
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<12> to_string(const ::enums::test_nodefault v) noexcept {
 ::enumbra::stack_string<12> output;
 if (static_cast<uint16_t>(v & ::enums::test_nodefault::B) > 0) {
 output.append<1>("B");
 }
 if (static_cast<uint16_t>(v & ::enums::test_nodefault::C) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<1>("C");
 }
 return output;
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_nodefault> from_string<::enums::test_nodefault>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::test_nodefault output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 1) {
+if (::enumbra::detail::streq_fixed_size<1>(start, "B")) { output |= ::enums::test_nodefault::B; }
+else if (::enumbra::detail::streq_fixed_size<1>(start, "C")) { output |= ::enums::test_nodefault::C; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::test_nodefault>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::test_nodefault> from_string<::enums::test_nodefault>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::test_nodefault>(str, len);
 }
 } // namespace enumbra
 
@@ -2519,6 +2583,9 @@ template<> constexpr bool has_single(::enums::TestSparseFlags value) noexcept { 
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::TestSparseFlags> : enumbra::detail::enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5, false, 0> { };
+
 namespace enums {
 constexpr ::enums::TestSparseFlags operator~(const ::enums::TestSparseFlags a) noexcept { return static_cast<::enums::TestSparseFlags>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSparseFlags operator|(const ::enums::TestSparseFlags a, const ::enums::TestSparseFlags b) noexcept { return static_cast<::enums::TestSparseFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2530,21 +2597,51 @@ constexpr ::enums::TestSparseFlags& operator^=(::enums::TestSparseFlags& a, cons
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<12> to_string(const ::enums::TestSparseFlags v) noexcept {
 ::enumbra::stack_string<12> output;
 if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::B) > 0) {
 output.append<1>("B");
 }
 if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::C) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<1>("C");
 }
 if (static_cast<uint16_t>(v & ::enums::TestSparseFlags::D) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<1>("D");
 }
 return output;
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::TestSparseFlags> from_string<::enums::TestSparseFlags>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::TestSparseFlags output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 1) {
+if (::enumbra::detail::streq_fixed_size<1>(start, "B")) { output |= ::enums::TestSparseFlags::B; }
+else if (::enumbra::detail::streq_fixed_size<1>(start, "C")) { output |= ::enums::TestSparseFlags::C; }
+else if (::enumbra::detail::streq_fixed_size<1>(start, "D")) { output |= ::enums::TestSparseFlags::D; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::TestSparseFlags>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::TestSparseFlags> from_string<::enums::TestSparseFlags>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::TestSparseFlags>(str, len);
 }
 } // namespace enumbra
 
@@ -2586,6 +2683,9 @@ template<> constexpr bool has_single(::enums::TestSingleFlag value) noexcept { u
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::TestSingleFlag> : enumbra::detail::enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3, false, 0> { };
+
 namespace enums {
 constexpr ::enums::TestSingleFlag operator~(const ::enums::TestSingleFlag a) noexcept { return static_cast<::enums::TestSingleFlag>(~static_cast<uint16_t>(a)); }
 constexpr ::enums::TestSingleFlag operator|(const ::enums::TestSingleFlag a, const ::enums::TestSingleFlag b) noexcept { return static_cast<::enums::TestSingleFlag>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); }
@@ -2597,13 +2697,41 @@ constexpr ::enums::TestSingleFlag& operator^=(::enums::TestSingleFlag& a, const 
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<12> to_string(const ::enums::TestSingleFlag v) noexcept {
 ::enumbra::stack_string<12> output;
 if (static_cast<uint16_t>(v & ::enums::TestSingleFlag::C) > 0) {
 output.append<1>("C");
 }
 return output;
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::TestSingleFlag> from_string<::enums::TestSingleFlag>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::TestSingleFlag output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 1) {
+if (::enumbra::detail::streq_fixed_size<1>(start, "C")) { output |= ::enums::TestSingleFlag::C; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::TestSingleFlag>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::TestSingleFlag> from_string<::enums::TestSingleFlag>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::TestSingleFlag>(str, len);
 }
 } // namespace enumbra
 
@@ -2649,6 +2777,9 @@ template<> constexpr bool has_single(::enums::Blorp value) noexcept { uint32_t n
 
 } // namespace enumbra
 
+template<> struct enumbra::detail::base_helper<::enums::Blorp> : enumbra::detail::type_info<true, false, true> { };
+template<> struct enumbra::detail::enum_helper<::enums::Blorp> : enumbra::detail::enum_info<uint32_t, 0, 7, 0, 3, true, 3, 3, false, 0> { };
+
 namespace enums {
 constexpr ::enums::Blorp operator~(const ::enums::Blorp a) noexcept { return static_cast<::enums::Blorp>(~static_cast<uint32_t>(a)); }
 constexpr ::enums::Blorp operator|(const ::enums::Blorp a, const ::enums::Blorp b) noexcept { return static_cast<::enums::Blorp>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }
@@ -2660,33 +2791,57 @@ constexpr ::enums::Blorp& operator^=(::enums::Blorp& a, const ::enums::Blorp b) 
 } // namespace enums
 
 namespace enumbra {
-template<char separator = '|'>
+
 constexpr ::enumbra::stack_string<28> to_string(const ::enums::Blorp v) noexcept {
 ::enumbra::stack_string<28> output;
 if (static_cast<uint32_t>(v & ::enums::Blorp::big) > 0) {
 output.append<3>("big");
 }
 if (static_cast<uint32_t>(v & ::enums::Blorp::bigger) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<6>("bigger");
 }
 if (static_cast<uint32_t>(v & ::enums::Blorp::biggest) > 0) {
-if (!output.empty()) { output.append(separator); }
+if (!output.empty()) { output.append('|'); }
 output.append<7>("biggest");
 }
 return output;
 }
+
+template<>
+constexpr ::enumbra::optional_value<::enums::Blorp> from_string<::enums::Blorp>(const char* str, int len) noexcept {
+if (len < 0) { return {}; } // Invalid size
+const char* start = str;
+const char* end = start;
+::enums::Blorp output = {};
+for (int i = 0; i < len; ++i) {
+if (str[i] == '\0') { return {}; } // Invalid: null in string
+end++;
+if ((i == (len - 1)) || (*end == '|')) {
+const auto check_len = end - start;
+if (check_len == 3) {
+if (::enumbra::detail::streq_fixed_size<3>(start, "big")) { output |= ::enums::Blorp::big; }
+else { return {}; }
+}
+else if (check_len == 6) {
+if (::enumbra::detail::streq_fixed_size<6>(start, "bigger")) { output |= ::enums::Blorp::bigger; }
+else { return {}; }
+}
+else if (check_len == 7) {
+if (::enumbra::detail::streq_fixed_size<7>(start, "biggest")) { output |= ::enums::Blorp::biggest; }
+else { return {}; }
+}
+else { return {}; }
+start = end + 1;
+}
+}
+return ::enumbra::optional_value<::enums::Blorp>(output);
+}
+
+template<>
+constexpr ::enumbra::optional_value<::enums::Blorp> from_string<::enums::Blorp>(const char* str) noexcept {
+    const int len = ::enumbra::detail::strlen(str);
+    return ::enumbra::from_string<::enums::Blorp>(str, len);
+}
 } // namespace enumbra
 
-// Template Specializations Begin
-template<> struct enumbra::detail::base_helper<enums::test_flags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::test_flags> : enumbra::detail::enum_info<uint32_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
-template<> struct enumbra::detail::base_helper<enums::test_nodefault> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::test_nodefault> : enumbra::detail::enum_info<uint16_t, 0, 3, 0, 2, true, 2, 2, false, 0> { };
-template<> struct enumbra::detail::base_helper<enums::TestSparseFlags> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::TestSparseFlags> : enumbra::detail::enum_info<uint16_t, 0, 21, 0, 3, false, 5, 5, false, 0> { };
-template<> struct enumbra::detail::base_helper<enums::TestSingleFlag> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::TestSingleFlag> : enumbra::detail::enum_info<uint16_t, 0, 4, 0, 1, true, 3, 3, false, 0> { };
-template<> struct enumbra::detail::base_helper<enums::Blorp> : enumbra::detail::type_info<true, false, true> { };
-template<> struct enumbra::detail::enum_helper<enums::Blorp> : enumbra::detail::enum_info<uint32_t, 0, 7, 0, 3, true, 3, 3, false, 0> { };
-// Template Specializations End

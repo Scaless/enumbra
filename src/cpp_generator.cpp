@@ -1,6 +1,7 @@
 #include "cpp_generator.h"
 #include <set>
 #include <vector>
+#include <map>
 
 using namespace enumbra;
 using namespace enumbra::cpp;
@@ -188,8 +189,6 @@ const std::string &cpp_generator::generate_cpp_output() {
     emit_optional_macros();
 
     emit_templates();
-
-    std::vector<std::string> template_specializations;
 
     // Flags Enums Precondition Checks
     for (auto &e: enum_meta.flag_enum_definitions) {
@@ -542,51 +541,39 @@ const std::string &cpp_generator::generate_cpp_output() {
         wvl("template<> constexpr bool has_single({enum_name_fq} value) noexcept {{ {size_type} n = static_cast<{size_type}>(static_cast<{size_type}>(value) & {max_value}); return n && !(n & (n - 1)); }}");
         wlf();
 
-        // Helper specializations
-        template_specializations.emplace_back(fmt::format(
-            "template<> struct enumbra::detail::base_helper<{0}::{1}> : enumbra::detail::type_info<true, false, true> {{ }};",
-            ctx.enum_ns, e.name));
-
-        template_specializations.emplace_back(
-            fmt::format("template<> struct enumbra::detail::enum_helper<{0}::{1}> : "
-                        "enumbra::detail::enum_info<{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}> {{ }};",
-                        ctx.enum_ns,
-                        e.name,
-                        size_type,
-                        Int128Format{min_value, type_bits, is_size_type_signed},
-                        Int128Format{max_value, type_bits, is_size_type_signed},
-                        Int128Format{default_value, type_bits, is_size_type_signed},
-                        unique_entry_count,
-                        is_contiguous ? "true" : "false",
-                        bits_required_storage,
-                        bits_required_transmission,
-                        "false",
-                        0
-            ));
-
-
-
         wlu("} // namespace enumbra");
         wlf();
 
+        // Helper specializations
+        wl("template<> struct enumbra::detail::base_helper<{0}> : enumbra::detail::type_info<true, false, true> {{ }};", enum_name_fq);
+
+        wl("template<> struct enumbra::detail::enum_helper<{0}> : enumbra::detail::enum_info<{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}> {{ }};",
+            enum_name_fq,
+            size_type,
+            Int128Format{ min_value, type_bits, is_size_type_signed },
+            Int128Format{ max_value, type_bits, is_size_type_signed },
+            Int128Format{ default_value, type_bits, is_size_type_signed },
+            unique_entry_count,
+            is_contiguous ? "true" : "false",
+            bits_required_storage,
+            bits_required_transmission,
+            "false", // TODO: We could use an unused flag bit to signal invalid
+            0
+        );
+        
+        wlf();
+
         // Operator Overloads need to be outside of enumbra::
-        // START NAMESPACE
         for (const auto& ns : cpp_cfg.output_namespace) {
             wl("namespace {} {{", ns);
         }
-        std::vector<const char*> operator_strings = {
-            "constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}",
-            "constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}",
-            "constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}",
-            "constexpr {enum_name_fq} operator^(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) ^ static_cast<{size_type}>(b)); }}",
-
-            "constexpr {enum_name_fq}& operator|=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a | b; }}",
-            "constexpr {enum_name_fq}& operator&=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a & b; }}",
-            "constexpr {enum_name_fq}& operator^=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a ^ b; }}",
-        };
-        for (auto& str : operator_strings) {
-            wvl(str);
-        }
+        wvl("constexpr {enum_name_fq} operator~(const {enum_name_fq} a) noexcept {{ return static_cast<{enum_name_fq}>(~static_cast<{size_type}>(a)); }}");
+        wvl("constexpr {enum_name_fq} operator|(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) | static_cast<{size_type}>(b)); }}");
+        wvl("constexpr {enum_name_fq} operator&(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) & static_cast<{size_type}>(b)); }}");
+        wvl("constexpr {enum_name_fq} operator^(const {enum_name_fq} a, const {enum_name_fq} b) noexcept {{ return static_cast<{enum_name_fq}>(static_cast<{size_type}>(a) ^ static_cast<{size_type}>(b)); }}");
+        wvl("constexpr {enum_name_fq}& operator|=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a | b; }}");
+        wvl("constexpr {enum_name_fq}& operator&=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a & b; }}");
+        wvl("constexpr {enum_name_fq}& operator^=({enum_name_fq}& a, const {enum_name_fq} b) noexcept {{ return a = a ^ b; }}");
         for (auto ns = cpp_cfg.output_namespace.rbegin(); ns != cpp_cfg.output_namespace.rend(); ++ns) {
             wl("}} // namespace {}", *ns);
         }
@@ -606,15 +593,17 @@ const std::string &cpp_generator::generate_cpp_output() {
         max_to_string_size -= 4;
         push("max_to_string_size", std::to_string(max_to_string_size));
 
+        // Start ns
         wlu("namespace enumbra {");
-        wlu("template<char separator = '|'>");
+        wlf();
+
         wvl("constexpr ::enumbra::stack_string<{max_to_string_size}> to_string(const {enum_name_fq} v) noexcept {{");
         wvl("::enumbra::stack_string<{max_to_string_size}> output;");
         bool first = true;
         for (const auto& v : e.values) {
             wl("if (static_cast<{0}>(v & {1}::{2}) > 0) {{", size_type, enum_name_fq, v.name);
             if (!first) {
-                wlu("if (!output.empty()) { output.append(separator); }");
+                wlu("if (!output.empty()) { output.append('|'); }");
             }
             first = false;
             wl("output.append<{0}>(\"{1}\");", v.name.size(), v.name);
@@ -622,21 +611,59 @@ const std::string &cpp_generator::generate_cpp_output() {
         }
         wlu("return output;");
         wlu("}");
-        wlu("} // namespace enumbra");
 
         wlf();
-    }
 
-
-
-    // MSVC C2888: Template specializations need to be outside of the user-defined namespace so we'll stick them after
-    // the definitions.
-    {
-        wl("// Template Specializations Begin");
-        for (auto &s: template_specializations) {
-            wlu(s);
+        std::map<size_t, std::set<std::string>> names_sorted_by_length;
+        for (const auto& v : e.values) {
+            names_sorted_by_length[v.name.size()].insert(v.name);
         }
-        wl("// Template Specializations End");
+
+        wlu("template<>");
+        wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> from_string<{enum_name_fq}>(const char* str, int len) noexcept {{");
+        wlu("if (len < 0) { return {}; } // Invalid size");
+        wlu("const char* start = str;");
+        wlu("const char* end = start;");
+        wvl("{enum_name_fq} output = {{}};");
+        wlu("for (int i = 0; i < len; ++i) {");
+        wlu("if (str[i] == '\\0') { return {}; } // Invalid: null in string");
+        wlu("end++;");
+        wlu("if ((i == (len - 1)) || (*end == '|')) {");
+        wlu("const auto check_len = end - start;");
+
+        bool firstSize = true;
+        for (auto& [length, names] : names_sorted_by_length) {
+            wl("{} (check_len == {}) {{", firstSize ? "if" : "else if", length);
+            firstSize = false;
+
+            bool firstName = true;
+            for (auto& name : names) {
+                const char* ifelsename = firstName ? "if" : "else if";
+                wl("{} (::enumbra::detail::streq_fixed_size<{}>(start, \"{}\")) {{ output |= {}::{}; }}", ifelsename, length, name, enum_name_fq, name);
+                firstName = false;
+            }
+            wlu("else { return {}; }");
+            wlu("}");
+        }
+
+        wlu("else { return {}; }");
+        wlu("start = end + 1;");
+        wlu("}");
+        wlu("}");
+        wvl("return ::enumbra::optional_value<{enum_name_fq}>(output);");
+        wlu("}");
+
+        wlf();
+
+        wlu("template<>");
+        wvl("constexpr ::enumbra::optional_value<{enum_name_fq}> from_string<{enum_name_fq}>(const char* str) noexcept {{");
+        wlu("    const int len = ::enumbra::detail::strlen(str);");
+        wvl("    return ::enumbra::from_string<{enum_name_fq}>(str, len);");
+        wlu("}");
+
+        // End ns
+        wlu("} // namespace enumbra");
+        wlf();
     }
 
     // END INCLUDE GUARD

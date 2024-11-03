@@ -398,6 +398,138 @@ static void TestFlagsToString()
 	static_assert(enumbra::detail::streq_fixed_size<18>(enumbra::to_string(enumbra::max<Blorp>()).sv().str, "big|bigger|biggest"), "");
 }
 
+static void TestFlagsFromString()
+{
+	using namespace enums;
+
+	// Valid inputs
+	{
+		// Empty string returns enum with no flags
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == TestSparseFlags(), "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == TestSparseFlags::B, "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("C");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == TestSparseFlags::C, "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("D");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == TestSparseFlags::D, "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|C");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == (TestSparseFlags::B | TestSparseFlags::C), "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|D");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == (TestSparseFlags::B | TestSparseFlags::D), "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|C|D");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == enumbra::max<TestSparseFlags>(), "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("D|C|B");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == enumbra::max<TestSparseFlags>(), "");
+	}
+	{
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|C|D", 3);
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == (TestSparseFlags::B | TestSparseFlags::C), "");
+	}
+	{
+		// TODO: Allow duplicates?
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("C|C");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == TestSparseFlags::C, "");
+	}
+	{
+		// TODO: Allow duplicates?
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("C|B|C");
+		static_assert(res.has_value(), "");
+		static_assert(res.value() == (TestSparseFlags::B | TestSparseFlags::C), "");
+	}
+
+	// Invalid inputs
+	{
+		// Invalid input - bad value
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("E");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - ends with |
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|C|D|");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - starts with |
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("|B|C|D");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - starts and ends with |
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("|B|C|D|");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - empty gap
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B||C|D");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - bad value in gap
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B|E|C|D");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - invalid separator
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B C");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - separator only
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("|");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - padding
+		constexpr auto res = enumbra::from_string<TestSparseFlags>(" ");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - padding
+		constexpr auto res = enumbra::from_string<TestSparseFlags>(" B");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - padding
+		constexpr auto res = enumbra::from_string<TestSparseFlags>(" B ");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - padding
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B ");
+		static_assert(!res.has_value(), "");
+	}
+	{
+		// Invalid input - embedded null
+		constexpr auto res = enumbra::from_string<TestSparseFlags>("B\0C", 3);
+		static_assert(!res.has_value(), "");
+	}
+}
+
 int main()
 {
 	TestMacroWithUsingNamespace();
@@ -411,4 +543,5 @@ int main()
 	TestIsValid();
 	TestBitMacros();
 	TestFlagsToString();
+	TestFlagsFromString();
 }
