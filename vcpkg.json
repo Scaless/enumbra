@@ -1,9 +1,9 @@
 {
   "name": "enumbra",
   "dependencies": [
-    "nlohmann-json",
     "cxxopts",
     "fmt",
-    "abseil"
+    "abseil",
+    "simdjson"
   ]
 }

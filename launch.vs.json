@@ -7,7 +7,7 @@
       "project": "CMakeLists.txt",
       "projectTarget": "",
       "name": "enumbra",
-      "args": [ "-c C:/Repos/enumbra/examples/enumbra_config.json -s C:/Repos/enumbra/examples/enum.json --cppout C:/Repos/enumbra/examples/enumbra_test.hpp" ]
+      "args": [ "--showtime -c C:/Repos/enumbra/examples/enumbra_config.json -s C:/Repos/enumbra/examples/enum.json --cppout C:/Repos/enumbra/examples/enumbra_test.hpp" ]
     },
     {
       "type": "default",

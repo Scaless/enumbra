@@ -2,6 +2,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <chrono>
 
 using namespace enumbra;
 using namespace enumbra::cpp;

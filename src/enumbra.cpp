@@ -8,8 +8,11 @@
 #include <fstream>
 #include <cxxopts.hpp>
 #include <absl/strings/strip.h>
+#include <simdjson.h>
 #include "cpp_generator.h"
 #include "cpp_parser.h"
+
+using namespace simdjson;
 
 namespace {
     bool contains_whitespace(const std::string_view str)
@@ -21,6 +24,84 @@ namespace {
         }
         return false;
     }
+
+    bool is_pow_2(int128 x) {
+        return x && !(x & (x - 1));
+    }
+
+    int128 string_to_int128(const std::string_view s) {
+        const bool bIsHexString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X'));
+        const bool bIsBinaryString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'b'));
+        if (bIsHexString) {
+            // Unsigned Hex
+            uint64_t unsigned_value;
+            auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 16);
+            const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+            if (bConsumedEntireString && result.ec == std::errc{}) {
+                return int128(unsigned_value);
+            }
+        }
+        else if (bIsBinaryString) {
+            // Unsigned Binary
+            uint64_t unsigned_value;
+            auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 2);
+            const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+            if (bConsumedEntireString && result.ec == std::errc{}) {
+                return int128(unsigned_value);
+            }
+        }
+        else {
+            // Signed Base 10
+            {
+                int64_t signed_value;
+                auto result = std::from_chars(s.data(), s.data() + s.size(), signed_value);
+                const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+                if (bConsumedEntireString && result.ec == std::errc{}) {
+                    return int128(signed_value);
+                }
+            }
+
+            // Unsigned Base 10
+            {
+                uint64_t unsigned_value;
+                auto result = std::from_chars(s.data(), s.data() + s.size(), unsigned_value);
+                const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
+                if (bConsumedEntireString && result.ec == std::errc{}) {
+                    return int128(unsigned_value);
+                }
+            }
+        }
+
+        throw std::invalid_argument(fmt::format("\"{0}\" could not be parsed to an integer.", s));
+    }
+
+    template<typename T>
+    std::string get_optional_str(T&& key) {
+        std::string_view sv;
+        if (auto f = key.get(sv) != NO_SUCH_FIELD) {
+            return std::string(sv);
+        }
+        return "";
+    };
+
+    // Throws if v will not be storable in the defined size_type
+    void validate_value_fits_in_size_type(const enumbra::cpp::enum_size_type& size_type, const int128 v) {
+        if ((v < size_type.min_possible_value) || (v > size_type.max_possible_value)) {
+            auto to_string_128 = [](int128 v) -> std::string {
+                return (v < 0) ? fmt::format("{0}", static_cast<int64_t>(v)) : fmt::format("{0}", static_cast<uint64_t>(v));
+            };
+            auto to_string_128_hex = [](int128 v) -> std::string {
+                return (v < 0) ? fmt::format("{0:#x}", static_cast<int64_t>(v)) : fmt::format("{0:#x}",
+                    static_cast<uint64_t>(v));
+            };
+            throw std::logic_error(fmt::format("entry_value {0} ({1}) is out of the possible range {2} to {3}",
+                to_string_128(v),
+                to_string_128_hex(v),
+                to_string_128(size_type.min_possible_value),
+                to_string_128(size_type.max_possible_value)
+            ));
+        }
+    }
 }
 
 using namespace enumbra;
@@ -28,12 +109,6 @@ using namespace enumbra;
 enumbra::enumbra_config load_enumbra_config(const std::string &config_file);
 
 enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config &enumbra_config, const std::string &config_file);
-
-void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg);
-
-void parse_enumbra_csharp(enumbra::enumbra_config &enumbra_config, json &csharp_cfg);
-
-void parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_config &enum_config, json &meta_config);
 
 void print_help(const cxxopts::Options &options) {
     printf("%s\n", options.help().c_str());
@@ -98,6 +173,8 @@ int main(int argc, char **argv) {
         auto enum_config = load_meta_config(loaded_enumbra_config, source_file_path);
 
         if (loaded_enumbra_config.generate_cpp) {
+            auto time_pregen = std::chrono::system_clock::now();
+            auto elapsed_pregen = std::chrono::duration_cast<std::chrono::microseconds>(time_pregen - start);
             cpp_generator cpp_gen(loaded_enumbra_config, enum_config);
             const std::string &generated_cpp = cpp_gen.generate_cpp_output();
 
@@ -110,7 +187,11 @@ int main(int argc, char **argv) {
             if (result.count("showtime")) {
                 auto end = std::chrono::system_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-                printf("The cpp file was successfully output in (%s ms) to: %s\n", std::to_string(elapsed.count()).c_str(), cppout_file_path.c_str());
+                printf("The cpp file was successfully output in (%s us pregen) (%s us total) to: %s\n", 
+                    std::to_string(elapsed_pregen.count()).c_str(),
+                    std::to_string(elapsed.count()).c_str(),
+                    cppout_file_path.c_str()
+                );
             }
         }
         if (loaded_enumbra_config.generate_csharp) {
@@ -129,53 +210,41 @@ int main(int argc, char **argv) {
 
 enumbra::enumbra_config load_enumbra_config(const std::string &config_file) {
     enumbra::enumbra_config cfg;
-
-    std::ifstream file(config_file);
-    json data = json::parse(file, nullptr, true, true);
+    
+    padded_string file = padded_string::load(config_file);
+    ondemand::parser parser;
+    ondemand::document data = parser.iterate(file);
 
     auto configuration = data["enumbra_config"];
-    auto cpp_config = configuration["cpp_generator"];
-    auto csharp_config = configuration["csharp_generator"];
+    auto cpp_json = configuration["cpp_generator"];
 
-    if (cpp_config.is_object()) {
-        parse_enumbra_cpp(cfg, cpp_config);
-    }
-    if (csharp_config.is_object()) {
-        parse_enumbra_csharp(cfg, csharp_config);
-    }
-
-    return cfg;
-}
-
-enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config &enumbra_config, const std::string &config_file) {
-    enumbra::enum_meta_config cfg;
-
-    std::ifstream file(config_file);
-    json data = json::parse(file, nullptr, true, true);
-
-    auto enum_meta = data["enums"];
-
-    parse_enum_meta(enumbra_config, cfg, enum_meta);
-
-    return cfg;
-}
-
-void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
     using namespace enumbra::cpp;
     try {
-        cpp_config &c = enumbra_config.cpp_config;
+        cpp_config &c = cfg.cpp_config;
 
-        c.output_namespace = get_array<std::string>(cpp_cfg["output_namespace"]);
-        c.time_generated_in_header = cpp_cfg["time_generated_in_header"].get<bool>();
-        c.preamble_text = get_array<std::string>(cpp_cfg["preamble_text"]);
-        c.additional_includes = get_array<std::string>(cpp_cfg["additional_includes"]);
+        auto to_str_vec = [](ondemand::value arr_obj) -> std::vector<std::string> {
+            std::vector<std::string> out;
+            for (auto x : arr_obj.get_array()) {
+                std::string_view vw;
+                if (x.get_string().get(vw) != NO_SUCH_FIELD) {
+                    out.push_back(std::string(vw));
+                }
+            }
+            return out;
+        };
 
-        for (auto iter: cpp_cfg["size_types"]) {
+        c.output_namespace = to_str_vec(cpp_json["output_namespace"]);
+        c.time_generated_in_header = cpp_json["time_generated_in_header"].get_bool();
+        c.preamble_text = to_str_vec(cpp_json["preamble_text"]);
+        c.additional_includes = to_str_vec(cpp_json["additional_includes"]);
+
+        for (auto iter: cpp_json["size_types"]) {
             enum_size_type t;
-            t.name = iter["name"].get<std::string>();
-            t.bits = iter["bits"].get<int32_t>();
-            t.is_signed = iter["is_signed"].get<bool>();
-            t.type_name = iter["type_name"].get<std::string>();
+            
+            t.name = iter["name"].get_string().value();
+            t.bits = iter["bits"].get_int64().value();
+            t.is_signed = iter["is_signed"].get_bool().value();
+            t.type_name = iter["type_name"].get_string().value();
 
             if (t.name.empty()) {
                 throw std::logic_error("size type name cannot be empty");
@@ -213,155 +282,94 @@ void parse_enumbra_cpp(enumbra::enumbra_config &enumbra_config, json &cpp_cfg) {
             throw std::logic_error("size_types array is required. See the enumbra documentation for details.");
         }
 
-        std::string default_value_enum_size_type = cpp_cfg["default_value_enum_size_type"].get<std::string>();
+        auto default_value_enum_size_type = cpp_json["default_value_enum_size_type"].get_string().value();
         c.default_value_enum_size_type_index = c.get_size_type_index_from_name(default_value_enum_size_type);
         if (c.default_value_enum_size_type_index == SIZE_MAX) {
             throw std::logic_error("default_value_enum_size_type must reference an existing size_type.");
         }
 
-        std::string default_flags_enum_size_type = cpp_cfg["default_flags_enum_size_type"].get<std::string>();
+        auto default_flags_enum_size_type = cpp_json["default_flags_enum_size_type"].get_string().value();
         c.default_flags_enum_size_type_index = c.get_size_type_index_from_name(default_flags_enum_size_type);
         if (c.default_flags_enum_size_type_index == SIZE_MAX) {
             throw std::logic_error("default_flags_enum_size_type must reference an existing size_type.");
         }
 
-        c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_cfg["string_table_layout"]);
+        // TODO: Implement later if feature is re-added
+        c.string_table_layout = get_mapped<StringTableLayout>(StringTableLayoutMapped, cpp_json["string_table_layout"].get_string().value());
 
-        c.min_max_functions = cpp_cfg["min_max_functions"].get<bool>();
-        c.bit_info_functions = cpp_cfg["bit_info_functions"].get<bool>();
-        c.enumbra_bitfield_macros = cpp_cfg["enumbra_bitfield_macros"].get<bool>();
+        c.min_max_functions = cpp_json["min_max_functions"].get_bool().value();
+        c.bit_info_functions = cpp_json["bit_info_functions"].get_bool().value();
+        c.enumbra_bitfield_macros = cpp_json["enumbra_bitfield_macros"].get_bool().value();
     }
     catch (const std::exception &e) {
 
         std::string x = std::string("parse_enumbra_cpp_config: ") + e.what();
         throw std::logic_error(x.c_str());
     }
+        
+
+    return cfg;
 }
 
-void parse_enumbra_csharp(enumbra::enumbra_config & /*enumbra_config*/, json & /*csharp_cfg*/) {
-    throw std::logic_error("parse_enumbra_csharp not implemented.");
-}
+enumbra::enum_meta_config load_meta_config(enumbra::enumbra_config &enumbra_cfg, const std::string &config_file) {
+    enumbra::enum_meta_config cfg;
 
-bool is_pow_2(int128 x) {
-    return x && !(x & (x - 1));
-}
+    padded_string file = padded_string::load(config_file);
+    ondemand::parser parser;
+    ondemand::document data = parser.iterate(file);
 
-int128 string_to_int128(const std::string_view s) {
-    const bool bIsHexString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X'));
-    const bool bIsBinaryString = (s.size() >= 2) && (s[0] == '0') && ((s[1] == 'b'));
-    if (bIsHexString) {
-        // Unsigned Hex
-        uint64_t unsigned_value;
-        auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 16);
-        const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
-        if (bConsumedEntireString && result.ec == std::errc{}) {
-            return int128(unsigned_value);
-        }
-    } else if (bIsBinaryString) {
-        // Unsigned Binary
-        uint64_t unsigned_value;
-        auto result = std::from_chars(s.data() + 2, s.data() + s.size(), unsigned_value, 2);
-        const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
-        if (bConsumedEntireString && result.ec == std::errc{}) {
-            return int128(unsigned_value);
-        }
-    } else {
-        // Signed Base 10
-        {
-            int64_t signed_value;
-            auto result = std::from_chars(s.data(), s.data() + s.size(), signed_value);
-            const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
-            if (bConsumedEntireString && result.ec == std::errc{}) {
-                return int128(signed_value);
-            }
-        }
+    auto meta_config = data["enums"];
 
-        // Unsigned Base 10
-        {
-            uint64_t unsigned_value;
-            auto result = std::from_chars(s.data(), s.data() + s.size(), unsigned_value);
-            const bool bConsumedEntireString = result.ptr == (s.data() + s.size());
-            if (bConsumedEntireString && result.ec == std::errc{}) {
-                return int128(unsigned_value);
-            }
-        }
-    }
+    cfg.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(ValueEnumDefaultValueStyleMapped, meta_config["value_enum_default_value_style"].get_string().value());
+    cfg.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(FlagsEnumDefaultValueStyleMapped, meta_config["flags_enum_default_value_style"].get_string().value());
 
-    throw std::invalid_argument(fmt::format("\"{0}\" could not be parsed to an integer.", s));
-}
-
-// Throws if v will not be storable in the defined size_type
-void validate_value_fits_in_size_type(const enumbra::cpp::enum_size_type &size_type, const int128 v) {
-    if ((v < size_type.min_possible_value) || (v > size_type.max_possible_value)) {
-        auto to_string_128 = [](int128 v) -> std::string {
-            return (v < 0) ? fmt::format("{0}", static_cast<int64_t>(v)) : fmt::format("{0}", static_cast<uint64_t>(v));
-        };
-        auto to_string_128_hex = [](int128 v) -> std::string {
-            return (v < 0) ? fmt::format("{0:#x}", static_cast<int64_t>(v)) : fmt::format("{0:#x}",
-                                                                                          static_cast<uint64_t>(v));
-        };
-        throw std::logic_error(fmt::format("entry_value {0} ({1}) is out of the possible range {2} to {3}",
-                                           to_string_128(v),
-                                           to_string_128_hex(v),
-                                           to_string_128(size_type.min_possible_value),
-                                           to_string_128(size_type.max_possible_value)
-        ));
-    }
-}
-
-void
-parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_config &enum_config, json &meta_config) {
-
-    enum_config.value_enum_default_value_style = get_mapped<ValueEnumDefaultValueStyle>(
-            ValueEnumDefaultValueStyleMapped, meta_config["value_enum_default_value_style"]);
-    enum_config.flags_enum_default_value_style = get_mapped<FlagsEnumDefaultValueStyle>(
-            FlagsEnumDefaultValueStyleMapped, meta_config["flags_enum_default_value_style"]);
-
-    for (auto &value_enum: meta_config["value_enums"]) {
+    for (auto value_enum : meta_config["value_enums"]) {
         enum_definition def;
-        def.name = value_enum["name"].get<std::string>();
+        def.name = value_enum["name"].get_string().value();
 
-        std::string size_type_string = value_enum.value("size_type", "");
+        std::string size_type_string = get_optional_str(value_enum["size_type"]);
         if (!size_type_string.empty()) {
-            def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
+            def.size_type_index = enumbra_cfg.cpp_config.get_size_type_index_from_name(size_type_string);
             if (def.size_type_index == SIZE_MAX) {
-                throw std::logic_error(
-                        "value_enum size_type does not exist in global types table: " + size_type_string);
+                throw std::logic_error("value_enum size_type does not exist in global types table: " + std::string(size_type_string));
             }
-        } else {
+        }
+        else {
             // use the default size_type
-            def.size_type_index = enumbra_config.cpp_config.default_value_enum_size_type_index;
+            def.size_type_index = enumbra_cfg.cpp_config.default_value_enum_size_type_index;
         }
 
-        def.default_value_name = value_enum.value("default_value", "");
+        def.default_value_name = get_optional_str(value_enum["default_value"]);
 
         int128 current_value = 0;
-        for (auto &entry: value_enum["entries"]) {
+        for (auto entry : value_enum["entries"]) {
             enum_entry ee;
-            ee.name = entry["name"].get<std::string>();
-            ee.description = entry.value("description", "");
+            ee.name = entry["name"].get_string().value();
+            //ee.description = get_optional_str(entry["description"]);
 
-            if(ee.name.empty()) {
+            if (ee.name.empty()) {
                 throw std::logic_error("enum value name is empty");
             }
-            if(contains_whitespace((ee.name))) {
+            if (contains_whitespace((ee.name))) {
                 throw std::logic_error("enum value name contains whitespace character");
             }
 
-            auto entry_value = entry["value"];
-            if (entry_value.is_null()) {
+            std::string_view sv;
+            bool field_exists = entry["value"].get(sv) != NO_SUCH_FIELD;
+            if (field_exists && !sv.empty()) {
+                ee.p_value = string_to_int128(sv);
+            }
+            else if (field_exists && entry["value"].get_number_type() == fallback::number_type::unsigned_integer) {
+                ee.p_value = entry["value"].get_uint64().value();
+            }
+            else if (field_exists && entry["value"].get_number_type() == fallback::number_type::signed_integer) {
+                ee.p_value = entry["value"].get_int64().value();
+            }
+            else {
                 ee.p_value = current_value;
-            } else if (entry_value.is_string()) {
-                ee.p_value = string_to_int128(entry_value.get<std::string>());
-            } else if (entry_value.is_number_unsigned()) {
-                ee.p_value = entry_value.get<uint64_t>();
-            } else if (entry_value.is_number_integer()) {
-                ee.p_value = entry_value.get<int64_t>();
-            } else {
-                throw std::logic_error("entry_value type is not valid");
             }
 
-            auto size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
+            auto size_type = enumbra_cfg.cpp_config.get_size_type_from_index(def.size_type_index);
             validate_value_fits_in_size_type(size_type, ee.p_value);
 
             current_value = ee.p_value + 1;
@@ -369,54 +377,59 @@ parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_conf
         }
 
         std::sort(def.values.begin(), def.values.end(),
-                  [](const enum_entry &a, const enum_entry &b) { return a.p_value < b.p_value; }
+            [](const enum_entry& a, const enum_entry& b) { return a.p_value < b.p_value; }
         );
 
-        enum_config.value_enum_definitions.push_back(def);
+        cfg.value_enum_definitions.push_back(def);
     }
 
 
-    for (auto &flags_enum: meta_config["flags_enums"]) {
+    for (auto flags_enum : meta_config["flags_enums"]) {
         enum_definition def;
-        def.name = flags_enum["name"].get<std::string>();
-        std::string size_type_string = flags_enum.value("size_type", "");
+        def.name = flags_enum["name"].get_string().value();
+        std::string size_type_string = get_optional_str(flags_enum["size_type"]);
         if (!size_type_string.empty()) {
-            def.size_type_index = enumbra_config.cpp_config.get_size_type_index_from_name(size_type_string);
+            def.size_type_index = enumbra_cfg.cpp_config.get_size_type_index_from_name(size_type_string);
             if (def.size_type_index == SIZE_MAX) {
                 throw std::logic_error(
-                        "flags_enum size_type does not exist in global types table: " + size_type_string);
+                    "flags_enum size_type does not exist in global types table: " + size_type_string);
             }
-        } else {
-            // use the default size_type
-            def.size_type_index = enumbra_config.cpp_config.default_flags_enum_size_type_index;
         }
-        def.default_value_name = flags_enum.value("default_value", "");
+        else {
+            // use the default size_type
+            def.size_type_index = enumbra_cfg.cpp_config.default_flags_enum_size_type_index;
+        }
+        def.default_value_name = get_optional_str(flags_enum["default_value"]);
 
         int64_t current_shift = 0;
-        for (auto &entry: flags_enum["entries"]) {
+        for (auto entry : flags_enum["entries"]) {
             enum_entry ee;
-            ee.name = entry["name"].get<std::string>();
-            ee.description = entry.value("description", "");
+            ee.name = entry["name"].get_string().value();
+            ee.description = get_optional_str(entry["description"]);
 
-            auto entry_value = entry["value"];
-            if (entry_value.is_null()) {
+            std::string_view sv;
+            bool field_exists = entry["value"].get(sv) != NO_SUCH_FIELD;
+            if (field_exists && !sv.empty()) {
+                ee.p_value = string_to_int128(sv);
+            }
+            else if (field_exists && entry["value"].get_number_type() == fallback::number_type::unsigned_integer) {
+                ee.p_value = entry["value"].get_uint64().value();
+            }
+            else if (field_exists && entry["value"].get_number_type() == fallback::number_type::signed_integer) {
+                ee.p_value = entry["value"].get_int64().value();
+                if (ee.p_value < 0) {
+                    throw std::logic_error("flags_enum value is negative. Signed enums are not currently supported.");
+                }
+            }
+            else {
                 ee.p_value = 1LL << current_shift;
-            } else if (entry_value.is_string()) {
-                ee.p_value = string_to_int128(entry_value.get<std::string>());
-            } else if (entry_value.is_number_unsigned()) {
-                ee.p_value = entry_value.get<uint64_t>();
-            } else if (entry_value.is_number_integer()) {
-                ee.p_value = entry_value.get<int64_t>();
-            } else {
-                throw std::logic_error("entry_value type is not valid");
             }
 
-            auto &size_type = enumbra_config.cpp_config.get_size_type_from_index(def.size_type_index);
+            auto& size_type = enumbra_cfg.cpp_config.get_size_type_from_index(def.size_type_index);
             validate_value_fits_in_size_type(size_type, ee.p_value);
 
             if (!is_pow_2(ee.p_value)) {
-                throw std::logic_error(
-                        "flags_enum value is not a power of 2 (1 bit set). Non-pow2 values are not currently supported.");
+                throw std::logic_error("flags_enum value is not a power of 2 (1 bit set). Non-pow2 values are not currently supported.");
             }
             current_shift++;
             while ((1LL << current_shift) < ee.p_value) {
@@ -426,11 +439,13 @@ parse_enum_meta(enumbra::enumbra_config &enumbra_config, enumbra::enum_meta_conf
         }
 
         std::sort(def.values.begin(), def.values.end(),
-                  [](const enum_entry &a, const enum_entry &b) { return a.p_value < b.p_value; }
+            [](const enum_entry& a, const enum_entry& b) { return a.p_value < b.p_value; }
         );
 
-        enum_config.flag_enum_definitions.push_back(def);
+        cfg.flag_enum_definitions.push_back(def);
     }
+
+    return cfg;
 }
 
 size_t enumbra::cpp::cpp_config::get_size_type_index_from_name(std::string_view name) {

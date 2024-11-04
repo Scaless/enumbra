@@ -3,10 +3,11 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <nlohmann/json.hpp>
+#include <stdexcept>
+
 #include <absl/numeric/int128.h>
 
-using json = nlohmann::json;
+
 using int128 = absl::int128;
 using uint128 = absl::uint128;
 
@@ -49,7 +50,7 @@ namespace enumbra {
 
 		struct enum_size_type {
 			std::string name;
-			int32_t bits{ 0 };
+			int64_t bits{ 0 };
 			bool is_signed{ true };
 			std::string type_name;
 			int128 min_possible_value{ absl::Int128Max() };
@@ -147,34 +148,32 @@ namespace enumbra {
 		cpp::cpp_config cpp_config{};
 	};
 
-	// Get an array of T from the json structure, possibly empty
-	template<typename T>
-	std::vector<T> get_array(json& config)
-	{
-		std::vector<T> out;
+	//// Get an array of T from the json structure, possibly empty
+	//template<typename T>
+	//std::vector<T> get_array(json& config)
+	//{
+	//	std::vector<T> out;
 
-		if (config.is_null())
-		{
-			return out;
-		}
+	//	if (config.is_null())
+	//	{
+	//		return out;
+	//	}
 
-		for (auto iter : config)
-		{
-			out.push_back(iter.get<T>());
-		}
+	//	for (auto iter : config)
+	//	{
+	//		out.push_back(iter.get<T>());
+	//	}
 
-		return out;
-	}
+	//	return out;
+	//}
 
 	// Get a mapped value from the json structure, throwing if key is not mapped
 	// Requires a mapping table of the following form: std::array<std::pair<std::string_view, T>, #>
 	template<typename T, typename mapping>
-	T get_mapped(mapping& map, json& config) {
+	T get_mapped(mapping& map, std::string_view param) {
 		if (map.size() == 0) {
 			throw std::logic_error("Map passed to get_mapped has a size of 0");
 		}
-
-		auto param = config.get<std::string>();
 
 		using namespace enumbra::cpp;
 		auto found_map = std::find_if(map.begin(), map.end(),

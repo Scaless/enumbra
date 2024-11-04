@@ -1,3 +1,6 @@
+# simdjson branch
+
+At least 50% faster than nlohmann on clang, but hangs MSVC so not adding to the main branch until that's resolved.
 
 # Overview
 enumbra is a code generator for enums. Config file in, generated code file out.  

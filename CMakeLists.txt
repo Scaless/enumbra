@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 3.20)
 
 project ("enumbra")
 
-find_package(nlohmann_json)
+find_package(simdjson CONFIG REQUIRED)
 find_package(cxxopts)
 find_package(fmt)
 find_package(absl REQUIRED)
@@ -36,6 +36,7 @@ target_link_libraries(enumbra PRIVATE
 	cxxopts::cxxopts
 	fmt::fmt
 	absl::int128
+	simdjson::simdjson
 )
 
 add_subdirectory(examples)

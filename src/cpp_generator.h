@@ -8,6 +8,8 @@
 #include <string_view>
 #include <unordered_map>
 #include <optional>
+#include <algorithm>
+#include <iterator>
 #include <fmt/format.h>
 #include <fmt/args.h>
 
